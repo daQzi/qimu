@@ -251,6 +251,43 @@ func TestUpdateAppearanceRejectsAnotherUsersNewResource(t *testing.T) {
 	}
 }
 
+func TestUpdateAppearanceClearsMissingCurrentAppearanceResources(t *testing.T) {
+	svc, db, _, admin := newAppearanceTestService(t)
+	current := defaultAppearanceSetting()
+	current.LogoResourceID = "missing-logo"
+	current.DarkLogoResourceID = "missing-dark-logo"
+	current.AuthVideoResourceID = "missing-video"
+	current.AuthVideoPosterResourceID = "missing-poster"
+	encoded, err := json.Marshal(current)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&model.SystemSetting{Key: appearanceSettingKey, ValueJSON: string(encoded)}).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	updated, err := svc.UpdateAppearance(admin, AppearanceSetting{
+		BrandName:                 current.BrandName,
+		BrandSlug:                 current.BrandSlug,
+		AuthHeroTitle:             current.AuthHeroTitle,
+		LogoResourceID:            current.LogoResourceID,
+		DarkLogoResourceID:        current.DarkLogoResourceID,
+		AuthVideoResourceID:       current.AuthVideoResourceID,
+		AuthVideoPosterResourceID: current.AuthVideoPosterResourceID,
+		SkinID:                    "xiaoyunque",
+		SkinThemes:                defaultAppearanceSkinThemes(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.SkinID != "xiaoyunque" || updated.LogoResourceID != "" || updated.DarkLogoResourceID != "" || updated.AuthVideoResourceID != "" || updated.AuthVideoPosterResourceID != "" {
+		t.Fatalf("updated appearance retained stale resources: %#v", updated.AppearanceSetting)
+	}
+	if updated.Public.LogoConfigured || updated.Public.DarkLogoConfigured || updated.Public.AuthVideoConfigured || updated.Public.AuthVideoPosterConfigured {
+		t.Fatalf("public appearance retained stale resource state: %#v", updated.Public)
+	}
+}
+
 func TestOpenAppearanceAssetOnlyServesConfiguredSlot(t *testing.T) {
 	svc, db, dataDir, admin := newAppearanceTestService(t)
 	resource := model.Resource{ID: "brand-logo", UserID: admin.ID, Kind: "image", Status: model.ResourceStatusReady, Provider: "local", ObjectKey: "brand/logo.png", MimeType: "image/png"}

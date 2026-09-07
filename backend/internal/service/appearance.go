@@ -192,17 +192,19 @@ func (s *Service) UpdateAppearance(actor *model.User, value AppearanceSetting) (
 	}
 	for _, candidate := range []struct {
 		slot       string
-		resourceID string
+		resourceID *string
 		currentID  string
 	}{
-		{slot: AppearanceAssetLogo, resourceID: value.LogoResourceID, currentID: before.LogoResourceID},
-		{slot: AppearanceAssetDarkLogo, resourceID: value.DarkLogoResourceID, currentID: before.DarkLogoResourceID},
-		{slot: AppearanceAssetVideo, resourceID: value.AuthVideoResourceID, currentID: before.AuthVideoResourceID},
-		{slot: AppearanceAssetPoster, resourceID: value.AuthVideoPosterResourceID, currentID: before.AuthVideoPosterResourceID},
+		{slot: AppearanceAssetLogo, resourceID: &value.LogoResourceID, currentID: before.LogoResourceID},
+		{slot: AppearanceAssetDarkLogo, resourceID: &value.DarkLogoResourceID, currentID: before.DarkLogoResourceID},
+		{slot: AppearanceAssetVideo, resourceID: &value.AuthVideoResourceID, currentID: before.AuthVideoResourceID},
+		{slot: AppearanceAssetPoster, resourceID: &value.AuthVideoPosterResourceID, currentID: before.AuthVideoPosterResourceID},
 	} {
-		if err := s.validateAppearanceResource(actor, candidate.slot, candidate.resourceID, candidate.currentID); err != nil {
+		resourceID, err := s.normalizeAppearanceResourceID(actor, candidate.slot, *candidate.resourceID, candidate.currentID)
+		if err != nil {
 			return nil, err
 		}
+		*candidate.resourceID = resourceID
 	}
 	encoded, err := json.Marshal(value)
 	if err != nil {
@@ -455,18 +457,26 @@ func validateAppearanceCopy(value string, label string, maxRunes int, required b
 	return nil
 }
 
-func (s *Service) validateAppearanceResource(actor *model.User, slot string, resourceID string, currentID string) error {
+func (s *Service) normalizeAppearanceResourceID(actor *model.User, slot string, resourceID string, currentID string) (string, error) {
 	if resourceID == "" {
-		return nil
+		return "", nil
 	}
 	resource, err := s.repo.Resource(resourceID)
 	if err != nil {
-		return BadAuthRequest("选择的外观资源不存在")
+		// A restored database can retain IDs whose resource rows were not restored.
+		// Only clear an unchanged stale reference; new missing IDs stay invalid.
+		if errors.Is(err, gorm.ErrRecordNotFound) && resourceID == currentID {
+			return "", nil
+		}
+		return "", BadAuthRequest("选择的外观资源不存在")
 	}
 	if resourceID != currentID && resource.UserID != actor.ID {
-		return Forbidden("只能使用当前管理员上传的外观资源")
+		return "", Forbidden("只能使用当前管理员上传的外观资源")
 	}
-	return validateAppearanceResourceType(slot, resource)
+	if err := validateAppearanceResourceType(slot, resource); err != nil {
+		return "", err
+	}
+	return resourceID, nil
 }
 
 func validateAppearanceResourceType(slot string, resource *model.Resource) error {
