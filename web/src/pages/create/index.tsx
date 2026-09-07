@@ -17,6 +17,7 @@ import { creationCanvasHandoffPath, creationResultAssetIds } from "@/lib/canvas/
 import { ASSET_CATEGORY_LABELS } from "@/lib/asset-category";
 import type { GenerationRetryContext } from "@/lib/canvas/canvas-project-generation";
 import { createClientId } from "@/lib/client-id";
+import { consumeLandingDraft } from "@/lib/landing-draft";
 import { formatShotOrdinal } from "@/lib/shot-label";
 import { generationErrorCode, generationErrorMessage } from "@/lib/generation-error";
 import { useCopyText } from "@/hooks/use-copy-text";
@@ -156,6 +157,13 @@ export default function CreatePage() {
     const [hydrated, setHydrated] = useState(false);
     const [mode, setMode] = useState<CreationMode>(() => initialComposerPreferences.mode || "video");
     const [prompt, setPrompt] = useState("");
+    const landingDraftConsumed = useRef(false);
+    useEffect(() => {
+        if (landingDraftConsumed.current) return;
+        landingDraftConsumed.current = true;
+        const draft = consumeLandingDraft();
+        if (draft) setPrompt(draft);
+    }, []);
     const [attachments, setAttachments] = useState<CreationAttachment[]>([]);
     const promptRef = useRef(prompt);
     const attachmentsRef = useRef(attachments);

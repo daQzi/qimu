@@ -39,6 +39,7 @@ const CanvasPage = lazy(loadCanvasPage);
 const CanvasProjectPage = lazy(loadCanvasProjectPage);
 const SharedCanvasPage = lazy(() => import("@/pages/canvas/shared"));
 const CreatePage = lazy(loadCreatePage);
+const LandingPage = lazy(() => import("@/pages/landing"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const SkillsPage = lazy(() => import("@/pages/skills"));
 const PluginsPage = lazy(() => import("@/pages/plugins"));
@@ -82,6 +83,7 @@ function devRoutes() {
 }
 
 export const router = createBrowserRouter([
+    { path: "/", element: fullScreenDeferred(<LandingPage />), errorElement: <RouteErrorPage /> },
     {
         element: <AuthScene />,
         errorElement: <RouteErrorPage />,
@@ -97,7 +99,7 @@ export const router = createBrowserRouter([
         element: <AuthenticatedWorkspaceLayout />,
         errorElement: <RouteErrorPage />,
         children: [
-            { path: "/", element: <RequireAuth>{deferred(<CreatePage />)}</RequireAuth> },
+            { path: "/home", element: <RequireAuth>{deferred(<CreatePage />)}</RequireAuth> },
             { path: "/create", element: <RequireAuth>{deferred(<CreatePage />)}</RequireAuth> },
             {
                 path: "/tasks",

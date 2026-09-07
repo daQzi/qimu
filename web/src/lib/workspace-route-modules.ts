@@ -16,9 +16,9 @@ export const loadProjectsPage = workspaceRouteLoaders.projects;
 export const loadWalletPage = workspaceRouteLoaders.wallet;
 
 export function preloadWorkspaceRoute(pathnameOrSlug: string) {
-    // 根路径就是创作页，预加载时仍映射到其内部模块名。
+    // 创作首页和 /create 共用同一模块。
     const segments = pathnameOrSlug.replace(/^\//, "").split("/").filter(Boolean);
-    const slug = segments[0] || "create";
+    const slug = segments[0] === "home" ? "create" : segments[0];
     if (slug === "projects" && segments.length > 1) {
         void workspaceRouteLoaders.projectDetail();
         return;

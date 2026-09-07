@@ -31,17 +31,16 @@ describe("workspace route loading", () => {
         expect(navigation).toContain("onFocus={() => preloadWorkspaceRoute(linkTo)}");
     });
 
-    test("keeps the creation page at root and preserves the create compatibility route", () => {
+    test("keeps the public landing page separate from the authenticated creation home", () => {
         const router = source("../src/router.tsx");
         const navigation = source("../src/components/layout/workspace-sidebar-nav.tsx");
 
-        expect(router).toContain('{ path: "/", element: <RequireAuth>{deferred(<CreatePage />)}</RequireAuth> }');
+        expect(router).toContain('{ path: "/", element: fullScreenDeferred(<LandingPage />), errorElement: <RouteErrorPage /> }');
+        expect(router).toContain('{ path: "/home", element: <RequireAuth>{deferred(<CreatePage />)}</RequireAuth> }');
         expect(router).toContain('{ path: "/create", element: <RequireAuth>{deferred(<CreatePage />)}</RequireAuth> }');
-        expect(router).not.toContain('path: "/home"');
         expect(router).not.toContain("HomePage");
-        expect(navigation).toContain('{ id: "home", title: "首页", icon: Home, to: "/" }');
+        expect(navigation).toContain('{ id: "home", title: "首页", icon: Home, to: "/home" }');
         expect(navigation).not.toContain('to: "/create"');
-        expect(navigation).not.toContain('to: "/home"');
     });
 
     test("preloads canvas detail and paints opening feedback before navigation", () => {

@@ -46,7 +46,7 @@ function buildNav(features: FeatureAvailability, balance: string, isAdmin: boole
     const groups: WorkspaceNavGroup[] = [
         {
             items: [
-                { id: "home", title: "首页", icon: Home, to: "/" },
+                { id: "home", title: "首页", icon: Home, to: "/home" },
 toolItem("projects", "/projects"),
                 toolItem("canvas", "/canvas"),
                 ...(features.taskCenterEnabled ? [toolItem("tasks", "/tasks")] : []),
@@ -126,7 +126,7 @@ function WorkspaceSwitcher({ collapsed, onNavigate, onExpand }: { collapsed: boo
                         </div>
                         <div className="mx-2 my-1 h-px bg-[var(--workspace-border)]" />
                         {[
-                            { label: "首页", to: "/" },
+                            { label: "首页", to: "/home" },
                             { label: "画布", to: "/canvas" },
                             { label: "设置", to: "/settings" },
                         ].map((entry) => (
