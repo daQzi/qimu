@@ -200,15 +200,17 @@
 .landing-header-cta:focus-visible,
 .landing-final-cta-button:hover,
 .landing-final-cta-button:focus-visible {
-    background: var(--primary-hover);
-    border-color: var(--primary-hover);
+    color: var(--btn-solid-fg);
+    background: var(--btn-solid-hover-bg);
+    border-color: var(--btn-solid-hover-bg);
     transform: translateY(-2px);
 }
 
 .landing-header-cta:active,
 .landing-final-cta-button:active {
-    background: var(--primary-active);
-    border-color: var(--primary-active);
+    color: var(--btn-solid-fg);
+    background: var(--btn-solid-active-bg);
+    border-color: var(--btn-solid-active-bg);
     transform: none;
 }
 
@@ -368,13 +370,13 @@
 
 .landing-hero-prompt:hover .landing-hero-prompt-action,
 .landing-hero-prompt:focus-within .landing-hero-prompt-action {
-    background: var(--primary-hover);
-    border-color: var(--primary-hover);
+    background: var(--btn-solid-hover-bg);
+    border-color: var(--btn-solid-hover-bg);
 }
 
 .landing-hero-prompt:active .landing-hero-prompt-action {
-    background: var(--primary-active);
-    border-color: var(--primary-active);
+    background: var(--btn-solid-active-bg);
+    border-color: var(--btn-solid-active-bg);
 }
 
 .landing-hero-prompt:active {
