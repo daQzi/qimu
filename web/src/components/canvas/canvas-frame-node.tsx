@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { ChevronDown, ChevronRight, Video } from "lucide-react";
@@ -47,7 +48,7 @@ export const CanvasFrameNode = React.memo(function CanvasFrameNode({
     onHoverStart?: (nodeId: string) => void;
     onHoverEnd?: (nodeId: string) => void;
 }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const collapsed = Boolean(data.metadata?.frame?.collapsed);
     const folder = isCanvasFolderNode(data);
     const [editing, setEditing] = useState(false);

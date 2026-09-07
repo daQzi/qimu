@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, MouseEvent as ReactMouseEvent, SetStateAction } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -226,7 +227,7 @@ function InfiniteCanvasPage() {
     const cleanupAssetImages = useAssetStore((state) => state.cleanupImages);
     const colorTheme = useThemeStore((state) => state.theme);
     const setTheme = useThemeStore((state) => state.setTheme);
-    const theme = canvasThemes[colorTheme];
+    const theme = useCanvasTheme(colorTheme);
     const defaultDrawingEngine = useUserStore((state) => state.drawingEngine.defaultEngine);
     const shortDramaEnabled = useUserStore((state) => state.features.shortDramaEnabled);
     const directorOnboardingScope = useUserStore((state) => state.user?.id?.trim() || "");
@@ -361,7 +362,7 @@ function InfiniteCanvasPage() {
         });
     }, [canvasStorageScope, projectId]);
 
-    const resolvedCanvasAppearance = useMemo(() => resolveCanvasAppearance(canvasAppearance, colorTheme), [canvasAppearance, colorTheme]);
+    const resolvedCanvasAppearance = useMemo(() => resolveCanvasAppearance(canvasAppearance, colorTheme, theme), [canvasAppearance, colorTheme, theme]);
     const applyCanvasAppearance = useCallback((next: CanvasAppearance) => {
         const fallback = canvasAppearanceBaseTheme(next, colorTheme);
         const normalized = normalizeCanvasAppearance(next, fallback);

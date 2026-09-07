@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 // 二期：多轨时间线编辑弹窗。
 // 数据源是项目级 TimelineProject：视频/音频节点自动入轨，字幕条目转字幕片段。
 // 交互：拖拽移动片段（吸附播放头/片段边缘）、左右边缘裁剪、删除、播放头跳转。
@@ -74,7 +75,7 @@ export function CanvasTimelineDialog({
     onCreateAssembledNode,
 }: CanvasTimelineDialogProps) {
     const { message } = App.useApp();
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const [draft, setDraft] = useState<TimelineProject>(() => buildTimelineFromNodes([]));
     const [playheadMs, setPlayheadMs] = useState(0);
     const [zoomLevel, setZoomLevel] = useState(1);

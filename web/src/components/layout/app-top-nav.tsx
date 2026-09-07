@@ -11,22 +11,37 @@ import { isSpatialWorkbenchPath } from "@/lib/workspace-routes";
 
 const WorkspaceCommandPalette = lazy(() => import("@/components/layout/workspace-command-palette").then((module) => ({ default: module.WorkspaceCommandPalette })));
 
+const MOBILE_VIEWPORT_QUERY = "(max-width: 1023px)";
+
+function useMobileViewport() {
+    const [matches, setMatches] = useState(() => typeof window !== "undefined" && window.matchMedia(MOBILE_VIEWPORT_QUERY).matches);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+        const handleChange = (event: MediaQueryListEvent) => setMatches(event.matches);
+        setMatches(mediaQuery.matches);
+        mediaQuery.addEventListener("change", handleChange);
+        return () => mediaQuery.removeEventListener("change", handleChange);
+    }, []);
+
+    return matches;
+}
+
 export function AppWorkspaceShell({ children }: { children: ReactNode }) {
     const { pathname } = useLocation();
     const navigate = useNavigate();
     const [mobileSidebarExpanded, setMobileSidebarExpanded] = useState(false);
     const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(readWorkspaceSidebarCollapsed);
     const [paletteOpen, setPaletteOpen] = useState(false);
+    const mobileViewport = useMobileViewport();
 
     const hideChrome = pathname.startsWith("/admin") || /^\/canvas\/[^/]+/.test(pathname);
     const showGlobalTopBar = !hideChrome;
     const spatialWorkbench = isSpatialWorkbenchPath(pathname);
-    const creationWorkspace = pathname === "/";
-
-    const isMobileViewport = () => window.innerWidth < 1024;
+    const creationWorkspace = !hideChrome;
 
     const toggleSidebar = () => {
-        if (isMobileViewport()) {
+        if (mobileViewport) {
             setMobileSidebarExpanded((current) => !current);
             return;
         }
@@ -43,8 +58,12 @@ export function AppWorkspaceShell({ children }: { children: ReactNode }) {
     };
 
     const handleNavClick = () => {
-        if (isMobileViewport()) setMobileSidebarExpanded(false);
+        if (mobileViewport) setMobileSidebarExpanded(false);
     };
+
+    useEffect(() => {
+        if (!mobileViewport) setMobileSidebarExpanded(false);
+    }, [mobileViewport]);
 
     // ⌘K / Ctrl+K 全局呼出搜索面板。
     useEffect(() => {
@@ -81,11 +100,11 @@ export function AppWorkspaceShell({ children }: { children: ReactNode }) {
                                 className={cn(
                                     "app-workspace-sidebar flex h-full shrink-0 flex-col overflow-hidden",
                                     mobileSidebarExpanded && "is-mobile-expanded",
-                                    desktopSidebarCollapsed && "is-collapsed",
+                                    desktopSidebarCollapsed && !mobileViewport && "is-collapsed",
                                 )}
                             >
                                 <WorkspaceSidebarNav
-                                    collapsed={desktopSidebarCollapsed}
+                                    collapsed={mobileViewport ? false : desktopSidebarCollapsed}
                                     onNavigate={handleNavClick}
                                     onOpenSearch={() => setPaletteOpen(true)}
                                     onExpand={expandDesktopSidebar}
@@ -94,7 +113,7 @@ export function AppWorkspaceShell({ children }: { children: ReactNode }) {
                         ) : null}
 
                         <div className="app-workspace-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-                            {showGlobalTopBar ? <WorkspaceTopBar sidebarOpen={isMobileViewport() ? mobileSidebarExpanded : !desktopSidebarCollapsed} onToggleSidebar={toggleSidebar} /> : null}
+                            {showGlobalTopBar ? <WorkspaceTopBar sidebarOpen={mobileViewport ? mobileSidebarExpanded : !desktopSidebarCollapsed} onToggleSidebar={toggleSidebar} /> : null}
                             <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">{children}</div>
                         </div>
                     </div>

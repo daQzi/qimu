@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { App, Button, Dropdown, Input, Modal, Tag, Tooltip } from "antd";
 import type { MenuProps } from "antd";
@@ -122,7 +123,7 @@ export function CanvasNodeToolbar({
     const { message } = App.useApp();
     const copyText = useCopyText();
     const themeName = useThemeStore((state) => state.theme);
-    const theme = canvasThemes[themeName];
+    const theme = useCanvasTheme(themeName);
     const simpleMode = workspaceMode === "simple";
 
     useEffect(() => {
@@ -394,7 +395,7 @@ function NodeDockMenuButton({ menuId, label, icon, tools, openMenuId, onOpenChan
 }
 
 export function CanvasNodeInfoModal({ node, open, onClose, onMetadataChange, readOnly = false, onUnauthorized }: { node: CanvasNodeData | null; open: boolean; onClose: () => void; onMetadataChange?: (nodeId: string, metadata: Partial<CanvasNodeMetadata>) => void; readOnly?: boolean; onUnauthorized?: () => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const [assetTags, setAssetTags] = useState<string[]>([]);
     const [assetTagInput, setAssetTagInput] = useState("");
     const [assetCategory, setAssetCategory] = useState<CanvasAssetCategory>("other");

@@ -159,7 +159,28 @@ func defaultAppearanceSkinThemes() []AppearanceSkinTheme {
 	})
 	violet.Tokens.Components = appearanceSkinComponentPreset(7, 7, 12, 14, 9, 4)
 
-	return []AppearanceSkinTheme{classic, studio, warm, violet}
+	return []AppearanceSkinTheme{classic, studio, warm, violet, defaultXiaoyunqueAppearanceSkin()}
+}
+
+func defaultXiaoyunqueAppearanceSkin() AppearanceSkinTheme {
+	skin := cloneAppearanceSkin(defaultClassicAppearanceSkin(), "xiaoyunque", "小云雀", "浅蓝白底 · 紫青点缀 · 轻盈胶囊")
+	skin.Tokens.Light = tintAppearanceSkinMode(skin.Tokens.Light, appearanceSkinPalette{
+		canvas: "#f5fbff", surface: "#ffffff", subtle: "#f3efff", raised: "#f8faff", overlay: "#ffffff", text: "#1d2023", muted: "#6b7280", border: "#e3eefb",
+		primary: "#8359ff", primaryHover: "#5e40df", primaryActive: "#4d31c7", primaryForeground: "#ffffff", selected: "#f2ecff", selectedHover: "#e9dfff", selectedActive: "#ded1ff", selectedForeground: "#5e40df", info: "#00cae0",
+		switchChecked: "#0e9f6e", switchCheckedHover: "#07845a", switchCheckedHandle: "#ffffff", switchUnchecked: "#b8c3d0", switchUncheckedHover: "#98a6b7", switchUncheckedHandle: "#ffffff",
+		success: "#0e9f6e", warning: "#b7791f", danger: "#e5484d", dangerHover: "#ce343b", dangerActive: "#b52931", dangerForeground: "#ffffff",
+		workspace: "#ffffff", grid: "#dce7f3", adminBackground: "#f5fbff", adminSurface: "#ffffff", adminSubtle: "#f8faff", adminStrong: "#e3eefb", authBackground: "#0f172a", authPanel: "#151e30", authCard: "#1d293c", authAccent: "#b49aff", authMuted: "#a4afbf",
+	})
+	skin.Tokens.Dark = tintAppearanceSkinMode(skin.Tokens.Dark, appearanceSkinPalette{
+		canvas: "#0f172a", surface: "#192336", subtle: "#222e43", raised: "#273349", overlay: "#202c40", text: "#f3f6fa", muted: "#a4afbf", border: "#344158",
+		primary: "#ab8bff", primaryHover: "#c0a7ff", primaryActive: "#9370ee", primaryForeground: "#171126", selected: "#35294f", selectedHover: "#43355f", selectedActive: "#514071", selectedForeground: "#e0d3ff", info: "#36d5e6",
+		switchChecked: "#34d399", switchCheckedHover: "#6ee7b7", switchCheckedHandle: "#062b20", switchUnchecked: "#526176", switchUncheckedHover: "#69798f", switchUncheckedHandle: "#f3f6fa",
+		success: "#34d399", warning: "#fbbf24", danger: "#fb8187", dangerHover: "#ffa0a5", dangerActive: "#e56670", dangerForeground: "#310b17",
+		workspace: "#192336", grid: "#344158", adminBackground: "#0f172a", adminSurface: "#192336", adminSubtle: "#222e43", adminStrong: "#273349", authBackground: "#0f172a", authPanel: "#151e30", authCard: "#1d293c", authAccent: "#b49aff", authMuted: "#a4afbf",
+	})
+	skin.Tokens.Components = appearanceSkinComponentPreset(18, 8, 8, 16, 8, 4)
+	skin.Tokens.Components.ShadowStyle = "brand"
+	return skin
 }
 
 func defaultClassicAppearanceSkin() AppearanceSkinTheme {
@@ -364,7 +385,7 @@ func validateAppearanceSkinComponents(value AppearanceSkinComponentTokens) error
 	if value.MotionFast > value.MotionNormal {
 		return BadAuthRequest("快速动效时长不能大于常规动效时长")
 	}
-	if value.ShadowStyle != "none" && value.ShadowStyle != "soft" && value.ShadowStyle != "strong" {
+	if value.ShadowStyle != "none" && value.ShadowStyle != "soft" && value.ShadowStyle != "strong" && value.ShadowStyle != "brand" {
 		return BadAuthRequest("阴影风格无效")
 	}
 	return nil

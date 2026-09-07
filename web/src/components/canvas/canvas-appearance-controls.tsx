@@ -10,7 +10,8 @@ import {
     type CanvasAppearance,
     type CanvasCustomAppearance,
 } from "@/lib/canvas/canvas-appearance";
-import type { CanvasBackgroundMode, CanvasColorTheme, CanvasTheme } from "@/lib/canvas-theme";
+import { getCanvasTheme, type CanvasBackgroundMode, type CanvasColorTheme, type CanvasTheme } from "@/lib/canvas-theme";
+import { useAppearanceStore } from "@/stores/use-appearance-store";
 
 const LIGHT_PRESETS = ["#F0F0F0", "#F3DCE5", "#EEE5D8", "#DFE9E6"];
 const DARK_PRESETS = ["#000000", "#30272B", "#302D26", "#25302E"];
@@ -33,6 +34,8 @@ export function CanvasAppearanceControls({
     onBackgroundModeChange: (mode: CanvasBackgroundMode) => void;
 }) {
     const [draft, setDraft] = useState(appearance);
+    const activeSkin = useAppearanceStore((state) => state.appearance.activeSkin);
+    const themeFor = (mode: CanvasColorTheme) => getCanvasTheme(mode, activeSkin);
 
     useEffect(() => setDraft(appearance), [appearance]);
 
@@ -42,21 +45,21 @@ export function CanvasAppearanceControls({
         onAppearanceChange(next);
     };
     const selectCustomTheme = () => {
-        const next = enterCustomCanvasAppearance(draft, colorTheme);
+        const next = enterCustomCanvasAppearance(draft, colorTheme, themeFor(colorTheme));
         setDraft(next);
         onAppearanceChange(next);
     };
     const updateCustom = (patch: Partial<CanvasCustomAppearance>) => {
         const current = draft.mode === "custom" && draft.custom
             ? draft
-            : enterCustomCanvasAppearance(draft, colorTheme);
+            : enterCustomCanvasAppearance(draft, colorTheme, themeFor(colorTheme));
         const next: CanvasAppearance = { mode: "custom", custom: { ...current.custom!, ...patch } };
         setDraft(next);
         onAppearanceChange(next);
     };
     const resetCustom = () => {
         const baseTheme = draft.custom?.baseTheme || colorTheme;
-        const next = customCanvasAppearanceFromTheme(baseTheme);
+        const next = customCanvasAppearanceFromTheme(baseTheme, themeFor(baseTheme));
         setDraft(next);
         onAppearanceChange(next);
     };

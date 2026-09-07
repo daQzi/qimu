@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 import { CachedResourceImage } from "@/components/cached-resource-image";
@@ -14,7 +15,7 @@ const MINIMAP_HEIGHT = 160;
 const MINIMAP_IMAGE_PREVIEW_LIMIT = 24;
 
 export function Minimap({ nodes, viewport, viewportSize, canvasContainerRef, onViewportPreviewChange, onViewportChange }: { nodes: CanvasNodeData[]; viewport: ViewportTransform; viewportSize: { width: number; height: number }; canvasContainerRef?: RefObject<HTMLDivElement | null>; onViewportPreviewChange?: (viewport: ViewportTransform) => void; onViewportChange: (viewport: ViewportTransform) => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const viewportRectRef = useRef<HTMLDivElement>(null);
     const liveViewportRef = useRef(viewport);

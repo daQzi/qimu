@@ -95,6 +95,12 @@
     --r-5xl: 32px;
     --r-full: 9999px;
 
+    /* 发现轨尺寸：创作台桌面使用窄幅导航，移动端由抽屉尺寸接管。 */
+    --size-discovery-rail: 108px;
+    --size-discovery-rail-item: 52px;
+    --size-discovery-drawer: 280px;
+    --size-discovery-item: 44px;
+
     /* --- 5. 阴影（含 glow）--- */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -539,6 +545,16 @@
     --workspace-nav-active-bg: color-mix(in srgb, var(--workspace-accent) 12%, transparent);
     --workspace-nav-active-hover-bg: color-mix(in srgb, var(--workspace-accent) 16%, transparent);
     --workspace-nav-active-indicator: color-mix(in srgb, var(--workspace-accent) 78%, transparent);
+    /* 创作工作区发现轨道：菜单文字和图标只使用中性色，不继承主题主操作色。 */
+    --discovery-navigation: var(--workspace-navigation);
+    --discovery-sidebar-width: var(--size-discovery-rail);
+    --discovery-rail-item-size: var(--size-discovery-rail-item);
+    --discovery-sidebar-drawer-width: var(--size-discovery-drawer);
+    --discovery-nav-item-size: var(--size-discovery-item);
+    --discovery-sidebar-foreground: color-mix(in srgb, var(--foreground) 64%, transparent);
+    --discovery-sidebar-foreground-hover: color-mix(in srgb, var(--foreground) 82%, transparent);
+    --discovery-sidebar-foreground-active: var(--foreground);
+    --discovery-sidebar-indicator: color-mix(in srgb, var(--foreground) 84%, transparent);
     --workspace-sidebar-width: 208px;        /* 侧栏展开宽度：较原 260px 收窄 20% */
     --workspace-sidebar-nav-width: 208px;    /* 展开态导航内容宽度 */
     --workspace-sidebar-collapsed-width: 56px; /* 折叠态保留可发现的图标菜单轨 */
@@ -1774,6 +1790,219 @@
 
     .app-workspace-nav-link.is-active:hover {
         background: var(--workspace-nav-active-hover-bg);
+    }
+
+    /* 首页创作台采用 film-studio 的窄发现轨：图标在上、文字在下。 */
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar {
+        width: var(--discovery-sidebar-width);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar.is-collapsed {
+        width: var(--workspace-sidebar-collapsed-width) !important;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav {
+        width: var(--discovery-sidebar-width);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav.is-collapsed {
+        width: var(--workspace-sidebar-collapsed-width);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-search {
+        display: none;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher {
+        display: flex;
+        min-height: 76px;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-3) 0 var(--space-2);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher > button {
+        width: var(--discovery-rail-item-size);
+        min-height: var(--discovery-rail-item-size);
+        justify-content: center;
+        padding: var(--space-1);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher > button > span {
+        justify-content: center;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher .app-workspace-brand-wordmark,
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher > button > svg {
+        display: none;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher .app-workspace-brand-mark {
+        width: 40px;
+        height: 40px;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-scroll-area {
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-2) var(--space-3);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-link {
+        min-height: var(--discovery-rail-item-size);
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--space-half);
+        padding: var(--space-1);
+        color: var(--discovery-sidebar-foreground) !important;
+        text-align: center;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-link:hover,
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-link:focus-visible {
+        background: color-mix(in srgb, var(--foreground) 7%, transparent);
+        color: var(--discovery-sidebar-foreground-hover) !important;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-link.is-active,
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-link.is-active:hover {
+        background: color-mix(in srgb, var(--foreground) 9%, transparent);
+        color: var(--discovery-sidebar-foreground-active) !important;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-link.is-active::before {
+        top: 12px;
+        bottom: 12px;
+        left: 0;
+        width: 3px;
+        background: var(--discovery-sidebar-indicator);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-main {
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-half);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-main > svg {
+        width: 22px;
+        height: 22px;
+        color: currentColor;
+        stroke-width: 1.55;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-title {
+        max-width: 100%;
+        color: inherit;
+        font-size: var(--fs-label);
+        line-height: 1.2;
+        white-space: normal;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-meta,
+    .app-workspace-shell.is-creation-workspace .app-workspace-nav-group-toggle {
+        display: none;
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-footer {
+        padding: var(--space-2) var(--space-2) var(--space-3);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav.is-collapsed .app-workspace-sidebar-switcher {
+        min-height: 64px;
+        padding: var(--space-2);
+    }
+
+    .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav.is-collapsed .app-workspace-sidebar-switcher > button {
+        display: none;
+    }
+
+    @media (min-width: 1024px) {
+        /* 窄轨只展示一级入口，设置子项仍由路由直达，不改变原有导航合同。 */
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-children {
+            display: none;
+        }
+    }
+
+    @media (max-width: 1023px) {
+        /* 移动端是抽屉，恢复横向菜单，避免窄轨文字拥挤。 */
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar {
+            width: var(--workspace-sidebar-width, 208px);
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar.is-mobile-expanded {
+            width: min(var(--discovery-sidebar-drawer-width), calc(100vw - 58px)) !important;
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-search {
+            display: block;
+            padding: var(--space-2) var(--space-3) var(--space-1);
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-search > button {
+            height: var(--discovery-nav-item-size);
+            border-radius: var(--r-md);
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav {
+            width: var(--workspace-sidebar-width, 208px);
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher {
+            min-height: 64px;
+            justify-content: flex-start;
+            padding: var(--space-2) var(--space-3);
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher > button {
+            width: 100%;
+            justify-content: space-between;
+            padding: var(--space-2);
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher .app-workspace-brand-mark {
+            width: 32px;
+            height: 32px;
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher .app-workspace-brand-wordmark,
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-switcher > button > svg {
+            display: inline-flex;
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-link {
+            min-height: var(--discovery-nav-item-size);
+            flex-direction: row;
+            justify-content: space-between;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            text-align: left;
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-main {
+            width: auto;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            gap: var(--space-2-half);
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-main > svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-title {
+            font-size: var(--fs-body);
+            line-height: normal;
+            white-space: nowrap;
+        }
+
+        .app-workspace-shell.is-creation-workspace .app-workspace-sidebar-nav:not(.is-collapsed) .app-workspace-nav-meta,
+        .app-workspace-shell.is-creation-workspace .app-workspace-nav-group-toggle {
+            display: flex;
+        }
     }
 
 

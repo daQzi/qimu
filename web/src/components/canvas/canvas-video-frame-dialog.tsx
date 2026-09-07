@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { App, Button, InputNumber, Modal } from "antd";
 import { Check, Image as ImageIcon, SkipBack, SkipForward, Trash2 } from "lucide-react";
@@ -31,7 +32,7 @@ const MAX_SELECTED_FRAMES = 30;
 
 export function CanvasVideoFrameDialog({ node, open, onClose, onConfirm }: CanvasVideoFrameDialogProps) {
     const { message } = App.useApp();
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const videoRef = useRef<HTMLVideoElement>(null);
     const [videoUrl, setVideoUrl] = useState("");
     const [videoError, setVideoError] = useState(false);

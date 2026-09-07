@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
@@ -193,7 +194,7 @@ function FaceSelectionOverlay({
     onManualComplete: (box: CanvasFaceBox) => void;
     onFaceSelect: (box: CanvasFaceBox) => void;
 }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const overlayRef = useRef<HTMLDivElement>(null);
     const dragStartRef = useRef<{ x: number; y: number } | null>(null);
     useScreenAnchor(overlayRef, node, viewport, containerRef, (next) => imageScreenRect(node, next, imageWidth, imageHeight));
@@ -352,7 +353,7 @@ function SelectionToolbar({
     onManualSelect: () => void;
     onClose: () => void;
 }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const reducedMotion = useReducedMotion();
     const toolbarRef = useRef<HTMLDivElement>(null);
     useScreenAnchor(toolbarRef, node, viewport, containerRef, (next, container) => toolbarScreenRect(node, next, container, toolbarRef.current));

@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { Alert, Button, Empty, Modal, Tag } from "antd";
 import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, ChevronRight, Copy, FileText, Image as ImageIcon, LoaderCircle, RefreshCw, Sparkles, Target, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -53,7 +54,7 @@ type AiArtCritiqueView = "overview" | "detail";
 type ArtCritiquePromptStatus = "ready" | "pending" | "unavailable";
 
 export function AiArtCritiqueModal({ node, upstreamNodes, open, onClose, onUpdateState }: AiArtCritiqueModalProps) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const effectiveConfig = useEffectiveConfig();
     const selectedCritiqueModel = effectiveConfig.textModel.trim();
     const configuredCritiqueModelLabel = selectedCritiqueModel ? modelOptionLabel(effectiveConfig, selectedCritiqueModel) : "未配置文本/视觉理解模型";

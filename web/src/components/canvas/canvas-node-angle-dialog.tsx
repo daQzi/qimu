@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Segmented, Slider, Tooltip } from "antd";
 import { motion, useReducedMotion } from "motion/react";
@@ -26,7 +27,7 @@ const presets = [
 ];
 
 export function CanvasNodeAnglePanel({ dataUrl, onClose, onConfirm }: { dataUrl: string; onClose: () => void; onConfirm: (params: CanvasImageAngleParams) => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const reducedMotion = useReducedMotion();
     const [params, setParams] = useState(defaultParams);
     const dragRef = useRef<{ x: number; y: number; horizontal: number; pitch: number } | null>(null);

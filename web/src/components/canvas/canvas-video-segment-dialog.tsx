@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { App, Button, Input, InputNumber, Modal, Segmented, Select } from "antd";
 import { AudioLines, Check, ListVideo, Plus, Scissors, SkipBack, SkipForward, Trash2 } from "lucide-react";
@@ -47,7 +48,7 @@ const MIN_SEGMENT_MS = 100;
 
 export function CanvasVideoSegmentDialog({ node, nodes, connections, open, mode, config, timeline, onClose, onConfirm }: CanvasVideoSegmentDialogProps) {
     const { message } = App.useApp();
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const videoRef = useRef<HTMLVideoElement>(null);
     const segmentsSeededRef = useRef(false);
     const [videoUrl, setVideoUrl] = useState("");

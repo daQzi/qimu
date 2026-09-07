@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useMemo, useState } from "react";
 import { Input, Popover } from "antd";
 import { LayoutTemplate, Search, WandSparkles } from "lucide-react";
@@ -86,7 +87,7 @@ export function CanvasPresetPicker({
     dense?: boolean;
     appearance?: "default" | "quiet";
 }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const [internalOpen, setInternalOpen] = useState(false);
     const [query, setQuery] = useState("");
     const actualOpen = open ?? internalOpen;

@@ -43,7 +43,7 @@ func TestAppearanceDefaultsPreserveBuiltInBrand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(adminAppearance.SkinThemes) != 4 || !adminAppearance.SkinThemes[0].Locked {
+	if len(adminAppearance.SkinThemes) != 5 || !adminAppearance.SkinThemes[0].Locked {
 		t.Fatalf("AdminAppearance() skin library = %#v", adminAppearance.SkinThemes)
 	}
 }
@@ -293,7 +293,7 @@ func TestAppearanceSkinLibrarySupportsEditableCopiesAndProtectsClassic(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if updated.Public.ActiveSkin.ID != custom.ID || updated.Public.ActiveSkin.Tokens.Light.Primary != "#123456" || updated.Public.ActiveSkin.Tokens.Components.ButtonRadius != 14 || len(updated.SkinThemes) != 5 {
+	if updated.Public.ActiveSkin.ID != custom.ID || updated.Public.ActiveSkin.Tokens.Light.Primary != "#123456" || updated.Public.ActiveSkin.Tokens.Components.ButtonRadius != 14 || len(updated.SkinThemes) != 6 {
 		t.Fatalf("custom skin round trip = %#v", updated)
 	}
 

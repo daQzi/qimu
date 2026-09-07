@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { Modal, Switch } from "antd";
 import { GripVertical, RotateCcw, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
@@ -41,7 +42,7 @@ type SettingsItem = {
 };
 
 export function ToolbarSettingsModal({ open, onClose, toolbar }: ToolbarSettingsModalProps) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const reducedMotion = useReducedMotion();
     const [items, setItems] = useState<SettingsItem[]>([]);
     const [toolbarId, setToolbarId] = useState<ToolbarId>(toolbar);

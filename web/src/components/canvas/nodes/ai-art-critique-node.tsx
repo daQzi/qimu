@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { ArrowRight, CheckCircle2, CircleAlert, Image as ImageIcon, LoaderCircle, RefreshCw, ScanSearch } from "lucide-react";
 
 import { canvasThemes } from "@/lib/canvas-theme";
@@ -14,7 +15,7 @@ type ArtCritiqueNodeProps = {
 };
 
 export function ArtCritiqueNodeContent({ node }: ArtCritiqueNodeProps) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const installations = usePluginStore((state) => state.installations);
     const { openArtCritique } = useCanvasNodeActions();
     const imageInputs = useUpstreamNodes(node.id).filter(isArtCritiqueImageInput);

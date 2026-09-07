@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Clock3, Copy, Eye, Palette, Pencil, Plus, Search, SlidersHorizontal, Star, Trash2, UserRound } from "lucide-react";
@@ -436,7 +437,7 @@ export function CanvasStylePickerModal({ open, value, currentProfile, startInEdi
 }) {
     const { message, modal } = App.useApp();
     const queryClient = useQueryClient();
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const [detailPreset, setDetailPreset] = useState<CanvasStylePreset | null>(null);
     const [tab, setTab] = useState<StyleCenterTab>("system");
     const [query, setQuery] = useState("");
@@ -669,7 +670,7 @@ function editableCopy(profile: StyleProfileSnapshot, entityId?: string, title?: 
 }
 
 export function CanvasStyleDetailModal({ open, preset, selected = false, onClose, onSelect }: { open: boolean; preset: CanvasStylePreset | null; selected?: boolean; onClose: () => void; onSelect?: (preset: CanvasStylePreset) => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const sections = preset ? parseStyleSections(preset.prompt) : [];
     return (
         <Modal rootClassName="canvas-style-detail-modal" open={open} title={null} footer={null} centered destroyOnHidden width="min(820px, calc(100vw - 24px))" onCancel={onClose} styles={{ container: { padding: 0 }, body: { padding: 0 } }}>

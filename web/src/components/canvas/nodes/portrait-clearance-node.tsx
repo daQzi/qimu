@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { ArrowRight, CircleAlert, Image as ImageIcon, ShieldAlert, ShieldCheck } from "lucide-react";
 
 import { canvasThemes } from "@/lib/canvas-theme";
@@ -22,7 +23,7 @@ const roleLabels: Record<PortraitClearanceInputRole, string> = {
 };
 
 export function PortraitClearanceNodeContent({ node }: PortraitClearanceNodeProps) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const enabled = usePluginStore((state) => state.pluginStates[PORTRAIT_CLEARANCE_PLUGIN_ID]?.effectiveEnabled ?? Boolean(state.installations.find((item) => item.manifest.id === PORTRAIT_CLEARANCE_PLUGIN_ID)?.enabled));
     const { openPortraitClearance } = useCanvasNodeActions();
     const upstream = useUpstreamNodes(node.id).filter((item) => isPortraitImageInput(item));
@@ -83,7 +84,7 @@ export function PortraitClearanceNodeContent({ node }: PortraitClearanceNodeProp
 }
 
 function InputSlot({ label, node, count = 0 }: { label: string; node?: CanvasNodeData; count?: number }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const preview = node?.metadata?.previewContent || node?.metadata?.content || "";
     return (
         <div className="relative min-h-0 overflow-hidden rounded-[var(--r-md)] border" style={{ borderColor: theme.node.edge, background: theme.node.fill }}>

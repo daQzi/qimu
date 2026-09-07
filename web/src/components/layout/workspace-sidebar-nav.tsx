@@ -98,7 +98,7 @@ function WorkspaceSwitcher({ collapsed, onNavigate, onExpand }: { collapsed: boo
     }
 
     return (
-        <div className="relative shrink-0 px-3 pt-3">
+        <div className="app-workspace-sidebar-switcher relative shrink-0 px-3 pt-3">
             <button
                 type="button"
                 onClick={() => setIsOpen((open) => !open)}
@@ -244,7 +244,7 @@ function NavItem({
             )}
 
             {hasChildren && !collapsed ? (
-                <div className={cn("grid transition-[grid-template-rows,opacity] duration-300 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+                <div className={cn("app-workspace-nav-children grid transition-[grid-template-rows,opacity] duration-300 ease-in-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
                     <div className="relative flex min-h-0 flex-col gap-0.5 overflow-hidden pt-0.5">
                         <span className="app-workspace-nav-guide-line" style={{ left: `${(level + 1) * 12 + 12.5}px` }} />
                         {item.children!.map((child) => (

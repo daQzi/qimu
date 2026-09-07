@@ -29,7 +29,7 @@ const (
 )
 
 const (
-	appearanceSchemaVersion        = 6
+	appearanceSchemaVersion        = 7
 	appearanceLogoMaxBytes   int64 = 5 << 20
 	appearancePosterMaxBytes int64 = 10 << 20
 	appearanceVideoMaxBytes  int64 = 256 << 20
@@ -331,10 +331,10 @@ func (s *Service) readAppearance() (*model.SystemSetting, AppearanceSetting, err
 		return nil, AppearanceSetting{}, err
 	}
 	value := defaultAppearanceSetting()
+	value.SchemaVersion = 0
 	if strings.TrimSpace(setting.ValueJSON) == "" || json.Unmarshal([]byte(setting.ValueJSON), &value) != nil {
 		return nil, AppearanceSetting{}, errors.New("外观配置格式无效")
 	}
-	value.SchemaVersion = appearanceSchemaVersion
 	value.BrandName = strings.TrimSpace(value.BrandName)
 	if value.BrandName == "" {
 		value.BrandName = defaultAppearanceBrandName
@@ -356,6 +356,15 @@ func (s *Service) readAppearance() (*model.SystemSetting, AppearanceSetting, err
 		value.SkinThemes = defaultAppearanceSkinThemes()
 	}
 	value.SkinThemes = normalizeAppearanceSkinThemes(value.SkinThemes)
+	// Existing installations receive the new preset without changing their active skin.
+	foundXiaoyunque := false
+	for _, skin := range value.SkinThemes {
+		foundXiaoyunque = foundXiaoyunque || skin.ID == "xiaoyunque"
+	}
+	if value.SchemaVersion < 7 && !foundXiaoyunque && len(value.SkinThemes) < maxAppearanceSkinThemes {
+		value.SkinThemes = append(value.SkinThemes, defaultXiaoyunqueAppearanceSkin())
+	}
+	value.SchemaVersion = appearanceSchemaVersion
 	value.SEOTitle = normalizeAppearanceSingleLine(value.SEOTitle)
 	value.SEODescription = normalizeAppearanceCopy(value.SEODescription)
 	value.SEOKeywords = normalizeAppearanceSingleLine(value.SEOKeywords)

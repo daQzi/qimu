@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { motion, useReducedMotion } from "motion/react";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -16,7 +17,7 @@ export type CanvasCreateCommand = {
 };
 
 export function CanvasCreateMenu({ commands }: { commands: CanvasCreateCommand[] }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const projectCommands = commands.filter((command) => command.section === "project");
     const nodeCommands = commands.filter((command) => command.section === "node");
     const workflowCommands = commands.filter((command) => command.section === "workflow");
@@ -59,7 +60,7 @@ export function CanvasCreateMenu({ commands }: { commands: CanvasCreateCommand[]
 }
 
 function CanvasCreateCommandGrid({ commands, variant }: { commands: CanvasCreateCommand[]; variant: "node" | "compact" | "workflow" }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const reducedMotion = useReducedMotion();
 
     return (

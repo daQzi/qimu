@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { App, Button, ColorPicker, Input, InputNumber, Modal, Progress, Segmented, Switch } from "antd";
 import { Captions, FileDown, FileUp, ListPlus, LoaderCircle, Plus, Scissors, Sparkles, Trash2 } from "lucide-react";
@@ -28,7 +29,7 @@ type CanvasSubtitleDialogProps = {
 
 export function CanvasSubtitleDialog({ node, open, projectId, config, onClose, onSave }: CanvasSubtitleDialogProps) {
     const { message, modal } = App.useApp();
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const isAiConfigReady = useConfigStore((state) => state.isAiConfigReady);
     const [entries, setEntries] = useState<SrtEntry[]>([]);
     const [highlights, setHighlights] = useState<SubtitleHighlight[]>([]);

@@ -1,4 +1,4 @@
-import { canvasThemes, type CanvasBackgroundMode, type CanvasColorTheme } from "@/lib/canvas-theme";
+import { canvasThemes, type CanvasBackgroundMode, type CanvasColorTheme, type CanvasTheme } from "@/lib/canvas-theme";
 import { scopedLocalStorage } from "@/lib/user-scope";
 
 export type CanvasAppearanceMode = CanvasColorTheme | "custom";
@@ -38,12 +38,13 @@ export function canvasAppearanceForTheme(theme: CanvasColorTheme, previous?: Can
     return previous?.custom?.baseTheme === theme ? { mode: theme, custom: previous.custom } : { mode: theme };
 }
 
-export function customCanvasAppearanceFromTheme(theme: CanvasColorTheme): CanvasAppearance {
+export function customCanvasAppearanceFromTheme(theme: CanvasColorTheme, themedCanvas?: CanvasTheme): CanvasAppearance {
+    const base = themedCanvas && themedCanvas.canvas ? themedCanvas : canvasThemes[theme];
     return {
         mode: "custom",
         custom: {
             baseTheme: theme,
-            backgroundColor: canvasThemes[theme].canvas.background.toUpperCase(),
+            backgroundColor: base.canvas.background.toUpperCase(),
             backgroundBrightness: 0,
             gridColor: CUSTOM_GRID_COLOR[theme],
             gridOpacity: CUSTOM_GRID_OPACITY,
@@ -51,9 +52,9 @@ export function customCanvasAppearanceFromTheme(theme: CanvasColorTheme): Canvas
     };
 }
 
-export function enterCustomCanvasAppearance(current: CanvasAppearance, currentTheme: CanvasColorTheme) {
+export function enterCustomCanvasAppearance(current: CanvasAppearance, currentTheme: CanvasColorTheme, themedCanvas?: CanvasTheme) {
     if (current.custom) return { ...current, mode: "custom" } as CanvasAppearance;
-    return customCanvasAppearanceFromTheme(currentTheme);
+    return customCanvasAppearanceFromTheme(currentTheme, themedCanvas);
 }
 
 export function canvasAppearanceBaseTheme(appearance: CanvasAppearance | undefined, fallback: CanvasColorTheme): CanvasColorTheme {
@@ -72,10 +73,10 @@ export function normalizeCanvasAppearance(value: unknown, fallback: CanvasColorT
     return custom ? { mode, custom } : { mode };
 }
 
-export function resolveCanvasAppearance(appearance: CanvasAppearance | undefined, fallback: CanvasColorTheme): ResolvedCanvasAppearance {
+export function resolveCanvasAppearance(appearance: CanvasAppearance | undefined, fallback: CanvasColorTheme, themedCanvas?: CanvasTheme): ResolvedCanvasAppearance {
     const normalized = normalizeCanvasAppearance(appearance, fallback);
     const baseTheme = canvasAppearanceBaseTheme(normalized, fallback);
-    const base = canvasThemes[baseTheme];
+    const base = themedCanvas && baseTheme === fallback ? themedCanvas : canvasThemes[baseTheme];
     if (normalized.mode !== "custom" || !normalized.custom) {
         return {
             baseTheme,
@@ -92,10 +93,11 @@ export function resolveCanvasAppearance(appearance: CanvasAppearance | undefined
     };
 }
 
-export function resolveCanvasGridColor(appearance: CanvasAppearance | undefined, fallback: CanvasColorTheme, mode: CanvasBackgroundMode) {
+export function resolveCanvasGridColor(appearance: CanvasAppearance | undefined, fallback: CanvasColorTheme, mode: CanvasBackgroundMode, themedCanvas?: CanvasTheme) {
     const normalized = normalizeCanvasAppearance(appearance, fallback);
     if (normalized.mode === "custom" && normalized.custom) return rgbaFromHex(normalized.custom.gridColor, normalized.custom.gridOpacity / 100);
-    const theme = canvasThemes[canvasAppearanceBaseTheme(normalized, fallback)];
+    const baseTheme = canvasAppearanceBaseTheme(normalized, fallback);
+    const theme = themedCanvas && baseTheme === fallback ? themedCanvas : canvasThemes[baseTheme];
     return mode === "dots" ? theme.canvas.dot : theme.canvas.line;
 }
 

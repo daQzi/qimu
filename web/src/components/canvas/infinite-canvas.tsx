@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { resolveCanvasAppearance, resolveCanvasGridColor, type CanvasAppearance } from "@/lib/canvas/canvas-appearance";
 import { resolveCanvasPointerIntent } from "@/lib/canvas/canvas-selection";
 import type { CanvasBackgroundMode } from "@/lib/canvas-theme";
@@ -45,7 +46,8 @@ type PinchState = {
 
 export function InfiniteCanvas({ containerRef, viewport, appearance, backgroundMode = "lines", onViewportChange, onViewportPreviewChange, onCanvasMouseDown, boxSelectEnabled = false, onCanvasDoubleClick, onCanvasDeselect, onContextMenu, onDrop, onFileDragEnter, onFileDragLeave, onFileDragOver, graphicsLayer, children }: InfiniteCanvasProps) {
     const colorTheme = useThemeStore((state) => state.theme);
-    const resolvedAppearance = resolveCanvasAppearance(appearance, colorTheme);
+    const theme = useCanvasTheme(colorTheme);
+    const resolvedAppearance = resolveCanvasAppearance(appearance, colorTheme, theme);
     const panState = useRef({
         isPanning: false,
         pointerId: -1,
@@ -423,7 +425,7 @@ export function InfiniteCanvas({ containerRef, viewport, appearance, backgroundM
             }}
             onDrop={onDrop}
         >
-            <CanvasGrid appearance={appearance} mode={backgroundMode} />
+            <CanvasGrid appearance={appearance} mode={backgroundMode} theme={theme} />
             {graphicsLayer}
             <div
                 data-canvas-world-layer
@@ -437,9 +439,9 @@ export function InfiniteCanvas({ containerRef, viewport, appearance, backgroundM
     );
 }
 
-function CanvasGrid({ appearance, mode }: { appearance?: CanvasAppearance; mode: CanvasBackgroundMode }) {
+function CanvasGrid({ appearance, mode, theme }: { appearance?: CanvasAppearance; mode: CanvasBackgroundMode; theme: ReturnType<typeof useCanvasTheme> }) {
     const colorTheme = useThemeStore((state) => state.theme);
-    const gridColor = resolveCanvasGridColor(appearance, colorTheme, mode);
+    const gridColor = resolveCanvasGridColor(appearance, colorTheme, mode, theme);
     const backgroundImage = mode === "dots" ? `radial-gradient(circle, ${gridColor} 0.8px, transparent 1px)` : `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`;
     if (mode === "blank") return null;
 

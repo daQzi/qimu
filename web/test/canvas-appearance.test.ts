@@ -12,6 +12,8 @@ import {
     resolveCanvasGridColor,
     writeCanvasAppearanceDefault,
 } from "../src/lib/canvas/canvas-appearance";
+import { getCanvasTheme } from "../src/lib/canvas-theme";
+import { DEFAULT_CLASSIC_SKIN, duplicateSkinDefinition } from "../src/lib/skin-themes";
 
 const values = new Map<string, string>();
 
@@ -49,6 +51,15 @@ describe("canvas custom appearance", () => {
 
         const dark = enterCustomCanvasAppearance(canvasAppearanceForTheme("dark"), "dark");
         expect(dark.custom).toMatchObject({ baseTheme: "dark", backgroundColor: "#000000", backgroundBrightness: 0, gridColor: "#AFAFAF", gridOpacity: 80 });
+    });
+
+    test("inherits the active skin canvas color when entering custom mode", () => {
+        const skin = duplicateSkinDefinition(DEFAULT_CLASSIC_SKIN, ["classic"]);
+        skin.tokens.light.canvas = "#F4EADF";
+        const themed = getCanvasTheme("light", skin);
+        const appearance = enterCustomCanvasAppearance(canvasAppearanceForTheme("light"), "light", themed);
+
+        expect(appearance.custom?.backgroundColor).toBe("#F4EADF");
     });
 
     test("restores a previous custom profile only under the same base theme", () => {

@@ -1,3 +1,4 @@
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { motion, useReducedMotion } from "motion/react";
 import { Bot, PanelBottom, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Tooltip } from "antd";
@@ -19,7 +20,7 @@ type CanvasFocusModeBarProps = {
 };
 
 export function CanvasFocusModeBar({ dockRevealed, agentOpen, zoomPercent, onToggleDock, onToggleAgent, onExit, onZoomIn, onZoomOut, onFit }: CanvasFocusModeBarProps) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const reducedMotion = useReducedMotion();
 
     return (
