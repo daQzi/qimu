@@ -403,6 +403,7 @@ function canvasNodeTypeLabel(type?: CanvasNodeTypeId) {
     if (type === CanvasNodeType.Frame) return "背板";
     if (type === CanvasNodeType.Drawing) return "绘图节点";
     if (type === CanvasNodeType.Skill) return "技能节点";
+    if (type === CanvasNodeType.MediaConversion) return "转换节点";
     return type ? `${getNodeDefinition(type)?.label || type}节点` : "文本节点";
 }
 
