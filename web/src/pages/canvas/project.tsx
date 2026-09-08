@@ -2208,6 +2208,7 @@ function InfiniteCanvasPage() {
                             onRedo={redoCanvas}
                             onShare={() => setShareModalOpen(true)}
                             agentOpen={assistantOpen}
+                            agentPanelWidth={assistantMounted ? assistantWidth : undefined}
                             compactAgentStatus={codexCompactAgent ? { connected: localAgentConnected, enabled: localAgentEnabled, activity: localAgentActivity } : undefined}
                             onToggleAgent={() => (assistantOpen ? closeAgent() : openAgent())}
                             shortcutRequestNonce={shortcutRequestNonce}
@@ -2456,7 +2457,7 @@ function InfiniteCanvasPage() {
                         </div>
 
                         {assistantMounted ? (
-                            <AssistantPanelColumn width={assistantWidth} closing={assistantClosing} topInset={focusMode ? "0px" : "var(--canvas-topbar-offset)"} onWidthChange={setAssistantWidth}>
+                                    <AssistantPanelColumn width={assistantWidth} closing={assistantClosing} topInset="0px" onWidthChange={setAssistantWidth}>
                                 {(resizing) => (
                                     <CanvasAssistantPanel
                                         nodes={nodes}
