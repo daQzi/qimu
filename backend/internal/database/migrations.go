@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const CurrentSchemaVersion int64 = 9
+const CurrentSchemaVersion int64 = 10
 
 const baselineSchemaChecksum = "sha256:open-ai-canvas-schema-v1-20260830"
 const schemaMigrationAppliedAtIndexChecksum = "sha256:schema-migrations-applied-at-index-v2-20260830"
@@ -56,10 +56,25 @@ var schemaMigrations = []migration{
 	{version: 7, name: "asset_library_folders", checksum: assetLibraryFoldersChecksum, apply: migrateSchemaV7},
 	{version: 8, name: "logical_model_active_code", checksum: logicalModelActiveCodeChecksum, apply: migrateSchemaV8},
 	{version: 9, name: "creation_run_admission", checksum: creationRunAdmissionChecksum, apply: migrateSchemaV9},
+	{version: 10, name: "channel_presentation", checksum: "sha256:channel-presentation-v10-20260908", apply: migrateChannelPresentation},
 }
 
 func migrateSchemaV9(tx *gorm.DB) error {
 	return tx.AutoMigrate(&model.CreationRun{}, &model.CreationSubmission{}, &model.Task{})
+}
+
+func migrateChannelPresentation(tx *gorm.DB) error {
+	for _, column := range []struct {
+		model any
+		field string
+	}{{&model.ModelChannel{}, "PublicAlias"}, {&model.ModelChannel{}, "SortOrder"}, {&model.ChannelModel{}, "SortOrder"}} {
+		if !tx.Migrator().HasColumn(column.model, column.field) {
+			if err := tx.Migrator().AddColumn(column.model, column.field); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func migrationsForDatabase(db *gorm.DB) ([]migration, error) {
