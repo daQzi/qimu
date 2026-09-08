@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const CurrentSchemaVersion int64 = 8
+const CurrentSchemaVersion int64 = 9
 
 const baselineSchemaChecksum = "sha256:open-ai-canvas-schema-v1-20260830"
 const schemaMigrationAppliedAtIndexChecksum = "sha256:schema-migrations-applied-at-index-v2-20260830"
@@ -20,6 +20,7 @@ const paymentTopupChecksum = "sha256:payment-topup-v5-20260902"
 const resourcePlaybackChecksum = "sha256:resource-playback-v6-20260902"
 const assetLibraryFoldersChecksum = "sha256:asset-library-folders-v6-20260902"
 const logicalModelActiveCodeChecksum = "sha256:logical-model-active-code-v8-20260905"
+const creationRunAdmissionChecksum = "sha256:creation-run-admission-v9-20260908"
 
 const postgresSchemaMigrationLockID int64 = 73123910420260830
 
@@ -54,6 +55,11 @@ var schemaMigrations = []migration{
 	{version: 6, name: "resource_playback_variant", checksum: resourcePlaybackChecksum, apply: migrateSchemaV6},
 	{version: 7, name: "asset_library_folders", checksum: assetLibraryFoldersChecksum, apply: migrateSchemaV7},
 	{version: 8, name: "logical_model_active_code", checksum: logicalModelActiveCodeChecksum, apply: migrateSchemaV8},
+	{version: 9, name: "creation_run_admission", checksum: creationRunAdmissionChecksum, apply: migrateSchemaV9},
+}
+
+func migrateSchemaV9(tx *gorm.DB) error {
+	return tx.AutoMigrate(&model.CreationRun{}, &model.CreationSubmission{}, &model.Task{})
 }
 
 func migrationsForDatabase(db *gorm.DB) ([]migration, error) {
