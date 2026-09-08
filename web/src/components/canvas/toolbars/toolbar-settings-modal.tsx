@@ -1,5 +1,6 @@
 import { useCanvasTheme } from "@/hooks/use-canvas-theme";
-import { Modal, Switch } from "antd";
+import { Modal } from "antd";
+import { Switch } from "@/components/ui/base/switch";
 import { GripVertical, RotateCcw, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
@@ -219,7 +220,7 @@ function ToolbarSettingsItem({ item, reducedMotion, theme, dragging, onToggleVis
                 >
                     <GripVertical className="size-4" />
                 </button>
-                <Switch size="small" checked={item.visible} onChange={(checked) => onToggleVisible(item.id, checked)} aria-label={`${item.visible ? "隐藏" : "显示"}${item.label}`} />
+                <Switch size="sm" checked={item.visible} onChange={(checked) => onToggleVisible(item.id, checked)} aria-label={`${item.visible ? "隐藏" : "显示"}${item.label}`} />
             </div>
             <div className="canvas-toolbar-settings-card-content mt-auto flex min-w-0 flex-col items-center gap-1">
                 <span className="grid size-8 shrink-0 place-items-center rounded-[var(--r-md)]" style={{ background: theme.toolbar.itemHover, color: theme.node.muted }}>

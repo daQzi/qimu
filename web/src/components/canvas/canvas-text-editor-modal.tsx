@@ -1,6 +1,8 @@
 import { useCanvasTheme } from "@/hooks/use-canvas-theme";
+import { App, Button, ColorPicker, Dropdown, Input, Modal, Popover } from "antd";
+import { Tooltip } from "@/components/ui/base/tooltip";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { App, Button, ColorPicker, Dropdown, Input, Modal, Popover, Tooltip } from "antd";
+
 import type { Editor, JSONContent } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/react";
 import {

@@ -1,7 +1,8 @@
 import { useCanvasTheme } from "@/hooks/use-canvas-theme";
+import { Tooltip } from "@/components/ui/base/tooltip";
 import { motion, useReducedMotion } from "motion/react";
 import { Bot, PanelBottom, X, ZoomIn, ZoomOut } from "lucide-react";
-import { Tooltip } from "antd";
+
 
 import { aceternityMotion } from "@/lib/aceternity-motion";
 import { canvasThemes } from "@/lib/canvas-theme";
