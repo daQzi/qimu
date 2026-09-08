@@ -1,7 +1,7 @@
 import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { Button, Modal, Segmented, Select } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import copyToClipboard from "copy-to-clipboard";
 import { AtSign, Copy, Cpu, FileText, Music, Sparkles, Video, Settings2, Trash2, X } from "lucide-react";
 
@@ -486,7 +486,7 @@ export function CanvasAssistantPanel({
     const agentBusy = isRunning || Object.values(creativeBusy).some(Boolean) || safeSessions.some((session) => session.pendingBackendSession?.status === "pending");
     const activeCreativeId = messages.findLast((message) => Boolean(canvasCreativeDetail(message)))?.id;
     const latestAssistantMessage = messages.findLast((message) => message.role === "assistant");
-    const currentCreativeState = latestAssistantMessage ? canvasCreativeDetail(latestAssistantMessage)?.state : undefined;
+    const currentCreativeState = activeCreativeId ? canvasCreativeDetail(messages.find((message) => message.id === activeCreativeId)!)?.state : latestAssistantMessage ? canvasCreativeDetail(latestAssistantMessage)?.state : undefined;
     const selectedReferences = useMemo(() => buildAssistantReferences(nodes, attachedReferenceIds), [attachedReferenceIds, nodes]);
     const composerImageReferences = useMemo(() => assistantReferencesToMentionReferences(selectedReferences), [selectedReferences]);
     const resolvedComposerImageReferences = useResolvedCanvasResourceReferences(composerImageReferences);
@@ -754,7 +754,7 @@ export function CanvasAssistantPanel({
                     const toolMessage: CanvasAssistantMessage = {
                         id: toolMessageId,
                         role: "tool",
-                        title: "确认工具调用",
+                        title: `确认${capabilityBatchTitle(result.toolCalls)}`,
                         text: summarizeToolCalls(result.toolCalls),
                         detail: { status: "pending", step: loop.step, toolCalls: result.toolCalls, impact: previewOnlineToolCalls(result.toolCalls, snapshotRef.current, effectiveConfig) },
                     };
@@ -805,7 +805,7 @@ export function CanvasAssistantPanel({
         appendMessage(sessionId, {
             id: nanoid(),
             role: "tool",
-            title: "工具自动执行完成",
+            title: capabilityBatchTitle(result.toolCalls),
             text: toolResults.map((item) => toolResultText(item.result)).join("\n"),
             detail: { status: "completed", step, toolCalls: result.toolCalls, results: toolResults },
         });
@@ -854,7 +854,7 @@ export function CanvasAssistantPanel({
                 appendMessage(sessionId, {
                     id: toolMessageId,
                     role: "tool",
-                    title: "确认工具调用",
+                    title: `确认${capabilityBatchTitle(next.toolCalls)}`,
                     text: summarizeToolCalls(next.toolCalls),
                     detail: { status: "pending", step: step + 1, toolCalls: next.toolCalls, impact: previewOnlineToolCalls(next.toolCalls, snapshotRef.current, effectiveConfig) },
                 });
@@ -1048,7 +1048,7 @@ export function CanvasAssistantPanel({
             setIsRunning(true);
             const results = await executeOnlineToolCalls(session.id, toolCalls);
             addOnlineLog("工具执行结果", results);
-            upsertMessage(session.id, { id: messageId, role: "tool", title: "工具执行完成", text: results.map((item) => toolResultText(item.result)).join("\n"), detail: { ...detail, results, status: "completed" } });
+            upsertMessage(session.id, { id: messageId, role: "tool", title: capabilityBatchTitle(toolCalls), text: results.map((item) => toolResultText(item.result)).join("\n"), detail: { ...detail, results, status: "completed" } });
             pendingToolContextRef.current.delete(messageId);
             await continueOnlineToolLoopAfterResults(session.id, assistantId, previousMessages, toolCalls, results, pendingContext?.step || Number(detail.step) || 1);
         } catch (error) {
@@ -1183,8 +1183,10 @@ export function CanvasAssistantPanel({
                 <div ref={chatListRef} className="thin-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
                     {messages.length ? (
                         <>
-                            {messages.map((message) => (
-                                <div key={message.id} className="space-y-2">
+                            {messages.map((message, index) => (
+                                <Fragment key={message.id}>
+                                {agentBusy && index === messages.findLastIndex((item) => item.role === "user") + 1 ? <div className="creative-agent-thinking-wrap"><AgentWorkingMessage theme={theme} /></div> : null}
+                                <div className={message.role === "tool" ? "agent-tool-message" : "space-y-2"}>
                                     <AgentChatMessage item={assistantMessageToChatMessage(message)} theme={theme} user={user} isStreaming={agentBusy && message.id === messages.at(-1)?.id && message.role === "assistant" && !canvasCreativeDetail(message)} onRejectTool={rejectOnlineTool} onApproveTool={approveOnlineTool} onQuickAction={submitQuickAction} />
                                     {canvasCreativeDetail(message) && <CanvasCreativeInteraction
                                         message={message} sessionId={activeSession!.id} active={message.id === activeCreativeId && !isRunning && agentMode === "online"} config={effectiveConfig}
@@ -1201,8 +1203,9 @@ export function CanvasAssistantPanel({
                                     />}
                                     {message.references?.length ? <MessageReferences message={message} /> : null}
                                 </div>
+                                </Fragment>
                             ))}
-                            {agentBusy ? <AgentWorkingMessage theme={theme} /> : null}
+                            {agentBusy && messages.findLastIndex((item) => item.role === "user") === messages.length - 1 ? <div className="creative-agent-thinking-wrap"><AgentWorkingMessage theme={theme} /></div> : null}
                         </>
                     ) : (
                         <AgentChatEmptyState
@@ -1244,14 +1247,14 @@ export function CanvasAssistantPanel({
                             ))}
                         </div>
                     ) : null}
-                    {currentCreativeState && <div className="px-3 pb-2" data-canvas-no-zoom data-canvas-wheel-scroll>
+                    {currentCreativeState && <div className="creative-agent-plan-docked" data-canvas-no-zoom data-canvas-wheel-scroll>
                         <CreativePlanBar plan={creativePlan(currentCreativeState)} onLocateNode={(id) => onSelectNodeIds(new Set([id]))} />
                     </div>}
                     <div ref={composerRef}>
                     <AgentChatComposer
                         prompt={prompt}
                         sending={agentBusy}
-                        placeholder="描述创作需求，或告诉我如何调整画布…"
+                        placeholder={currentCreativeState?.modificationRequested ? "在这里告诉我想改哪里，调整后再确认…" : "描述创作需求，或告诉我如何调整画布…"}
                         theme={theme}
                         references={composerReferences}
                         slashSkills={composerSkills}
@@ -1887,6 +1890,13 @@ function summarizeToolCalls(calls: ResponseToolCall[]) {
     return calls.map((call) => toolCallLabel(call.function.name)).join("，") || "工具调用";
 }
 
+function capabilityBatchTitle(calls: ResponseToolCall[]) {
+    const names = calls.map((call) => call.function.name);
+    if (names.some((name) => name.startsWith("canvas_") && (name.includes("skill") || name.includes("plugin")))) return "技能与插件";
+    if (names.some((name) => name.startsWith("canvas_"))) return "画布操作";
+    return "工具调用";
+}
+
 function previewOnlineToolCalls(calls: ResponseToolCall[], snapshot: CanvasAgentSnapshot, config: AiConfig): CanvasAgentOperationImpact {
     const ops: CanvasAgentOp[] = [];
     let deferredCinematicCount = 0;
@@ -1960,11 +1970,22 @@ function toolCallLabel(name: string) {
     if (name === "canvas_select_nodes") return "选择节点";
     if (name === "canvas_set_viewport") return "调整视口";
     if (name === "canvas_run_generation") return "触发生成";
-    return name;
+    return "执行系统能力";
 }
 
 function toolResultText(result: OnlineToolResult) {
-    return result.message;
+    return friendlyToolMessage(result.message);
+}
+
+function friendlyToolMessage(message: string) {
+    return message
+        .replace(/canvas_[a-z0-9_]+/gi, "画布能力")
+        .replace(/SKILL\.md/gi, "技能说明")
+        .replace(/nodeId/gi, "节点").replace(/storageKey/gi, "素材引用")
+        .replace(/executionEpoch|expectedStateHash|expectedRevision/gi, "当前画布状态")
+        .replace(/toolCalls?/gi, "操作")
+        .replace(/API|MCP|JSON|HTTP/gi, "系统服务")
+        .replace(/\s{2,}/g, " ");
 }
 
 function requireStringArray(value: unknown, field: string): string[] {
