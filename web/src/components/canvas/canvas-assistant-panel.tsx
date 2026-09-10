@@ -1,4 +1,3 @@
-import { canvasThemes } from "@/lib/canvas-theme";
 import { Button, Modal } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -20,7 +19,7 @@ import { consumeGenerationTaskAgent } from "@/services/project-asset-sync";
 import { applyGenerationConsumerEffect, generationEffectApplied } from "@/services/generation-consumer-dedupe";
 import { activeGenerationConsumerController } from "@/services/generation-consumer-lifecycle";
 import { useAssetStore } from "@/stores/use-asset-store";
-import { useThemeStore } from "@/stores/use-theme-store";
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { useUserStore } from "@/stores/use-user-store";
 import { navigateToSettings } from "@/lib/settings-navigation";
 import { cinematicAgentSessionOpsJson, createCinematicAgentSession, isAgentSessionPollingAbort, resumeCinematicAgentSession } from "@/lib/canvas/canvas-agent-session";
@@ -108,7 +107,7 @@ export function CanvasAssistantPanel({
     onCinematicEntryConsumed,
     resizing = false,
 }: CanvasAssistantPanelProps) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const user = useUserStore((state) => state.user);
     const effectiveConfig = useEffectiveConfig();
     const cleanupImages = useAssetStore((state) => state.cleanupImages);

@@ -9,7 +9,7 @@ import { Tooltip } from "@/components/ui/base/tooltip";
 import { aceternityMotion } from "@/lib/aceternity-motion";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { useCopyText } from "@/hooks/use-copy-text";
-import { useThemeStore } from "@/stores/use-theme-store";
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 
 export type CanvasImageLightingOptions = {
     azimuth: number;
@@ -138,7 +138,7 @@ function buildLightingPrompt(input: {
 }
 
 export function CanvasNodeLightingPanel({ dataUrl, onClose, onConfirm }: { dataUrl: string; onClose: () => void; onConfirm: (options: CanvasImageLightingOptions, prompt: string) => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const reducedMotion = useReducedMotion();
     const copyText = useCopyText();
     const [options, setOptions] = useState(defaultLightingOptions);

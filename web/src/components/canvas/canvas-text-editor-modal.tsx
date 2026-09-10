@@ -30,9 +30,8 @@ import {
     X,
 } from "lucide-react";
 
-import { canvasThemes } from "@/lib/canvas-theme";
 import { createCanvasRichTextExtensions, isSafeCanvasRichTextLink } from "@/lib/canvas/canvas-rich-text";
-import { useThemeStore } from "@/stores/use-theme-store";
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import type { CanvasNodeData } from "@/types/canvas";
 
 type CanvasTextEditorModalProps = {
@@ -44,7 +43,7 @@ type CanvasTextEditorModalProps = {
 
 export function CanvasTextEditorModal({ node, open, onClose, onSave }: CanvasTextEditorModalProps) {
     const { message, modal } = App.useApp();
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const [title, setTitle] = useState("");
     const [dirty, setDirty] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -161,7 +160,7 @@ export function CanvasTextEditorModal({ node, open, onClose, onSave }: CanvasTex
 
 function TextEditorToolbar({ editor }: { editor: Editor | null }) {
     const { message } = App.useApp();
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const [, setToolbarVersion] = useState(0);
     const [linkOpen, setLinkOpen] = useState(false);
     const [linkValue, setLinkValue] = useState("");
@@ -276,7 +275,7 @@ function TextEditorToolbar({ editor }: { editor: Editor | null }) {
 }
 
 function EditorToolButton({ label, active = false, children, onClick }: { label: string; active?: boolean; children: ReactNode; onClick: () => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     return (
         <Tooltip title={label}>
             <button type="button" aria-label={label} aria-pressed={active} className="grid size-8 shrink-0 place-items-center rounded-md outline-none transition hover:bg-black/5 focus-visible:ring-2 dark:hover:bg-white/8 [&_svg]:size-3.5" style={{ background: active ? theme.toolbar.activeBg : undefined, color: active ? theme.accent.primary : undefined }} onClick={onClick}>{children}</button>

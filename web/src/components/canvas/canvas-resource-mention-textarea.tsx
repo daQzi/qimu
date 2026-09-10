@@ -3,9 +3,8 @@ import type { CSSProperties, ClipboardEvent, DragEvent, KeyboardEvent, MouseEven
 import { createPortal } from "react-dom";
 import { ArrowLeft, ChevronRight, FileText, Folder, Image as ImageIcon, Music2, Pencil, Search, UserRound, Video, Workflow } from "lucide-react";
 
-import { canvasThemes } from "@/lib/canvas-theme";
 import { ASSET_CATEGORY_LABELS } from "@/lib/asset-category";
-import { useThemeStore } from "@/stores/use-theme-store";
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 import { buildAssetMentionReferences, canvasResourceMentionToken, findCanvasResourceAutoLinkMatch, type CanvasResourceAutoLinkMatch, type CanvasResourceReference } from "@/lib/canvas/canvas-resource-references";
 import { useAssetStore, type AssetCategory } from "@/stores/use-asset-store";
 import { CanvasNodeType } from "@/types/canvas";
@@ -53,9 +52,8 @@ export const CanvasResourceMentionTextarea = forwardRef<HTMLTextAreaElement, Pro
     { value, references, onChange, onSubmit, onKeyDown, className, containerClassName, style, highlightLabels = true, mentionMenuWidth = 320, sendOnEnter = true, onContentSizeChange, includeAssetLibrary = false, activeDropReferenceId, onReferenceFilesDrop, autoLinkEnabled = false, ...props },
     forwardedRef,
 ) {
-    const rawTheme = useThemeStore((state) => state.theme);
     const assets = useAssetStore((state) => state.assets);
-    const theme = canvasThemes[rawTheme as keyof typeof canvasThemes] ?? canvasThemes.dark;
+    const theme = useCanvasTheme();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const editorRef = useRef<HTMLDivElement | null>(null);

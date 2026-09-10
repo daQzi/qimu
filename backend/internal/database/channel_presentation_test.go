@@ -1,6 +1,44 @@
 package database
 
-import "testing"
+import (
+	"reflect"
+	"strings"
+	"testing"
+)
+
+func TestChannelPresentationRejectsUpstreamHistoryWithoutRewritingIt(t *testing.T) {
+	db, err := Open(Config{Driver: "sqlite", DSN: ":memory:"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := MigrateSchema(db); err != nil {
+		t.Fatal(err)
+	}
+	// 模拟来自上游的另一套迁移历史，不能把同版本号视为本 fork 已升级。
+	for _, record := range []schemaMigration{
+		{Version: 9, Name: "channel_presentation", Checksum: "sha256:channel-presentation-v9-20260908"},
+		{Version: 10, Name: "creation_runtime", Checksum: "sha256:creation-runtime-v10-20260909"},
+	} {
+		if err := db.Model(&schemaMigration{}).Where("version = ?", record.Version).Updates(map[string]any{"name": record.Name, "checksum": record.Checksum}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	var before, after []schemaMigration
+	if err := db.Order("version").Find(&before).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, check := range []func() error{func() error { return MigrateSchema(db) }, func() error { return RequireSchemaVersion(db) }} {
+		if err := check(); err == nil || !strings.Contains(err.Error(), "迁移 9 名称不一致") {
+			t.Fatalf("unexpected history validation: %v", err)
+		}
+	}
+	if err := db.Order("version").Find(&after).Error; err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(before, after) {
+		t.Fatal("rejected history was rewritten")
+	}
+}
 
 func TestChannelPresentationUpgradePreservesCreationV9(t *testing.T) {
 	db, err := Open(Config{Driver: "sqlite", DSN: "file:creation-v9-upgrade?mode=memory&cache=shared"})

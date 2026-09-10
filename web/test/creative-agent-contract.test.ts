@@ -4,16 +4,18 @@ import { applyCreativeAnswers, creativeBatchBarrier, normalizeCreativeQuestions,
 const identity = { interactionId: "trusted", revision: 2 };
 const question = (field: string) => ({ id: "model-id", field, title: field, type: "single", required: true, options: [{ id: "model-option", label: "选项" }] });
 describe("创作交互合同", () => {
-    test("跳过明确答案、未知字段和重复字段，最多三题且覆盖模型身份", () => {
+    test("跳过明确答案、危险字段和重复字段，安全自定义字段最多六题且覆盖模型身份", () => {
         const brief: CreativeBrief = { genre: { value: "悬疑", source: "user", status: "confirmed" } };
-        const request = normalizeCreativeQuestions([question("genre"), question("unknown"), question("seconds"), question("seconds"), question("style"), question("episodes"), question("scenes")], "short-film", brief, identity);
-        expect(request.questions.map((q) => q.field)).toEqual(["seconds", "style", "episodes"]);
+        const request = normalizeCreativeQuestions([question("genre"), question("__proto__"), question("camera.angle"), question("seconds"), question("seconds"), question("style"), question("episodes"), question("scenes"), question("audience"), question("extra")], "short-film", brief, identity);
+        expect(request.questions.map((q) => q.field)).toEqual(["camera.angle", "seconds", "style", "episodes", "scenes", "audience"]);
         expect(request.questions[0].id).toBe("trusted:2:1");
         expect(request.questions[0].options[0].id).not.toBe("model-option");
     });
-    test("未解析和冲突不是已知事实，营销不询问短片字段", () => {
+    test("未解析和冲突不是已知事实，跨场景需求字段仍可回答并持久化", () => {
         const request = normalizeCreativeQuestions([question("assets"), question("style"), question("episodes")], "marketing", { assets: { value: "文件", source: "asset", status: "unparsed" }, style: { value: "写实", source: "user", status: "conflict" } }, identity);
-        expect(request.questions.map((q) => q.field)).toEqual(["assets", "style"]);
+        expect(request.questions.map((q) => q.field)).toEqual(["assets", "style", "episodes"]);
+        const answers = Object.fromEntries(request.questions.map((q) => [q.id, { selected: [q.options[0].id], custom: "" }]));
+        expect(applyCreativeAnswers(request, identity, answers, {}).episodes).toEqual({ value: "选项", source: "user", status: "confirmed" });
     });
     test("必填答案与素材归属校验，成功才合并 brief", () => {
         const assets = [{ id: "real-asset", label: "真实商品图" }];

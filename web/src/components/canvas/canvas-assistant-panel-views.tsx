@@ -1,17 +1,16 @@
 import { Button, Select } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { useMemo, useState } from "react";
-import { AtSign, Cpu, Trash2, X } from "lucide-react";
+import { AtSign, Cpu, FileText, Music, Sparkles, Video, Trash2, X } from "lucide-react";
 
 import { modelDisplayName, modelIcon, resolveModelChannel, selectableModelsByCapability, type AiConfig } from "@/stores/use-config-store";
-import { canvasThemes } from "@/lib/canvas-theme";
 import { AgentImagePreview, type CanvasAgentChatMessage } from "./canvas-agent-chat-ui";
 import { ModelLogo } from "@/components/model-logo";
 import { useResolvedCanvasResourceReferences } from "./use-resolved-canvas-resource-references";
 import { imageReferenceLabel } from "@/lib/image-reference-prompt";
 import { type CanvasResourceReference } from "@/lib/canvas/canvas-resource-references";
 import { CanvasNodeType, type CanvasAssistantMessage, type CanvasAssistantReference, type CanvasAssistantSession } from "@/types/canvas";
-import { useThemeStore } from "@/stores/use-theme-store";
+import { useCanvasTheme } from "@/hooks/use-canvas-theme";
 
 export function AgentTextModelPicker({ config, value, onChange }: { config: AiConfig; value: string; onChange: (model: string) => void }) {
     const options = useMemo(() => Array.from(new Set([value, ...selectableModelsByCapability(config, "text")].filter(Boolean))), [config, value]);
@@ -67,7 +66,7 @@ export function AgentModelIcon({ config, model }: { config: AiConfig; model: str
 }
 
 export function AssistantHistory({ sessions, activeSession, onOpen, onDelete }: { sessions: CanvasAssistantSession[]; activeSession: CanvasAssistantSession | null; onOpen: (id: string) => void; onDelete: (id: string) => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
 
     return (
         <div className="space-y-3">
@@ -133,11 +132,12 @@ export function promptAlreadyHasMention(prompt: string, label: string) {
 }
 
 export function AssistantReferenceChip({ item, label, previewUrl, onRemove, onInsertMention }: { item: CanvasAssistantReference; label?: string; previewUrl?: string; onRemove?: () => void; onInsertMention?: (label: string) => void }) {
-    const theme = canvasThemes[useThemeStore((state) => state.theme)];
+    const theme = useCanvasTheme();
     const [previewOpen, setPreviewOpen] = useState(false);
     const mentionReference = useMemo(() => assistantReferencesToMentionReferences([item]), [item]);
     const resolvedReference = useResolvedCanvasResourceReferences(mentionReference)[0];
-    const text = (item.text || item.title).replace(/\s+/g, " ").trim().slice(0, 1) || "文";
+    const title = item.title.trim() || "未命名节点";
+    const Icon = item.type === "video" ? Video : item.type === "audio" ? Music : item.type === "skill" ? Sparkles : FileText;
     const imageUrl = previewUrl || resolvedReference?.previewUrl || item.dataUrl;
     const hasImage = Boolean(imageUrl || item.storageKey);
     const chipStyle = { background: theme.spatial.surface, color: theme.node.text };
@@ -197,11 +197,11 @@ export function AssistantReferenceChip({ item, label, previewUrl, onRemove, onIn
     }
 
     return (
-        <span className="group/chip relative inline-flex h-12 max-w-[168px] shrink-0 items-center gap-2 overflow-hidden rounded-md px-2.5 text-sm" style={chipStyle}>
+        <span title={title} className="group/chip relative inline-flex h-12 max-w-[168px] shrink-0 items-center gap-2 overflow-hidden rounded-md px-2.5 text-sm" style={chipStyle}>
             <span className="grid size-8 shrink-0 place-items-center rounded-md text-sm font-medium" style={{ background: theme.toolbar.itemHover }}>
-                {text}
+                <Icon className="size-3.5 shrink-0" aria-hidden="true" />
             </span>
-            <span className="min-w-0 truncate text-[var(--fs-tiny)] opacity-80">{item.title}</span>
+            <span className="min-w-0 truncate text-[var(--fs-tiny)] opacity-80">{title}</span>
             {onRemove ? (
                 <button
                     type="button"

@@ -8,6 +8,7 @@ import type { AssetLibraryPickerItem } from "@/components/assets/asset-library-p
 import { generationErrorCode, generationErrorMessage } from "@/lib/generation-error";
 import { creationResultAssetIds } from "@/lib/canvas/canvas-asset-handoff";
 import { getActiveUserScope } from "@/lib/user-scope";
+import { consumeLandingDraft } from "@/lib/landing-draft";
 import { continueCreationConversationOnCanvas } from "@/services/creation-canvas-conversation";
 import { useExternalAssetSources } from "@/hooks/use-external-asset-sources";
 import { modelCapabilityConfigFor, normalizeImageValue, normalizeVideoValue, videoDurationAllowed, videoDurationOptions } from "@/lib/model-capabilities";
@@ -81,6 +82,13 @@ export default function CreatePage() {
     const [hydrated, setHydrated] = useState(false);
     const [mode, setMode] = useState<CreationMode>(() => initialComposerPreferences.mode || "video");
     const [prompt, setPrompt] = useState("");
+    const landingDraftConsumed = useRef(false);
+    useEffect(() => {
+        if (landingDraftConsumed.current) return;
+        landingDraftConsumed.current = true;
+        const draft = consumeLandingDraft();
+        if (draft) setPrompt(draft);
+    }, []);
     const [attachments, setAttachments] = useState<CreationAttachment[]>([]);
     const promptRef = useRef(prompt);
     const attachmentsRef = useRef(attachments);

@@ -20,7 +20,7 @@ const paymentTopupChecksum = "sha256:payment-topup-v5-20260902"
 const resourcePlaybackChecksum = "sha256:resource-playback-v6-20260902"
 const assetLibraryFoldersChecksum = "sha256:asset-library-folders-v6-20260902"
 const logicalModelActiveCodeChecksum = "sha256:logical-model-active-code-v8-20260905"
-const creationRuntimeChecksum = "sha256:creation-runtime-v10-20260909"
+const creationRunAdmissionChecksum = "sha256:creation-run-admission-v9-20260908"
 
 const postgresSchemaMigrationLockID int64 = 73123910420260830
 
@@ -55,8 +55,8 @@ var schemaMigrations = []migration{
 	{version: 6, name: "resource_playback_variant", checksum: resourcePlaybackChecksum, apply: migrateSchemaV6},
 	{version: 7, name: "asset_library_folders", checksum: assetLibraryFoldersChecksum, apply: migrateSchemaV7},
 	{version: 8, name: "logical_model_active_code", checksum: logicalModelActiveCodeChecksum, apply: migrateSchemaV8},
-	{version: 9, name: "channel_presentation", checksum: "sha256:channel-presentation-v9-20260908", apply: migrateChannelPresentation},
-	{version: 10, name: "creation_runtime", checksum: creationRuntimeChecksum, apply: migrateSchemaV10},
+	{version: 9, name: "creation_run_admission", checksum: creationRunAdmissionChecksum, apply: migrateSchemaV9},
+	{version: 10, name: "channel_presentation", checksum: "sha256:channel-presentation-v10-20260908", apply: migrateChannelPresentation},
 }
 
 func migrateChannelPresentation(tx *gorm.DB) error {
@@ -215,8 +215,8 @@ func migrateSchemaV8(tx *gorm.DB) error {
 	return nil
 }
 
-// migrateSchemaV10 只增加创作运行时表和任务幂等关联；旧任务的空 submission ID 必须继续合法。
-func migrateSchemaV10(tx *gorm.DB) error {
+// 保留本 fork 已部署的 v9 身份；上游的同等创作结构不能重编号后覆盖历史记录。
+func migrateSchemaV9(tx *gorm.DB) error {
 	if err := tx.AutoMigrate(&model.CreationRun{}, &model.CreationSubmission{}, &model.Task{}); err != nil {
 		return fmt.Errorf("创建创作运行时结构：%w", err)
 	}
