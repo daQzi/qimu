@@ -12,7 +12,7 @@ func TestCreationMigrationKeepsLegacyTasksNullableAndEnforcesSubmissionUnique(t 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = migrateSchemaV9(db); err != nil {
+	if err = migrateSchemaV10(db); err != nil {
 		t.Fatal(err)
 	}
 	for _, id := range []string{"manual-one", "manual-two"} {

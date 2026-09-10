@@ -41,15 +41,17 @@ export function isCreativeFieldKnown(brief: CreativeBrief, field: string): boole
     return Boolean(entry && entry.status === "confirmed" && hasValue(entry.value));
 }
 
-/** Only the controller supplies identity and provenance; model IDs and state are discarded. */
-export function normalizeCreativeQuestions(raw: unknown, _scenario: CreativeScenarioId, brief: CreativeBrief, identity: { interactionId: string; revision: number }, assets: CreativeAssetOption[] = []): CreativeQuestionRequest {
+/** 交互身份与版本只能由控制器生成；模型返回的 ID、状态和来源信息一律不可信。 */
+export function normalizeCreativeQuestions(raw: unknown, scenario: CreativeScenarioId, brief: CreativeBrief, identity: { interactionId: string; revision: number }, assets: CreativeAssetOption[] = []): CreativeQuestionRequest {
     if (!identity.interactionId.trim() || !Number.isInteger(identity.revision) || identity.revision < 1) throw new Error("无效的交互版本");
     const questions: CreativeQuestion[] = [];
     const used = new Set<string>();
+    // 交互字段必须来自当前场景合同，避免模型临时造字段后形成无法持久化、无法消费的隐式协议。
+    const allowedFields = new Set(Object.keys(CREATIVE_SCENARIOS[scenario].fields));
     for (const item of Array.isArray(raw) ? raw : []) {
         const q = object(item);
         const field = normalizeCreativeField(q.field);
-        if (!field || used.has(field) || isCreativeFieldKnown(brief, field) || typeof q.title !== "string" || !q.title.trim()) continue;
+        if (!field || !allowedFields.has(field) || used.has(field) || isCreativeFieldKnown(brief, field) || typeof q.title !== "string" || !q.title.trim()) continue;
         if (!["single", "multiple", "text", "asset"].includes(String(q.type))) continue;
         const type = q.type as CreativeQuestion["type"];
         const id = `${identity.interactionId}:${identity.revision}:${questions.length + 1}`;
@@ -59,7 +61,8 @@ export function normalizeCreativeQuestions(raw: unknown, _scenario: CreativeScen
         });
         questions.push({ id, field, type, title: q.title.trim(), description: typeof q.description === "string" ? q.description : undefined, required: q.required === true, allowCustom: type !== "asset" || q.allowCustom === true, options });
         used.add(field);
-        if (questions.length === 6) break;
+        // 每轮最多三题，保证用户可以逐步确认；后续缺失信息由下一轮基于已确认 brief 再补问。
+        if (questions.length === 3) break;
     }
     return { kind: "question_request", ...identity, status: "pending", questions };
 }

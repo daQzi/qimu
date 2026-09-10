@@ -1,4 +1,4 @@
-import { apiClient, request } from "./request";
+import { http } from "./request";
 import type { CanvasAgentOp } from "@/lib/canvas/canvas-agent-ops";
 import type { CanvasProject } from "@/stores/canvas/use-canvas-store";
 import type { CreateTaskInput, GenerationTask } from "./task-center";
@@ -21,23 +21,23 @@ export type CreationRunDetail = { run: CreationRun; submissions: CreationSubmiss
 
 const path = (id: string) => `/creation-runs/${encodeURIComponent(id)}`;
 export const creationRuns = {
-    create: (input: { clientKey: string; canvasId?: string; state: Record<string, unknown> }, signal?: AbortSignal) => request<CreationRunDetail>(apiClient.post("/creation-runs", input, { signal })),
-    get: (id: string, signal?: AbortSignal) => request<CreationRunDetail>(apiClient.get(path(id), { signal })),
-    list: (signal?: AbortSignal) => request<{ runs: CreationRun[] }>(apiClient.get("/creation-runs", { signal })),
-    save: (id: string, input: CreationGuard & { revision: number; state: Record<string, unknown>; status: CreationStatus }, signal?: AbortSignal) => request<CreationRun>(apiClient.patch(path(id), input, { signal })),
-    claim: (id: string, input: { expectedEpoch: number; owner: string }, signal?: AbortSignal) => request<CreationRun>(apiClient.post(`${path(id)}/claim`, input, { signal })),
-    heartbeat: (id: string, guard: CreationGuard, signal?: AbortSignal) => request<{ leaseExpiresAt: string }>(apiClient.post(`${path(id)}/heartbeat`, guard, { signal })),
-    release: (id: string, guard: CreationGuard) => request<{ released: boolean }>(apiClient.post(`${path(id)}/release`, guard)),
-    approveProposal: (id: string, input: CreationGuard & { revision: number; proposalVersion: number; proposal: unknown; ops: CanvasAgentOp[] }, signal?: AbortSignal) => request<CreationRun>(apiClient.post(`${path(id)}/proposal-approve`, input, { signal })),
-    invalidateProposal: (id: string, input: CreationGuard & { revision: number }, signal?: AbortSignal) => request<CreationRun>(apiClient.post(`${path(id)}/proposal-invalidate`, input, { signal })),
-    canvas: (id: string, guard: CreationGuard, signal?: AbortSignal) => request<{ run: CreationRun; canvasId: string }>(apiClient.post(`${path(id)}/canvas`, guard, { signal })),
-    prepare: (id: string, input: CreationGuard & { itemKey: string; proposalVersion?: number; request: CreateTaskInput }, signal?: AbortSignal) => request<CreationSubmission>(apiClient.post(`${path(id)}/submissions/prepare`, input, { signal })),
-    approve: (id: string, input: CreationGuard & { submissionIds: string[] }, signal?: AbortSignal) => request<{ submissions: CreationSubmission[] }>(apiClient.post(`${path(id)}/submissions/approve`, input, { signal })),
-    refreshQuote: (id: string, input: CreationGuard & { submissionId: string }, signal?: AbortSignal) => request<CreationSubmission>(apiClient.post(`${path(id)}/submissions/refresh`, input, { signal })),
-    execute: (id: string, input: CreationGuard & { submissionId: string }, signal?: AbortSignal) => request<GenerationTask>(apiClient.post(`${path(id)}/execute`, input, { signal })).then((task) => {
+    create: (input: { clientKey: string; canvasId?: string; state: Record<string, unknown> }, signal?: AbortSignal) => http.post<CreationRunDetail>("/creation-runs", input, { signal }),
+    get: (id: string, signal?: AbortSignal) => http.get<CreationRunDetail>(path(id), { signal }),
+    list: (signal?: AbortSignal) => http.get<{ runs: CreationRun[] }>("/creation-runs", { signal }),
+    save: (id: string, input: CreationGuard & { revision: number; state: Record<string, unknown>; status: CreationStatus }, signal?: AbortSignal) => http.patch<CreationRun>(path(id), input, { signal }),
+    claim: (id: string, input: { expectedEpoch: number; owner: string }, signal?: AbortSignal) => http.post<CreationRun>(`${path(id)}/claim`, input, { signal }),
+    heartbeat: (id: string, guard: CreationGuard, signal?: AbortSignal) => http.post<{ leaseExpiresAt: string }>(`${path(id)}/heartbeat`, guard, { signal }),
+    release: (id: string, guard: CreationGuard) => http.post<{ released: boolean }>(`${path(id)}/release`, guard),
+    approveProposal: (id: string, input: CreationGuard & { revision: number; proposalVersion: number; proposal: unknown; ops: CanvasAgentOp[] }, signal?: AbortSignal) => http.post<CreationRun>(`${path(id)}/proposal-approve`, input, { signal }),
+    invalidateProposal: (id: string, input: CreationGuard & { revision: number }, signal?: AbortSignal) => http.post<CreationRun>(`${path(id)}/proposal-invalidate`, input, { signal }),
+    canvas: (id: string, guard: CreationGuard, signal?: AbortSignal) => http.post<{ run: CreationRun; canvasId: string }>(`${path(id)}/canvas`, guard, { signal }),
+    prepare: (id: string, input: CreationGuard & { itemKey: string; proposalVersion?: number; request: CreateTaskInput }, signal?: AbortSignal) => http.post<CreationSubmission>(`${path(id)}/submissions/prepare`, input, { signal }),
+    approve: (id: string, input: CreationGuard & { submissionIds: string[] }, signal?: AbortSignal) => http.post<{ submissions: CreationSubmission[] }>(`${path(id)}/submissions/approve`, input, { signal }),
+    refreshQuote: (id: string, input: CreationGuard & { submissionId: string }, signal?: AbortSignal) => http.post<CreationSubmission>(`${path(id)}/submissions/refresh`, input, { signal }),
+    execute: (id: string, input: CreationGuard & { submissionId: string }, signal?: AbortSignal) => http.post<GenerationTask>(`${path(id)}/execute`, input, { signal }).then((task) => {
         if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("wallet:updated"));
         return task;
     }),
-    canvasSnapshot: (id: string, signal?: AbortSignal) => request<{ document: CanvasProject; snapshotHash: string }>(apiClient.get(`${path(id)}/canvas-snapshot`, { signal })),
-    commitCanvas: (id: string, input: CreationGuard & { expectedSnapshotHash: string; document: CanvasProject }, signal?: AbortSignal) => request<{ snapshotHash: string }>(apiClient.post(`${path(id)}/canvas-commit`, input, { signal })),
-};
+    canvasSnapshot: (id: string, signal?: AbortSignal) => http.get<{ document: CanvasProject; snapshotHash: string }>(`${path(id)}/canvas-snapshot`, { signal }),
+    commitCanvas: (id: string, input: CreationGuard & { expectedSnapshotHash: string; document: CanvasProject }, signal?: AbortSignal) => http.post<{ snapshotHash: string }>(`${path(id)}/canvas-commit`, input, { signal }),
+};;
