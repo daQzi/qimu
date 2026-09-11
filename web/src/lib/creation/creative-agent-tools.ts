@@ -43,6 +43,8 @@ generationItems 是方案的声明式生成配置，用于校验和之后的报�
 
 export function parseCreativeToolArguments(value: string): Record<string, unknown> {
     const parsed: unknown = JSON.parse(value);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("助手返回的交互内容格式无效");
+    // 兼容部分模型将 questions 直接作为根数组返回的情况。
+    if (Array.isArray(parsed)) return { message: "请确认下面的创作方向：", questions: parsed };
+    if (!parsed || typeof parsed !== "object") throw new Error("助手返回的交互内容格式无效");
     return parsed as Record<string, unknown>;
 }
