@@ -41,6 +41,7 @@ import { buildSkillMentionReferences, skillRuntime } from "@/services/skill-runt
 import { handleCinematicContinuationFailure, canvasCinematicContinuationEntryAdapters, type CinematicContinuationFailureDisposition, type CinematicContinuationLiveSessionState } from "./canvas-cinematic-continuation";
 import { CanvasCreativeInteraction, canvasCreativeDetail, creativeInteractionSeed, creativeProposalFailure, type CanvasCreativeDetail } from "./canvas-creative-interaction";
 import { creativePlan, type CreativeReference } from "@/lib/creation/creative-agent-state";
+import type { CreativePlan } from "@/lib/creation/creative-agent-contract";
 import { CreativePlanBar } from "@/components/creation/creative-agent-cards";
 import { AgentTextModelPicker, AssistantHistory, AssistantReferenceChip, MessageReferences, assistantImageReferenceLabel, assistantMessageToChatMessage, assistantReferencesToMentionReferences, promptAlreadyHasMention } from "./canvas-assistant-panel-views";
 import { backendAgentProviderConfig, buildAssistantReferences, buildToolAgentMessages, capabilityBatchTitle, cinematicSessionMessageId, compactSnapshot, createSession, describeCanvasSnapshot, explainNoop, nodeToReference, objectDetail, onlineToolToOps, parseToolArguments, previewOnlineToolCalls, requestOnlineAgentModel, requireOps, requireString, snapshotSignature, summarizeToolCalls, toolCallToResponseInput, toolCallsFromDetail, toolResultText, upsertAssistantMessage, type CreativeOnlineContext, type OnlineToolResult } from "./canvas-assistant-online-tools";
@@ -173,6 +174,23 @@ function creativeCanvasReferences(snapshot: CanvasAgentSnapshot): CreativeRefere
 
 export { handleCinematicContinuationFailure, runCanvasCinematicContinuationBoundary, canvasCinematicContinuationEntryAdapters } from "./canvas-cinematic-continuation";
 export type { CinematicContinuationFailureDisposition } from "./canvas-cinematic-continuation";
+
+const CREATIVE_PLAN_SETTLE_DELAY_MS = 6000;
+function useCreativePlanDockVisible(plan: CreativePlan | undefined, busy: boolean) {
+    const [settledHidden, setSettledHidden] = useState(false);
+    // failed 步骤不算完成：失败的计划保持展示，等待用户处理。
+    const finished = plan?.steps.length ? plan.steps.every((step) => step.status === "completed" || step.status === "cancelled") : false;
+    useEffect(() => {
+        if (!finished) setSettledHidden(false);
+    }, [finished]);
+    useEffect(() => {
+        if (!finished || settledHidden || busy) return;
+        const timer = setTimeout(() => setSettledHidden(true), CREATIVE_PLAN_SETTLE_DELAY_MS);
+        return () => clearTimeout(timer);
+    }, [busy, finished, settledHidden]);
+    return Boolean(plan?.steps.length) && (!finished || busy || !settledHidden);
+}
+
 export function CanvasAssistantPanel({
     nodes,
     selectedNodeIds,
@@ -285,6 +303,8 @@ export function CanvasAssistantPanel({
     const activeCreativeId = messages.findLast((message) => Boolean(canvasCreativeDetail(message)))?.id;
     const latestAssistantMessage = messages.findLast((message) => message.role === "assistant");
     const currentCreativeState = activeCreativeId ? canvasCreativeDetail(messages.find((message) => message.id === activeCreativeId)!)?.state : latestAssistantMessage ? canvasCreativeDetail(latestAssistantMessage)?.state : undefined;
+    const currentCreativePlan = currentCreativeState ? creativePlan(currentCreativeState) : undefined;
+    const creativePlanDockVisible = useCreativePlanDockVisible(currentCreativePlan, agentBusy);
     const selectedReferences = useMemo(() => buildAssistantReferences(nodes, attachedReferenceIds), [attachedReferenceIds, nodes]);
     const composerImageReferences = useMemo(() => assistantReferencesToMentionReferences(selectedReferences), [selectedReferences]);
     const resolvedComposerImageReferences = useResolvedCanvasResourceReferences(composerImageReferences);
@@ -1032,8 +1052,8 @@ export function CanvasAssistantPanel({
                             ))}
                         </div>
                     ) : null}
-                    {currentCreativeState && <div className="creative-agent-plan-docked" data-canvas-no-zoom data-canvas-wheel-scroll>
-                        <CreativePlanBar plan={creativePlan(currentCreativeState)} onLocateNode={(id) => onSelectNodeIds(new Set([id]))} />
+                    {creativePlanDockVisible && <div className="creative-agent-plan-docked" data-canvas-no-zoom data-canvas-wheel-scroll>
+                        <CreativePlanBar plan={currentCreativePlan} onLocateNode={(id) => onSelectNodeIds(new Set([id]))} />
                     </div>}
                     <div ref={composerRef}>
                     <AgentChatComposer

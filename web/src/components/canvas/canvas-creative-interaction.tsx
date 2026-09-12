@@ -127,7 +127,11 @@ export function CanvasCreativeInteraction(props: Props) {
         if (proposalFailure) { props.onContinue("请根据当前真实素材和校验反馈调整方案。能自行修正的请修正，需要我提供信息时请直接提问，仍须确认后才制作。"); return; }
         if (detail.input.proposal && !view.state.proposal) { await instance.presentInteraction(detail.input, true); return; }
         if (view.quote && Date.parse(view.quote.expiresAt || "") <= Date.now()) { await instance.refreshQuotes(); return; }
-        if (["running", "paused", "waiting_canvas", "waiting_task"].includes(status || "")) { await instance.resume(); return; }
+        // 任务可能已经提交但运行状态在恢复时被保存为 idle；只看 run 状态会
+        // 把“继续处理”错误地交回对话模型。只要仍有未完成的生成任务，就直接
+        // 进入控制器恢复流程，读取最新任务结果。
+        const hasPendingMedia = view.state.media.some((item) => item.taskId && item.status !== "ready");
+        if (hasPendingMedia || ["running", "paused", "waiting_canvas", "waiting_task"].includes(status || "")) { await instance.resume(); return; }
         props.onContinue("保留已确认的要求，在已授权范围内继续当前任务，自行处理常规选择和技术问题；确实阻塞时再询问。");
     };
     const rawError = proposalFailure || error || view.error;
