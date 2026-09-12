@@ -20,10 +20,6 @@ function rgbaFromHex(value: string, alpha: number) {
 
 function shadowValues(mode: SkinModeTokens, dark: boolean, style: SkinDefinition["tokens"]["components"]["shadowStyle"]) {
     if (style === "none") return { node: "none", nodeHover: "none", spatial: "none" };
-    if (style === "brand") {
-        const tint = dark ? "rgba(0,0,0,.35)" : rgbaFromHex(mode.primary, 0.16);
-        return { node: `0 2px 6px ${tint}`, nodeHover: `0 4px 12px ${tint}`, spatial: `0 4px 12px ${tint}` };
-    }
     const color = dark ? "rgba(0,0,0,.6)" : rgbaFromHex(mode.text, 0.18);
     if (style === "strong") {
         return {
@@ -72,7 +68,7 @@ export function getCanvasTheme(colorTheme: CanvasColorTheme, skin: SkinDefinitio
             edge: rgbaFromHex(palette.controlBorder, dark ? 0.8 : 0.65),
             shadow: shadows.node,
             hoverShadow: shadows.nodeHover,
-            activeStroke: skin.tokens.components.shadowStyle === "brand" ? palette.primary : palette.selected,
+            activeStroke: palette.selected,
             placeholder: palette.controlDisabledForeground,
             text: palette.text,
             muted: palette.textMuted,

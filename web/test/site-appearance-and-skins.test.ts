@@ -4,21 +4,6 @@ import { applySkinTheme, DEFAULT_CLASSIC_SKIN, duplicateSkinDefinition, getSkinA
 import { normalizePublicAppearance } from "../src/stores/use-appearance-store";
 
 describe("site appearance and editable skin library", () => {
-    test("brand shadows survive normalization and copying without making panels pill-shaped", () => {
-        const skin = duplicateSkinDefinition(DEFAULT_CLASSIC_SKIN, ["classic"], "小云雀测试");
-        skin.tokens.components.shadowStyle = "brand";
-        skin.tokens.components.buttonRadius = 18;
-        skin.tokens.components.inputRadius = 8;
-        skin.tokens.light.primary = "#8359ff";
-        const normalized = normalizeSkinDefinition(skin);
-        expect(normalized.id).toBe(skin.id);
-        expect(duplicateSkinDefinition(normalized, [skin.id]).tokens.components.shadowStyle).toBe("brand");
-        expect(getSkinAntOverrides(normalized, "light").buttonRadius).toBe(18);
-        const assigned = new Map<string, string>();
-        applySkinTheme(normalized, "light", { documentElement: { dataset: {}, style: { removeProperty: () => {}, setProperty: (key: string, value: string) => assigned.set(key, value) } } } as unknown as Document);
-        expect(assigned.get("--r-md")).toBe("8px");
-        expect(assigned.get("--elevation-overlay")).toBe("0 4px 12px #8359ff29");
-    });
     test("classic is immutable and keeps the existing runtime token system unchanged", () => {
         expect(DEFAULT_CLASSIC_SKIN.locked).toBe(true);
         expect(getSkinAntOverrides(DEFAULT_CLASSIC_SKIN, "light")).toEqual({});

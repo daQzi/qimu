@@ -180,7 +180,7 @@ export function getAntThemeConfig(dark: boolean, skinID: unknown = "classic"): T
             colorBgContainer: skin.controlSurface || undefined,
             colorBorderSecondary: dark ? "rgba(255, 255, 255, 0.1)" : "rgba(17, 17, 17, 0.09)",
             boxShadowSecondary:
-                skin.shadowStyle === "brand" ? `0 4px 12px ${dark ? "#00000059" : `${color.solidBg.slice(0, 7)}29`}` : skin.shadowStyle === "none" ? "none" : skin.shadowStyle === "strong" ? (dark ? "0 28px 84px rgba(0, 0, 0, 0.68)" : "0 26px 72px rgba(15, 23, 42, 0.22)") : dark ? "0 24px 72px rgba(0, 0, 0, 0.48)" : "0 22px 64px rgba(15, 23, 42, 0.14)",
+                skin.shadowStyle === "none" ? "none" : skin.shadowStyle === "strong" ? (dark ? "0 28px 84px rgba(0, 0, 0, 0.68)" : "0 26px 72px rgba(15, 23, 42, 0.22)") : dark ? "0 24px 72px rgba(0, 0, 0, 0.48)" : "0 22px 64px rgba(15, 23, 42, 0.14)",
             borderRadius: skin.borderRadius || 6,
             borderRadiusLG: skin.borderRadiusLG || 8,
             borderRadiusSM: skin.borderRadiusSM || 5,
@@ -196,7 +196,7 @@ export function getAntThemeConfig(dark: boolean, skinID: unknown = "classic"): T
         },
         components: {
             Button: {
-                primaryShadow: skin.shadowStyle === "brand" ? `0 4px 12px ${color.solidBg.slice(0, 7)}29` : "none",
+                primaryShadow: "none",
                 dangerShadow: "none",
                 dangerColor: color.dangerForeground,
                 fontWeight: skin.buttonFontWeight || 500,

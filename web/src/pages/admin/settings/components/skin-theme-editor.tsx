@@ -213,7 +213,6 @@ export function SkinThemeEditor({
                                 options={[
                                     { label: "无阴影", value: "none" },
                                     { label: "柔和阴影", value: "soft" },
-                                    { label: "品牌柔影", value: "brand" },
                                     { label: "强层次阴影", value: "strong" },
                                 ]}
                                 onChange={(value) => updateComponent("shadowStyle", value)}
@@ -245,7 +244,7 @@ function ColorTokenField({ label, help, value, disabled, onChange }: { label: st
 function SkinThemePreview({ theme, mode }: { theme: SkinDefinition; mode: SkinThemeMode }) {
     const color = theme.tokens[mode];
     const component = theme.tokens.components;
-    const shadow = component.shadowStyle === "brand" ? `0 4px 12px ${mode === "dark" ? "#00000059" : `${color.primary.slice(0, 7)}29`}` : component.shadowStyle === "none" ? "none" : component.shadowStyle === "strong" ? "0 18px 44px #0000003d" : "0 10px 28px #00000024";
+    const shadow = component.shadowStyle === "none" ? "none" : component.shadowStyle === "strong" ? "0 18px 44px #0000003d" : "0 10px 28px #00000024";
     return (
         <div className="admin-skin-live-preview" style={{ background: color.canvas, color: color.text, borderColor: color.border, borderRadius: component.cardRadius }}>
             <div className="admin-skin-live-preview-card" style={{ background: color.surface, borderColor: color.border, borderRadius: component.cardRadius, boxShadow: shadow }}>

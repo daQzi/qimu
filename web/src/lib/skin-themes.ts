@@ -1,5 +1,5 @@
 export type SkinThemeMode = "light" | "dark";
-export type SkinShadowStyle = "none" | "soft" | "strong" | "brand";
+export type SkinShadowStyle = "none" | "soft" | "strong";
 
 export type SkinModeTokens = {
     canvas: string;
@@ -668,7 +668,7 @@ export function applySkinTheme(skinValue: unknown, mode: SkinThemeMode, targetDo
 export function skinCSSVariables(skin: SkinDefinition, mode: SkinThemeMode): Record<string, string> {
     const color = skin.tokens[mode];
     const component = skin.tokens.components;
-    const shadows = skinShadowVariables(component.shadowStyle, mode, color.primary);
+    const shadows = skinShadowVariables(component.shadowStyle, mode);
     return {
         "--background": color.canvas,
         "--foreground": color.text,
@@ -742,7 +742,7 @@ export function skinCSSVariables(skin: SkinDefinition, mode: SkinThemeMode): Rec
         "--icon-muted": color.iconMuted,
         "--icon-active": color.iconActive,
         "--r-sm": `${component.inputRadius}px`,
-        "--r-md": `${component.shadowStyle === "brand" ? component.inputRadius : component.buttonRadius}px`,
+        "--r-md": `${component.buttonRadius}px`,
         "--r-lg": `${component.cardRadius}px`,
         "--r-xl": `${component.overlayRadius}px`,
         "--r-2xl": `${component.overlayRadius}px`,
@@ -764,11 +764,7 @@ export function skinCSSVariables(skin: SkinDefinition, mode: SkinThemeMode): Rec
     };
 }
 
-function skinShadowVariables(style: SkinShadowStyle, mode: SkinThemeMode, primary: string) {
-    if (style === "brand") {
-        const tint = mode === "dark" ? "#00000059" : `${primary.slice(0, 7)}29`;
-        return { "--elevation-card": "none", "--elevation-card-hover": `0 4px 12px ${tint}`, "--elevation-overlay": `0 4px 12px ${tint}`, "--theme-admin-card-shadow": "none" };
-    }
+function skinShadowVariables(style: SkinShadowStyle, mode: SkinThemeMode) {
     if (style === "none") return { "--elevation-card": "none", "--elevation-card-hover": "none", "--elevation-overlay": "none", "--theme-admin-card-shadow": "none" };
     if (style === "strong") {
         return mode === "dark"
@@ -811,5 +807,5 @@ function normalizeSkinMode(value: unknown, fallback: SkinModeTokens): SkinModeTo
 function isSkinComponents(value: unknown): value is SkinComponentTokens {
     if (!value || typeof value !== "object") return false;
     const candidate = value as Record<string, unknown>;
-    return SKIN_COMPONENT_NUMBER_FIELDS.every((field) => typeof candidate[field.key] === "number" && Number.isFinite(candidate[field.key])) && ["none", "soft", "strong", "brand"].includes(String(candidate.shadowStyle));
+    return SKIN_COMPONENT_NUMBER_FIELDS.every((field) => typeof candidate[field.key] === "number" && Number.isFinite(candidate[field.key])) && ["none", "soft", "strong"].includes(String(candidate.shadowStyle));
 }
