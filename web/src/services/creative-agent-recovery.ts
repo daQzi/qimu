@@ -15,12 +15,13 @@ function validate(reply: Reply, context: Context) {
     const scene = typeof input.scenario === "string" && Object.hasOwn(CREATIVE_SCENARIOS, input.scenario) ? input.scenario as CreativeScenarioId : context.state.scene;
     const brief = mergeCreativeBrief(context.state.brief, input.brief, scene, context.latestInput);
     const questions = normalizeCreativeQuestions(input.questions, scene, brief, { interactionId: "validation", revision: 1 }, context.state.references.map((asset) => ({ id: asset.id, label: asset.title })));
-    if (questions.questions.length) return;
+    if (questions.questions.length) return input;
     if (Array.isArray(input.questions) && input.questions.length && !input.proposal) throw new Error("问题均为已知或无效字段。请使用已知答案继续规划，不要重复提问；若缺少其他关键信息，请提出具体的新问题。");
     if (input.proposal) {
         const proposal = normalizeCreativeProposal(input.proposal, "validation", 1, context.config, context.state.references);
         assertCreativeBriefSpecifications(proposal, brief);
     }
+    return input;
 }
 
 function recoveryQuestion(context: Context, error: string): Reply {
@@ -44,7 +45,15 @@ export async function recoverCreativeResponse(initial: Reply, messages: Response
     let protocol = [...messages];
     for (let attempt = 0; attempt <= 2; attempt++) {
         let failure: string;
-        try { validate(reply, context); return reply; }
+        try {
+            const input = validate(reply, context);
+            if (!input) return reply;
+            const call = reply.toolCalls.find((item) => item.function.name === "creative_respond");
+            // 将校验时兼容的根数组写回对象参数，避免展示入口再次读取原始数组而失败。
+            return { ...reply, toolCalls: reply.toolCalls.map((item) => item === call
+                ? { ...item, function: { ...item.function, arguments: JSON.stringify(input) } }
+                : item) };
+        }
         catch (error) { failure = error instanceof Error ? error.message : "交互格式无效"; }
         onProgress(attempt + 1, failure);
         if (attempt === 2) return recoveryQuestion(context, failure);

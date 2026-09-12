@@ -188,7 +188,8 @@ function useCreativePlanDockVisible(plan: CreativePlan | undefined, busy: boolea
         const timer = setTimeout(() => setSettledHidden(true), CREATIVE_PLAN_SETTLE_DELAY_MS);
         return () => clearTimeout(timer);
     }, [busy, finished, settledHidden]);
-    return Boolean(plan?.steps.length) && (!finished || busy || !settledHidden);
+    // 忙碌只暂停尚未结束的收起计时，不能让闲聊重新展示已收起的旧计划。
+    return Boolean(plan?.steps.length) && (!finished || !settledHidden);
 }
 
 export function CanvasAssistantPanel({
