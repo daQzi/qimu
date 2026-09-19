@@ -402,11 +402,15 @@ func (r *Repository) ClaimNextTask(owner string, leaseDuration time.Duration) (*
 		if r.Dialect() != "postgres" {
 			claim = claim.Where("(status = ? OR (status = ? AND (lease_expires_at IS NULL OR lease_expires_at <= ?))) AND (next_poll_at IS NULL OR next_poll_at <= ?)", model.TaskStatusQueued, model.TaskStatusRunning, now, now)
 		}
+		progress := 15
+		if task.Type == model.TaskTypePluginOperation {
+			progress = 0
+		}
 		updated := claim.
 			Updates(map[string]any{
 				"status":           model.TaskStatusRunning,
 				"stage":            "后端接管任务",
-				"progress":         15,
+				"progress":         progress,
 				"attempts":         gorm.Expr("attempts + ?", 1),
 				"started_at":       gorm.Expr("COALESCE(started_at, ?)", now),
 				"lease_owner":      owner,

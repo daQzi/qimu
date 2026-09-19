@@ -106,6 +106,13 @@ func (r *Repository) ResourceReferenceSnapshot(userID string, excludingAssetID s
 	for _, lease := range leases {
 		snapshot.Direct = append(snapshot.Direct, ResourceDirectReference{Kind: "Agent 待执行引用", ID: lease.OwnerID, Title: "已准备的生成输入", ResourceID: lease.ResourceID})
 	}
+	var pluginRefs []model.PluginRunResource
+	if err := r.db.Where("user_id=? AND resource_id IN ?", userID, resourceIDs).Find(&pluginRefs).Error; err != nil {
+		return snapshot, err
+	}
+	for _, ref := range pluginRefs {
+		snapshot.Direct = append(snapshot.Direct, ResourceDirectReference{Kind: "插件任务", ID: ref.RunID, Title: "插件输入/结果", ResourceID: ref.ResourceID})
+	}
 
 	var assets []model.Asset
 	assetQuery := r.db.Where("user_id = ? AND id <> ?", userID, excludingAssetID)

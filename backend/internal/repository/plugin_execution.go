@@ -62,7 +62,7 @@ func (r *Repository) CreatePluginRun(run *model.PluginRun, step *model.PluginRun
 	return r.db.Create(step).Error
 }
 func (r *Repository) SavePluginRun(run *model.PluginRun, expected int64, stepStatus string) error {
-	result := r.db.Model(&model.PluginRun{}).Where("id=? AND user_id=? AND revision=?", run.ID, run.UserID, expected).Updates(map[string]any{"status": run.Status, "revision": run.Revision, "event_sequence": run.EventSequence, "approval_decision": run.ApprovalDecision, "result_json": run.ResultJSON, "source_resource_id": run.SourceResourceID, "projection_status": run.ProjectionStatus, "failure_message": run.FailureMessage, "updated_at": time.Now()})
+	result := r.db.Model(&model.PluginRun{}).Where("id=? AND user_id=? AND revision=?", run.ID, run.UserID, expected).Updates(map[string]any{"status": run.Status, "revision": run.Revision, "event_sequence": run.EventSequence, "approval_decision": run.ApprovalDecision, "result_json": run.ResultJSON, "source_resource_id": run.SourceResourceID, "projection_status": run.ProjectionStatus, "failure_message": run.FailureMessage, "task_id": run.TaskID, "connection_version_id": run.ConnectionVersionID, "updated_at": time.Now()})
 	if result.Error != nil {
 		return result.Error
 	}

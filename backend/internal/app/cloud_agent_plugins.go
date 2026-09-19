@@ -158,6 +158,18 @@ func (s *Service) executeCloudAgentPluginTool(run *model.CloudAgentExecution, st
 			}
 			return map[string]any{"result": result.Result, "reference": result.ResultRef}, nil
 		}
+		if call.Function.Name == "plugin_run_resume" && result.Status == "paused" && result.Remote != nil {
+			if state.Request.PermissionMode == "read_only" {
+				return nil, Forbidden("只读模式不能恢复插件任务")
+			}
+			action := "retry_safe"
+			if result.Remote.State == "import_pending" {
+				action = "retry_import"
+			} else if result.Remote.ProviderJobID != "" {
+				action = "retry_poll"
+			}
+			return service.Resume(run.UserID, args.RunID, args.Revision, action, "")
+		}
 		return result, nil
 	}
 }

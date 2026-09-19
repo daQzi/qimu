@@ -42,6 +42,7 @@ type Manifest struct {
 		Operations       []Contribution `json:"operations,omitempty"`
 		Views            []Contribution `json:"views,omitempty"`
 		CanvasBlueprints []Contribution `json:"canvasBlueprints,omitempty"`
+		Connectors       []Contribution `json:"connectors,omitempty"`
 	} `json:"contributes"`
 }
 type Execution struct {

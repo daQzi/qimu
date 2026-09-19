@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -518,6 +517,13 @@ func (s *Service) cloudAgentExecutionOutput(task *model.Task, initial cloudAgent
 	}
 	for _, order := range orders {
 		out.SpentCredits += float64(order.AmountMicrocredits) / float64(CreditScale)
+	}
+	if state.Request.PluginToolsVersion == 1 {
+		charges, err := s.repo.PluginAgentCharges(task.UserID, run.ID)
+		if err != nil {
+			return nil, err
+		}
+		out.SpentCredits += float64(charges) / float64(CreditScale)
 	}
 	return out, nil
 }
@@ -1238,13 +1244,9 @@ func cloudAgentMediaCall(call cloudAgentCall) cloudAgentCall {
 }
 
 func (s *Service) enqueueCloudAgentTask(run *model.CloudAgentExecution, state *cloudAgentRuntime, req CreateTaskRequest, media *cloudAgentMediaPlan) error {
-	orders, err := s.repo.BillingOrdersByTaskIDs(run.UserID, state.TaskIDs)
+	remaining, err := pluginAgentRemaining(s.repo, run.UserID, run.ID, *state)
 	if err != nil {
 		return err
-	}
-	remaining := int64(math.Floor(state.Request.Budget.MaxCredits * float64(CreditScale)))
-	for _, order := range orders {
-		remaining -= order.AmountMicrocredits
 	}
 	if remaining < 0 {
 		return s.failCloudAgent(run, state, "Agent 累计预算已耗尽")
@@ -1322,6 +1324,13 @@ func (s *Service) enqueueCloudAgentTask(run *model.CloudAgentExecution, state *c
 	s.storageMu.Lock()
 	defer s.storageMu.Unlock()
 	err = s.repo.MutateCloudAgent(run.UserID, run.ID, run.Revision, func(current *model.CloudAgentExecution, repo *repository.Repository) error {
+		remaining, err := pluginAgentRemaining(repo, run.UserID, run.ID, *state)
+		if err != nil {
+			return err
+		}
+		if prepare.Order != nil && prepare.Order.AmountMicrocredits > remaining {
+			return BadAuthRequest("Agent 累计预算不足")
+		}
 		if media != nil {
 			canvas, err := repo.CanvasProjectForUser(run.UserID, state.Request.CanvasID)
 			if err != nil {

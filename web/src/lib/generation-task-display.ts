@@ -6,9 +6,10 @@ export const statusLabel: Record<TaskStatus, string> = {
     succeeded: "已完成",
     failed: "失败",
     cancelled: "已取消",
+    paused: "待恢复",
 };
 
-type GenerationTaskDisplayTarget = Pick<GenerationTask, "status" | "stage">;
+type GenerationTaskDisplayTarget = Pick<GenerationTask, "status" | "stage"> & Partial<Pick<GenerationTask, "type">>;
 
 export function isGenerationTaskSubmissionUncertain(task: GenerationTaskDisplayTarget) {
     return task.stage === "submission_unknown";
@@ -27,6 +28,7 @@ export function generationTaskStageLabel(task: GenerationTaskDisplayTarget) {
 }
 
 export function generationTaskShowsProgress(task: GenerationTaskDisplayTarget) {
+	if (task.type === "plugin_operation") return false;
     if (isGenerationTaskSubmissionUncertain(task)) return false;
     // 排队、后端接管和连接供应商都没有真实百分比。只有上游状态响应
     // 已经写回任务后才显示进度，避免所有图片/视频长期停在同一个假数值。

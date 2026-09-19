@@ -113,3 +113,9 @@ func (s *Service) DecidePluginRun(userID, id, approvalID, decision string, revis
 func (s *Service) CancelPluginRun(userID, id string, revision int64) (plugins.RunView, error) {
 	return s.applicationPlugins().Cancel(userID, id, revision)
 }
+func (s *Service) ResumePluginRun(userID, id string, revision int64, action, providerJobID string) (plugins.RunView, error) {
+	if err := s.pluginOperationAccess(userID); err != nil {
+		return plugins.RunView{}, err
+	}
+	return s.applicationPlugins().Resume(userID, id, revision, action, providerJobID)
+}

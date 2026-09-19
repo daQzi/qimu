@@ -37,6 +37,9 @@ func (s *Service) CreateTask(userID string, req CreateTaskRequest) (*model.Task,
 		return nil, errors.New("prompt is required")
 	}
 	taskType := strings.TrimSpace(req.Type)
+	if taskType == model.TaskTypePluginOperation {
+		return nil, BadAuthRequest("插件任务必须通过插件调用与审批入口创建")
+	}
 	if err := validateTaskType(taskType); err != nil {
 		return nil, err
 	}
@@ -313,7 +316,7 @@ func (s *Service) createTextReplayTask(userID string, req CreateTaskRequest, nor
 // 其他任务类型必须是已实现的执行分支，避免未知类型落入假成功工作流。
 func validateTaskType(taskType string) error {
 	switch taskType {
-	case "text", "canvas_text", "canvas_image", "canvas_video", "canvas_audio":
+	case "text", "canvas_text", "canvas_image", "canvas_video", "canvas_audio", model.TaskTypePluginOperation:
 		return nil
 	}
 	if strings.HasPrefix(taskType, "video_") && strings.TrimPrefix(taskType, "video_") != "" {

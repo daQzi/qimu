@@ -3,6 +3,7 @@ package model
 import "time"
 
 type Task struct {
+	PluginRunID                  *string                  `json:"pluginRunId,omitempty" gorm:"size:36;uniqueIndex"`
 	AgentRunID                   string                   `json:"agentRunId,omitempty" gorm:"size:36;index"`
 	GenerationID                 string                   `json:"generationId,omitempty" gorm:"size:36;index"`
 	ApprovalID                   string                   `json:"approvalId,omitempty" gorm:"size:160"`

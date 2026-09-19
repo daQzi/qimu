@@ -25,7 +25,7 @@ func TestP03ProjectionMigrationPreservesResults(t *testing.T) {
 			if err := db.Migrator().DropTable(&model.PluginCanvasProjection{}); err != nil {
 				t.Fatal(err)
 			}
-			if err := db.Delete(&schemaMigration{}, "version=?", 30).Error; err != nil {
+			if err := db.Delete(&schemaMigration{}, "version>=?", 30).Error; err != nil {
 				t.Fatal(err)
 			}
 			for i := 0; i < 2; i++ {

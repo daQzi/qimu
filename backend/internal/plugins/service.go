@@ -1,5 +1,5 @@
-// Package plugins manages versioned application contributions. P01 installs
-// metadata and skills only; operation execution is deliberately unavailable.
+// Package plugins manages versioned contributions and authorized invocations.
+// Host ports provide local operations and durable remote Task admission.
 package plugins
 
 import (
@@ -22,6 +22,7 @@ import (
 )
 
 type Service struct {
+	remote   RemoteHost
 	adapters map[string]ShortHostAdapter
 	repo     *repository.Repository
 	dataDir  string

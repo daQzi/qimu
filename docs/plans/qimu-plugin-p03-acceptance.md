@@ -1,6 +1,6 @@
 # P03 交付与验收：插件结果卡片与画布绑定
 
-> 状态：代码完成、自动验证通过，待用户验收；P00–P02 已由用户验收通过，P04 尚未开始。
+> 状态：用户已确认 P03 验收通过，提交 `af6e404b` 已合入 `codex/codex-plugin`；当前继续 P04。本文保留 P03 交付时的 schema 30 和验收记录。
 > 阶段分支：`codex/plugin-p03-canvas-results`，独立 worktree；开始时已核对并同步 local main `308cf424`（v1.5.4）。完成后合入 `codex/codex-plugin`，不合并 main、不推送。
 
 ## 1. 本阶段交付

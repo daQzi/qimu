@@ -91,6 +91,10 @@ func (s *Service) loadPackage(release model.PluginRelease) (contracts.PackageFil
 	return pkg.Files, nil
 }
 
+func (s *Service) LoadReleasePackage(release model.PluginRelease) (contracts.PackageFiles, error) {
+	return s.loadPackage(release)
+}
+
 // PruneOrphans only touches old, content-addressed application archives that
 // no release references. Historical/uninstalled releases still retain files.
 func (s *Service) PruneOrphans(dryRun bool) ([]string, error) {

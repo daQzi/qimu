@@ -1,0 +1,24 @@
+{
+  "id": "preview",
+  "description": "调用远程异步媒体服务，按原任务 ID 恢复查询和导入",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/output.json",
+  "requiredPermissions": [
+    "connection.use",
+    "resource.create"
+  ],
+  "effects": [
+    "external_write"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "http",
+    "mode": "task",
+    "connector": "api",
+    "action": "preview"
+  },
+  "resultView": "message"
+}

@@ -20,6 +20,44 @@ const fail = (reason: string, location: string): never => {
 const validator = new Ajv2020({ strict: false, validateFormats: false, allErrors: false, ownProperties: true });
 validator.addSchema(schema);
 const encoder = new TextEncoder();
+
+function validateHTTPConnector(c: ObjectValue) {
+    const name = /^[A-Za-z][A-Za-z0-9_-]{0,79}$/;
+    const header = /^[A-Za-z][A-Za-z0-9-]{0,79}$/;
+    const forbidden = (h: string) => ["authorization", "cookie", "host", "content-type", "content-length", "connection", "transfer-encoding", "proxy-authorization", "proxy-connection"].includes(h.toLowerCase());
+    const pointer = (p: string) => p.startsWith("/") && p.length <= 500 && !/[\r\n]/.test(p);
+    let base: URL; try { base = new URL(c.baseUrl); } catch { return fail("contract_invalid", "connector baseUrl"); }
+    if (base.protocol !== "https:" || !base.hostname || base.username || base.password || base.search || base.hash) fail("contract_invalid", "connector baseUrl");
+    if (c.auth.type === "header" && (!header.test(c.auth.header || "") || forbidden(c.auth.header))) fail("contract_invalid", "auth header");
+    if (c.auth.type !== "header" && c.auth.header) fail("contract_invalid", "unexpected auth header");
+    for (const a of Object.values(c.actions) as ObjectValue[]) {
+        const async = !!a.jobIdPath;
+        if (async !== !!a.poll || async !== !!a.statusPath || async !== !!Object.keys(a.statusMap || {}).length) fail("contract_invalid", "async job contract");
+        if (!async && (a.lookup || a.cancellation.mode !== "unsupported")) fail("contract_invalid", "sync recovery/cancellation");
+        for (const p of [a.jobIdPath, a.statusPath, ...Object.values(a.outputs)] as string[]) if (p && !pointer(p)) fail("contract_invalid", "response pointer");
+        if (a.artifact && (!pointer(a.artifact.urlPath) || !name.test(a.artifact.field) || Object.hasOwn(a.outputs, a.artifact.field))) fail("contract_invalid", "artifact mapping");
+        for (const field of [...Object.keys(a.outputs), ...Object.keys(a.resources || {})]) if (!name.test(field)) fail("contract_invalid", "mapping field");
+        if (a.idempotency.mode === "header" && (!header.test(a.idempotency.header || "") || forbidden(a.idempotency.header) || a.idempotency.header.toLowerCase() === (c.auth.header || "").toLowerCase() || !a.idempotency.retentionSeconds)) fail("contract_invalid", "idempotency header/window");
+        if (a.idempotency.mode === "unsupported" && a.idempotency.header) fail("contract_invalid", "unsupported idempotency header");
+        if ((a.cancellation.mode === "request") !== !!a.cancellation.request) fail("contract_invalid", "cancel request");
+        for (const [kind, r] of Object.entries({ submit: a.submit, poll: a.poll, lookup: a.lookup, cancel: a.cancellation.request }) as [string, ObjectValue][]) {
+            if (!r) continue;
+            if (!r.path.startsWith("/") || r.path.startsWith("//") || /[?#\\\r\n%]/.test(r.path) || r.path.includes("..")) fail("contract_invalid", "HTTP path");
+            const token = kind === "lookup" ? "{submissionKey}" : kind === "submit" ? "" : "{jobId}";
+            if (token && !r.path.includes(token)) fail("contract_invalid", "HTTP path variable");
+            if (/[{}]/.test(token ? r.path.split(token).join("id") : r.path)) fail("contract_invalid", "HTTP path variable");
+            if ((kind === "submit" && r.method !== "POST") || (["poll", "lookup"].includes(kind) && r.method !== "GET") || (kind === "cancel" && !["POST", "DELETE"].includes(r.method))) fail("contract_invalid", "HTTP method");
+            if (kind !== "submit" && Object.keys(r.body || {}).length) fail("contract_invalid", "only submit maps body");
+            for (const [field, b] of Object.entries(r.body || {}) as [string, ObjectValue][]) {
+                if (!name.test(field)) fail("contract_invalid", "body field");
+                if (Object.hasOwn(b, "literal")) continue;
+                if (b.from?.startsWith("input.") && name.test(b.from.slice(6))) continue;
+                if (b.from?.startsWith("resource.") && Object.hasOwn(a.resources || {}, b.from.slice(9))) continue;
+                fail("contract_invalid", "unsupported mapping");
+            }
+        }
+    }
+}
 type ObjectValue = Record<string, any>;
 export type PluginTextPackage = Record<string, string>;
 
@@ -145,7 +183,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
     }
     const contributions = manifest.contributes;
     const registry: Record<string, Set<string>> = Object.create(null);
-    for (const kind of ["skills", "operations", "views", "canvasBlueprints"]) {
+    for (const kind of ["skills", "operations", "views", "canvasBlueprints", "connectors"]) {
         registry[kind] = new Set();
         for (const entry of contributions[kind] ?? []) {
             if (registry[kind].has(entry.id)) fail("contract_invalid", "duplicate contribution");
@@ -157,7 +195,8 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                 if (!target.endsWith("/SKILL.md") || !files[target]) fail("contract_invalid", "skill entry");
                 continue;
             }
-            validatePluginContract(({ operations: "operation", views: "view", canvasBlueprints: "blueprint" } as Record<string, string>)[kind], files[target]);
+            validatePluginContract(({ operations: "operation", views: "view", canvasBlueprints: "blueprint", connectors: "httpConnector" } as Record<string, string>)[kind], files[target]);
+            if (kind === "connectors") validateHTTPConnector(docs[target]);
             if (docs[target].id !== entry.id) fail("contract_invalid", "contribution id mismatch");
         }
     }
@@ -170,6 +209,15 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         requireSchema(op.outputSchemaRef);
         for (const p of op.requiredPermissions) if (!manifest.permissions.includes(p)) fail("scope_forbidden", "permission exceeds manifest");
         if (op.resultView && !registry.views.has(op.resultView)) fail("package_reference_invalid", op.resultView);
+        if (op.execution.kind === "http") {
+            const ref = contributions.connectors?.find((r: ObjectValue) => r.id === op.execution.connector);
+            if (!ref) fail("operation_unavailable", "HTTP connector not registered");
+            const actions = docs[ref.ref].actions;
+            const action = Object.hasOwn(actions, op.execution.action) ? actions[op.execution.action] : undefined;
+            if (!action) fail("package_reference_invalid", "connector action");
+            if (!op.requiredPermissions.includes("connection.use") || (Object.keys(action.resources || {}).length && !op.requiredPermissions.includes("media.read")) || (action.artifact && !op.requiredPermissions.includes("resource.create")) || op.effects.length !== 1 || !["external_write", "generation"].includes(op.effects[0])) fail("scope_forbidden", "HTTP operation effects and permissions");
+            continue;
+        }
         if (op.execution.kind !== "host" || !["resource.inspect", "resource.snapshot", "canvas.blueprint.instantiate"].includes(op.execution.adapter) || op.execution.mode !== "inline") fail("operation_unavailable", "host adapter profile");
         const snapshot = op.execution.adapter === "resource.snapshot";
         const projection = op.execution.adapter === "canvas.blueprint.instantiate";

@@ -263,6 +263,14 @@
               "minItems": 1,
               "maxItems": 32
             },
+            "connectors": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contribution"
+              },
+              "minItems": 1,
+              "maxItems": 16
+            },
             "canvasBlueprints": {
               "type": "array",
               "items": {
@@ -552,6 +560,253 @@
         "id",
         "nodes",
         "connections"
+      ],
+      "additionalProperties": false
+    },
+    "httpBinding": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "literal": {}
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "pattern": "^(input|resource)\\.[A-Za-z][A-Za-z0-9_-]{0,79}$"
+            }
+          },
+          "required": [
+            "from"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "httpRequest": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "enum": [
+            "POST",
+            "GET",
+            "DELETE"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "body": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "$ref": "#/$defs/httpBinding"
+          }
+        }
+      },
+      "required": [
+        "method",
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "httpAction": {
+      "type": "object",
+      "properties": {
+        "submit": {
+          "$ref": "#/$defs/httpRequest"
+        },
+        "poll": {
+          "$ref": "#/$defs/httpRequest"
+        },
+        "lookup": {
+          "$ref": "#/$defs/httpRequest"
+        },
+        "jobIdPath": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "statusPath": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "statusMap": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 32,
+          "additionalProperties": {
+            "enum": [
+              "pending",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ]
+          }
+        },
+        "outputs": {
+          "type": "object",
+          "maxProperties": 32,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "resources": {
+          "type": "object",
+          "maxProperties": 8,
+          "additionalProperties": {
+            "enum": [
+              "image",
+              "video",
+              "audio"
+            ]
+          }
+        },
+        "artifact": {
+          "type": "object",
+          "properties": {
+            "urlPath": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "field": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "kind": {
+              "enum": [
+                "image",
+                "video",
+                "audio"
+              ]
+            }
+          },
+          "required": [
+            "urlPath",
+            "field",
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        "idempotency": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "unsupported",
+                "header"
+              ]
+            },
+            "header": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "retentionSeconds": {
+              "type": "integer",
+              "minimum": 60,
+              "maximum": 86400
+            }
+          },
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false
+        },
+        "cancellation": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "unsupported",
+                "request"
+              ]
+            },
+            "request": {
+              "$ref": "#/$defs/httpRequest"
+            }
+          },
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "submit",
+        "outputs",
+        "idempotency",
+        "cancellation"
+      ],
+      "additionalProperties": false
+    },
+    "httpConnector": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "transport": {
+          "const": "http"
+        },
+        "baseUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "none",
+                "bearer",
+                "header"
+              ]
+            },
+            "header": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        "actions": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 16,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9-]{0,79}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/httpAction"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "transport",
+        "baseUrl",
+        "auth",
+        "actions"
       ],
       "additionalProperties": false
     },
@@ -1153,7 +1408,10 @@
             "kind": {
               "const": "inline"
             },
-            "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+            "digest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
             "result": {}
           },
           "required": [

@@ -11,6 +11,7 @@ import { PageHeader, PaginationBar, WorkspacePage } from "@/components/layout/wo
 import { WorkspaceState } from "@/components/layout/workspace-state";
 import { CONTENT_MODERATION_ERROR_CODE, generationErrorMessage, isContentModerationError } from "@/lib/generation-error";
 import { formatTaskKind, operationOptions, statusLabel } from "@/lib/generation-task-display";
+import { PluginRunCard } from "@/components/plugins/plugin-run-card";
 import { buildVideoOperationPrompt } from "@/lib/prompts";
 import { backendProviderConfig, logicalModelIDForConfig } from "@/services/api/generation-task";
 
@@ -104,7 +105,7 @@ export default function TasksPage() {
     const filteredTasks = useMemo(() => tasks.filter((task) => {
         if (statusFilter === "all") return true;
         if (statusFilter === "active") return task.status === "queued" || task.status === "running";
-        if (statusFilter === "failed") return task.status === "failed" || task.status === "cancelled";
+        if (statusFilter === "failed") return task.status === "failed" || task.status === "cancelled" || task.status === "paused";
         if (statusFilter === "succeeded") return task.status === "succeeded";
         return false;
     }).filter((task) => {
@@ -150,7 +151,7 @@ export default function TasksPage() {
     };
 
     const retryGroupTasks = async (key: string, items: GenerationTask[]) => {
-        const retryable = items.filter((task) => isTaskFailed(task) && task.errorCode !== CONTENT_MODERATION_ERROR_CODE && !isContentModerationError(task.error));
+        const retryable = items.filter((task) => !task.pluginRunId && isTaskFailed(task) && task.errorCode !== CONTENT_MODERATION_ERROR_CODE && !isContentModerationError(task.error));
         if (!retryable.length) return;
         setRetryingGroup(key);
         try {
@@ -483,6 +484,7 @@ export default function TasksPage() {
                     <div className="space-y-5">
                         <div className="task-detail-facts grid text-sm sm:grid-cols-2">
                             <InfoItem label="状态" value={statusLabel[detailTask.status]} />
+                            {detailTask.pluginRunId && <div className="col-span-full"><PluginRunCard runId={detailTask.pluginRunId} canvasId={detailTask.projectId} /></div>}
                             <InfoItem label="画布名称" value={getTaskCanvasContext(detailTask, canvasById, domainProjectNameById).canvasName} />
                             <InfoItem label="任务类型" value={formatTaskKind(detailTask)} />
                             <InfoItem label="模型" value={formatModelName(effectiveConfig, detailTask)} />

@@ -25,6 +25,7 @@ export function taskAttentionReason(task: GenerationTask) {
 }
 
 export function providerCancelStatusLabel(task: GenerationTask) {
+	if(task.pluginRunId) return "本地处理已停止，上游取消与供应商费用请查看插件运行";
     if (task.providerCancelStatus === "requested") return "已请求上游取消，正在等待确认";
     if (task.providerCancelStatus === "confirmed") return "上游已确认取消，积分已退回";
     if (task.providerCancelStatus === "uncertain") {

@@ -5,10 +5,10 @@ description: 启幕 Agent 应用插件的包合同、操作、技能、远程 AP
 
 # 应用插件 v3 开发与接入指南
 
-> 状态：按阶段实施的接入规范。P00–P02 已验收；P03 新增 canvas.blueprint.instantiate、标准 plugin-result 节点和声明式结果卡片。Pipeline、HTTP Connector、表单及长任务仍未开放。
+> 状态：P00–P03 已验收；P04 开放受控 HTTP Connector 和 plugin_operation 单任务，通用机制待用户验收。Pipeline、表单与任意代码运行尚未开放，真实供应商尚待选择和联调。
 > 本文示例不包含真实服务或密钥。带 `example.invalid` 的地址只说明协议结构；真实模型选择和质量验证属于应用接入工作。
 
-P00 已实现离线合同校验；P01 在现有上传入口按版本分流；P02 开放两个可信 Host Adapter，见[P02 验收说明](../../../plans/qimu-plugin-p02-acceptance.md)。当前 profile 比目标规范更窄：仅精确三段正式版本，包贡献限技能/操作/基础视图/结果蓝图；HTTP/Pipeline 仅有独立合同、不允许安装执行。旧协议解析器仍不直接接收 v3，应用包由独立领域服务处理。
+P00 实现离线合同校验，P01 在现有上传入口按版本分流，P02/P03 开放三个可信 Host Adapter，P04 开放 HTTP 单任务。当前 profile 接受技能、操作、基础视图、结果蓝图和受控 connectors，仍不接受 Pipeline 执行或任意代码。旧协议解析器不直接接收 v3，应用包由独立领域服务处理。
 
 P03 开放第三个可信 Host Adapter `canvas.blueprint.instantiate`，见[P03 验收说明](../../../plans/qimu-plugin-p03-acceptance.md)。插件作者通过声明操作、视图、蓝图及技能使用该能力，不需要修改 Agent 主循环。只有新增宿主执行类别时才需要实现并注册新的可信 Adapter。
 
@@ -239,6 +239,14 @@ HTTP 使用 `POST /api/plugin-invocations` 并带幂等键；按钮可以从 `GE
 
 ## 4. 接入一个真实远程 API
 
+P04 当前可执行合同以 `backend/internal/plugins/contracts/testdata/remote-helper-p04/` 为准，安装包与完整页面验收见 [P04 验收说明](../../../plans/qimu-plugin-p04-acceptance.md)。Manifest 新增 `contributes.connectors`，operation 使用 `execution.kind=http/mode=task`、connector、action。必须声明 connection.use 与 external_write/generation；资源输入另需 media.read，媒体输出另需 resource.create。
+
+当前映射使用 `input.<字段>` 与 `resource.<字段>`，后者在 `resources` 中声明 image/video/audio，宿主验证归属后准备临时地址。结果 `outputs` 把目标字段映射到响应 JSON Pointer；`artifact={urlPath,field,kind}` 声明一份需导入的媒体，宿主用资源对象替换临时地址。原始 URL 和密钥不能出现在公开结果。
+
+Idempotency 的 header 模式必须提供 header 与 retentionSeconds（60–86400），恢复保留同一键和同一正文；lookup 为 GET `/requests/{submissionKey}` 之类的受控查询。没有这两种能力时提交不明进入 paused。Cancellation 的 request 模式声明受控请求，仍需通过 statusPath/statusMap 读取取消确认；收到 HTTP 成功回执不代表已取消。
+
+用户连接经后端加密存储并固定修订，插件包不含真实 Key。管理员服务费以每次成功结果固定微积分配置，批准时预留；用户 Key 的供应商费用单独展示，不由该账务估算或退款。结果导入失败只恢复原任务查询/导入；普通 Task 重试不能重新发起生成。
+
 ### 4.1 接入前记录服务合同
 
 作者必须确认同步/异步协议、认证、输入上传方式、请求大小、状态值、幂等/查询语义、取消、结果有效期、计价和错误类型。支持视频生成不等于支持深度、姿态或遮罩输入。
@@ -254,14 +262,14 @@ HTTP 使用 `POST /api/plugin-invocations` 并带幂等键；按钮可以从 `GE
   "id": "depth-api",
   "transport": "http",
   "baseUrl": "https://depth.example.invalid",
-  "auth": { "type": "bearer", "credentialSlot": "apiKey" },
+  "auth": { "type": "bearer" },
   "actions": {
     "estimate": {
       "submit": {
         "method": "POST",
         "path": "/jobs",
         "body": {
-          "video_url": { "from": "prepared.sourceVideoUrl" }
+          "video_url": { "from": "resource.sourceVideo" }
         }
       },
       "jobIdPath": "/id",
@@ -273,7 +281,9 @@ HTTP 使用 `POST /api/plugin-invocations` 并带幂等键；按钮可以从 `GE
         "completed": "succeeded",
         "failed": "failed"
       },
-      "resultPath": "/output",
+      "resources": { "sourceVideo": "video" },
+      "outputs": { "summary": "/output/summary" },
+      "artifact": { "urlPath": "/output/depth_url", "field": "depthVideo", "kind": "video" },
       "idempotency": { "mode": "unsupported" },
       "cancellation": { "mode": "unsupported" }
     }
@@ -283,7 +293,7 @@ HTTP 使用 `POST /api/plugin-invocations` 并带幂等键；按钮可以从 `GE
 
 此例明确不支持幂等和取消，提交网络超时进入 unknown 待核实；不能拿它测试“自动安全重试”。实际服务支持幂等时才声明具体 Header/字段及查询端点，并做联调证明。
 
-`from` 只引用规范输入或宿主准备值；路径参数按 URL segment 编码；禁止任意模板表达式或 JS。响应路径使用 JSON Pointer，状态值未知即协议错误。HTTP transport 调用已有出站防护；初始 URL、重定向和结果下载 URL 都检查。大文件优先受控上传或短期签名地址，不把鉴权 URL 放入模型上下文。
+`from` 只引用 input 中的字段或 resources 声明的用户资源；路径参数按 URL segment 编码；禁止任意模板表达式或 JS。响应路径使用 JSON Pointer，状态值未知时暂停核实。HTTP transport 使用已有出站防护，鉴权 API 不跟随重定向，结果下载每次重定向重新检查。媒体资源以宿主签发的短期地址发送，不把鉴权 URL 放入模型上下文。
 
 Operation 执行绑定示例：
 
@@ -388,7 +398,7 @@ Pipeline 文件声明 `id/inputSchemaRef/outputSchemaRef/steps/outputs`。首期
 
 ## 7. 内部接口与实施状态
 
-以下均为登录态内部 API，不是对外开放平台。P02 已实现操作检索/描述/调用、Run 查询、批准与取消；输入、resume、SSE、派生、分页大结果和 Connection 仍是后续目标。不覆盖现有 `/api/plugins`、`/api/agent` 或 `/api/creation-runs`。
+以下均为登录态内部 API，不是对外开放平台。P02 实现操作检索/描述/调用、Run 查询、批准与取消；P04 实现连接管理及受控 resume。输入、SSE、派生和分页大结果仍是后续目标。不覆盖现有 `/api/plugins`、`/api/agent` 或 `/api/creation-runs`。
 
 P03 新增 `/api/plugin-canvases/:id/snapshot` 和 Run 的 `viewId` 查询参数；投影继续复用已有调用与审批接口，不新增一套执行器。下面表格同时包含未来接口，只有上述已实现路径可实际调用。
 
@@ -405,7 +415,7 @@ P03 新增 `/api/plugin-canvases/:id/snapshot` 和 Run 的 `viewId` 查询参数
 | POST `/api/plugin-runs/:id/derive` | 修改输入后派生运行 |
 | GET `/api/plugin-runs/:id/events?after=` | SSE 重放 |
 | GET `/api/plugin-runs/:id/results/:resultId?cursor=` | 分页读取结果 |
-| GET/POST `/api/plugin-connections` | 当前用户连接列表/建立连接 |
+| GET/PUT `/api/plugin-connections` | 当前用户连接列表/保存新修订（P04 已实现） |
 | PATCH `/api/plugin-connections/:id` | 更新连接配置；服务端控制 secret 写入及脱敏返回 |
 
 创建调用体示例：

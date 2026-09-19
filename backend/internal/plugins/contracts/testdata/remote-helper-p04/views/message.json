@@ -1,0 +1,15 @@
+{
+  "id": "message",
+  "component": "key-value/v1",
+  "schemaRef": "schemas/output.json",
+  "fields": [
+    {
+      "path": "/message",
+      "label": "结果说明"
+    },
+    {
+      "path": "/preview/resourceId",
+      "label": "已导入资源"
+    }
+  ]
+}

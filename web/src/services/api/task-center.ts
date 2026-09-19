@@ -5,7 +5,7 @@ import { recordDiagnosticEvent } from "@/services/diagnostics/client-diagnostics
 
 export type { BackendEnvelope } from "@/services/api/request";
 
-export type TaskStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
+export type TaskStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "paused";
 export type TaskBillingStatus = "reserved" | "running" | "settled" | "refunded" | "uncertain";
 export type ProviderCancelStatus = "requested" | "confirmed" | "uncertain";
 export type GenerationTaskResultState = "NOT_AVAILABLE" | "PENDING_MATERIALIZATION" | "MATERIALIZING" | "READY" | "FAILED_RETRYABLE" | "FAILED_PERMANENT";
@@ -18,6 +18,7 @@ export type GenerationTaskOutput = {
 };
 
 export type GenerationTask = {
+	pluginRunId?: string;
     id: string;
     clientOperationId?: string;
     retryOf?: string;
@@ -509,7 +510,7 @@ function numberValue(value: unknown) {
 }
 
 function isTaskStatus(value: unknown): value is TaskStatus {
-    return value === "queued" || value === "running" || value === "succeeded" || value === "failed" || value === "cancelled";
+    return value === "queued" || value === "running" || value === "succeeded" || value === "failed" || value === "cancelled" || value === "paused";
 }
 
 class TaskTextStreamFatalError extends Error {

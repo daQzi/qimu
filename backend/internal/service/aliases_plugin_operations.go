@@ -7,3 +7,5 @@ type PluginOperationContext = app.PluginOperationContext
 type PluginOperationDescription = app.PluginOperationDescription
 type PluginInvocationOutput = app.PluginInvocationOutput
 type PluginRunView = app.PluginRunView
+type PluginConnectionInput = app.PluginConnectionInput
+type PluginOperationPriceInput = app.PluginOperationPriceInput

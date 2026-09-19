@@ -4,6 +4,7 @@ import { useUserStore } from "@/stores/use-user-store";
 import { cancelPluginRun, decidePluginRun, getPluginRun, type PluginRunView } from "@/services/api/plugin-operations";
 import { PluginResultValues } from "./plugin-result-values";
 import { PluginCanvasSave } from "./plugin-canvas-save";
+import { PluginRemoteStatus } from "./plugin-remote-status";
 import { refreshCanvasAfterAgent, saveRemoteUserDataNow } from "@/services/user-data-sync";
 
 export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { runId: string; canvasId?: string; expectedDigest?: string; viewId?: string }) {
@@ -17,7 +18,9 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
     const [refresh, setRefresh] = useState(0);
     const [projection, setProjection] = useState<{ scope: string; id: string }>();
     const run = loaded?.scope === scope ? loaded.run : undefined;
-    const statusLabel = run ? ({ waiting_approval: "等待确认", succeeded: "已完成", cancelled: "已取消", failed: "执行失败", running: "执行中", queued: "排队中" }[run.status] || run.status) : "读取中";
+    useEffect(() => { if (!run?.remote || !["running", "cancelling"].includes(run.status) || busy) return; const timer = setInterval(() => setRefresh((v) => v + 1), 3000); return () => clearInterval(timer); }, [scope, run?.status, !!run?.remote, busy]);
+    const statusLabel = run ? ({ waiting_approval: "等待确认", succeeded: "已完成", cancelled: "已取消", failed: "执行失败", running: "执行中", queued: "排队中", paused: "待恢复", cancelling: "正在停止" }[run.status] || run.status) : "读取中";
+    useEffect(() => { if (run?.remote && ["running", "succeeded", "failed", "cancelled"].includes(run.status)) window.dispatchEvent(new CustomEvent("wallet:updated")); }, [scope, run?.status, !!run?.remote]);
     useEffect(() => {
         const controller = new AbortController();
         setError("");
@@ -66,7 +69,8 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
                 <>
                     <p className="break-all">{run.operation} · {run.releaseVersion}</p>
                     {run.failureMessage && <p role="alert" className="text-destructive">{run.failureMessage}</p>}
-                    <PluginResultValues value={run.result ?? run.preview} view={run.view} />
+                    {run.executionAdapter === "http" && <PluginRemoteStatus key={scope} run={run} onUpdated={(value) => { if (currentScope.current === scope) setLoaded({ scope, run: value }); }} />}
+                    {(run.executionAdapter !== "http" || run.status === "succeeded") && <PluginResultValues value={run.result ?? run.preview} view={run.view} />}
                     {canvasId && run.status === "succeeded" && run.canvasActions?.map((action) => <PluginCanvasSave key={`${scope}:${action.operation}:${action.blueprintId}`} run={run} canvasId={canvasId} action={action} onCreated={(id) => setProjection({ scope, id })} />)}
                     {canvasId && run.executionAdapter === "canvas.blueprint.instantiate" && run.status === "succeeded" && <Button size="small" onClick={() => void refreshCanvasAfterAgent(canvasId).catch((cause) => setError(cause instanceof Error ? cause.message : "画布同步失败"))}>同步画布结果</Button>}
                 </>
@@ -74,7 +78,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
             {run?.status === "waiting_approval" && (
                 <div className="flex flex-wrap gap-2">
                     <Button size="small" type="primary" loading={busy} onClick={() => void act("approve")}>
-                        {run.executionAdapter === "canvas.blueprint.instantiate" ? "确认保存到画布" : "确认保存快照"}
+                        {run.executionAdapter === "http" ? "确认发送并执行" : run.executionAdapter === "canvas.blueprint.instantiate" ? "确认保存到画布" : "确认保存快照"}
                     </Button>
                     <Button size="small" disabled={busy} onClick={() => void act("reject")}>
                         拒绝
@@ -85,6 +89,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
                 </div>
             )}
             {projection?.scope === scope && <PluginRunCard key={projection.id} runId={projection.id} canvasId={canvasId} />}
+            {run?.remote && ["running", "paused"].includes(run.status) && <Button size="small" loading={busy} onClick={() => void act("cancel")}>停止此任务</Button>}
         </section>
     );
 }

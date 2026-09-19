@@ -18,7 +18,7 @@ type ApplicationPluginView = plugins.ApplicationView
 
 func (s *Service) applicationPlugins() *plugins.Service {
 	setting := strings.ToLower(strings.TrimSpace(os.Getenv("CANVAS_APPLICATION_PLUGINS_ENABLED")))
-	return plugins.New(s.repo, s.dataDir, setting == "" || setting == "true" || setting == "1").WithAdapters(pluginHostAdapters())
+	return plugins.New(s.repo, s.dataDir, setting == "" || setting == "true" || setting == "1").WithAdapters(pluginHostAdapters()).WithRemoteHost(pluginRemoteHost{svc: s})
 }
 func (s *Service) ApplicationPlugins(actor *model.User) ([]ApplicationPluginView, error) {
 	if actor == nil || actor.ID == "" {

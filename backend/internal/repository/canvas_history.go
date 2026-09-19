@@ -152,7 +152,11 @@ func (r *Repository) RequireNoRetainedResourceReferences(resourceIDs []string) e
 	if err := r.db.Model(&model.PluginRun{}).Where("source_resource_id IN ?", resourceIDs).Count(&pluginReferences).Error; err != nil {
 		return err
 	}
-	if pluginReferences > 0 {
+	var remoteReferences int64
+	if err := r.db.Model(&model.PluginRunResource{}).Where("resource_id IN ?", resourceIDs).Count(&remoteReferences).Error; err != nil {
+		return err
+	}
+	if pluginReferences+remoteReferences > 0 {
 		return ErrPluginRunResourceReferenced
 	}
 	return nil

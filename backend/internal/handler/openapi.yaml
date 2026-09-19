@@ -139,6 +139,96 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /plugin-connections:
+    get:
+      tags: [agent]
+      summary: 当前用户的加密连接配置（仅返回是否已配置凭据）
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+    put:
+      tags: [agent]
+      summary: 保存用户连接的新修订，旧任务继续使用旧修订
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pluginId, connectorId, baseUrl, enabled, revision]
+              additionalProperties: false
+              properties:
+                pluginId: {type: string}
+                connectorId: {type: string}
+                name: {type: string, maxLength: 120}
+                baseUrl: {type: string, maxLength: 4096}
+                credential: {type: string, maxLength: 8192, writeOnly: true}
+                enabled: {type: boolean}
+                revision: {type: integer, minimum: 0}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "409":
+          $ref: "#/components/responses/Error"
+  /admin/plugin-operation-prices/{releaseId}/{operationId}:
+    get:
+      tags: [agent]
+      summary: 管理员读取插件平台服务费
+      parameters:
+        - {name: releaseId, in: path, required: true, schema: {type: string}}
+        - {name: operationId, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "403":
+          $ref: "#/components/responses/Error"
+  /admin/plugin-operation-prices:
+    put:
+      tags: [agent]
+      summary: 管理员设置按成功结果结算的固定平台服务费
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releaseId, operationId, feeMicrocredits, revision]
+              additionalProperties: false
+              properties:
+                releaseId: {type: string}
+                operationId: {type: string}
+                feeMicrocredits: {type: integer, minimum: 0, maximum: 1000000000}
+                revision: {type: integer, minimum: 0}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugin-runs/{id}/resume:
+    post:
+      tags: [agent]
+      summary: 恢复已批准的原插件任务，不绕过报价新建生成
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, action]
+              additionalProperties: false
+              properties:
+                revision: {type: integer}
+                action: {type: string, enum: [retry_safe, attach_job, retry_import, retry_poll]}
+                providerJobId: {type: string, maxLength: 160}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "409":
+          $ref: "#/components/responses/Error"
   /plugin-operations:
     get:
       tags: [agent]

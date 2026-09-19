@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "preview": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "type": "string"
+        },
+        "kind": {
+          "const": "image"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "resourceId",
+        "kind",
+        "mimeType",
+        "bytes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "message"
+  ],
+  "additionalProperties": false
+}

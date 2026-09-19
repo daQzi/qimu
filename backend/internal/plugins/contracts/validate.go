@@ -257,7 +257,7 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 	}
 	contributes := manifest["contributes"].(map[string]any)
 	registry := map[string]map[string]bool{}
-	for _, kind := range []string{"skills", "operations", "views", "canvasBlueprints"} {
+	for _, kind := range []string{"skills", "operations", "views", "canvasBlueprints", "connectors"} {
 		registry[kind] = map[string]bool{}
 		entries, _ := contributes[kind].([]any)
 		for _, v := range entries {
@@ -289,12 +289,17 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 				}
 				continue
 			}
-			typ := map[string]string{"operations": "operation", "views": "view", "canvasBlueprints": "blueprint"}[kind]
+			typ := map[string]string{"operations": "operation", "views": "view", "canvasBlueprints": "blueprint", "connectors": "httpConnector"}[kind]
 			if err := Validate(typ, raw); err != nil {
 				return err
 			}
 			if docs[p]["id"] != id {
 				return invalid("contract_invalid", "contribution id mismatch")
+			}
+			if kind == "connectors" {
+				if err := ValidateHTTPConnector(raw); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -319,6 +324,34 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 			return invalid("package_reference_invalid", view)
 		}
 		execution := op["execution"].(map[string]any)
+		if execution["kind"] == "http" {
+			connectorID := execution["connector"].(string)
+			if !registry["connectors"][connectorID] {
+				return invalid("operation_unavailable", "HTTP connector not registered")
+			}
+			var connector HTTPConnector
+			for _, ref := range asArray(contributes["connectors"]) {
+				entry := ref.(map[string]any)
+				if entry["id"] == connectorID {
+					if err := json.Unmarshal(files[entry["ref"].(string)], &connector); err != nil {
+						return err
+					}
+				}
+			}
+			action, ok := connector.Actions[execution["action"].(string)]
+			if !ok {
+				return invalid("package_reference_invalid", "connector action")
+			}
+			permissions := map[string]bool{}
+			for _, p := range asArray(op["requiredPermissions"]) {
+				permissions[p.(string)] = true
+			}
+			effects := asArray(op["effects"])
+			if !permissions["connection.use"] || (len(action.Resources) > 0 && !permissions["media.read"]) || (action.Artifact != nil && !permissions["resource.create"]) || len(effects) != 1 || (effects[0] != "external_write" && effects[0] != "generation") {
+				return invalid("scope_forbidden", "HTTP operation effects and permissions")
+			}
+			continue
+		}
 		// Installation validates the admitted host contract, never permissions
 		// invented by a package. Execution repeats the host minimum checks.
 		if execution["kind"] != "host" || (execution["adapter"] != "resource.inspect" && execution["adapter"] != "resource.snapshot" && execution["adapter"] != "canvas.blueprint.instantiate") || execution["mode"] != "inline" {

@@ -2,6 +2,7 @@ import { App, Button, Checkbox, Select } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserStore } from "@/stores/use-user-store";
 import { PluginOperationTester } from "./plugin-operation-tester";
+import { PluginRemotePanel } from "./plugin-remote-panel";
 import { activateApplicationPlugin, fetchApplicationPlugins, manageApplicationPlugin, type ApplicationPlugin } from "@/services/api/application-plugins";
 
 const reasonLabels: Record<string, string> = {
@@ -200,6 +201,7 @@ export function ApplicationPluginsPanel({ admin = false, refreshToken = 0 }: { a
                             </ul>
                         </details>
                         <PluginOperationTester key={release.id} pluginId={item.id} release={release} />
+                        {!!release.manifest.contributes.connectors?.length && <PluginRemotePanel key={`${userID}:${release.id}:remote`} pluginId={item.id} release={release} admin={admin} />}
                     </article>
                 );
             })}

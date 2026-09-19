@@ -12,6 +12,7 @@ import (
 // TaskSummary 是任务列表/会话详情的读模型，不直接复用数据库 Task，避免把
 // 渠道模型、供应线路和受保护输入泄露到普通用户接口。
 type TaskSummary struct {
+	PluginRunID               *string                    `json:"pluginRunId,omitempty"`
 	ID                        string                     `json:"id"`
 	ProjectID                 string                     `json:"projectId,omitempty"`
 	Type                      string                     `json:"type"`
@@ -102,6 +103,7 @@ func taskSummaryForOutput(task model.Task) TaskSummary {
 	}
 	previewURL, previewKind, previewPosterURL := taskMediaPreviewWithPoster(task.ResultJSON, task.Type)
 	return TaskSummary{
+		PluginRunID:               task.PluginRunID,
 		ID:                        task.ID,
 		ProjectID:                 task.ProjectID,
 		Type:                      task.Type,

@@ -1,0 +1,78 @@
+{
+  "id": "api",
+  "transport": "http",
+  "baseUrl": "https://example.invalid",
+  "auth": {
+    "type": "bearer"
+  },
+  "actions": {
+    "echo": {
+      "submit": {
+        "method": "POST",
+        "path": "/echo",
+        "body": {
+          "prompt": {
+            "from": "input.prompt"
+          }
+        }
+      },
+      "outputs": {
+        "message": "/message"
+      },
+      "idempotency": {
+        "mode": "unsupported"
+      },
+      "cancellation": {
+        "mode": "unsupported"
+      }
+    },
+    "preview": {
+      "submit": {
+        "method": "POST",
+        "path": "/jobs",
+        "body": {
+          "prompt": {
+            "from": "input.prompt"
+          }
+        }
+      },
+      "poll": {
+        "method": "GET",
+        "path": "/jobs/{jobId}"
+      },
+      "lookup": {
+        "method": "GET",
+        "path": "/requests/{submissionKey}"
+      },
+      "jobIdPath": "/id",
+      "statusPath": "/status",
+      "statusMap": {
+        "queued": "pending",
+        "running": "pending",
+        "completed": "succeeded",
+        "failed": "failed",
+        "cancelled": "cancelled"
+      },
+      "outputs": {
+        "message": "/output/message"
+      },
+      "artifact": {
+        "urlPath": "/output/url",
+        "field": "preview",
+        "kind": "image"
+      },
+      "idempotency": {
+        "mode": "header",
+        "header": "Idempotency-Key",
+        "retentionSeconds": 600
+      },
+      "cancellation": {
+        "mode": "request",
+        "request": {
+          "method": "POST",
+          "path": "/jobs/{jobId}/cancel"
+        }
+      }
+    }
+  }
+}

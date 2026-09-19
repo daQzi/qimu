@@ -35,6 +35,12 @@ func (s *Service) decorateRunView(view *RunView, viewID ...string) error {
 		}
 		if manifest.ID+"."+op.ID == view.Operation {
 			view.ExecutionAdapter = op.Execution.Adapter
+			if op.Execution.Kind == "http" {
+				view.ExecutionAdapter = "http"
+			}
+			if view.ExecutionAdapter == "http" && view.Status != "succeeded" {
+				continue
+			}
 			selected := op.ResultView
 			if len(viewID) > 0 && viewID[0] != "" {
 				selected = viewID[0]

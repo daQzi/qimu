@@ -185,6 +185,9 @@ func (w *taskWorkerCoordinator) processClaimedTask(task *model.Task, globalSlot 
 	if task.Type == model.TaskTypeTimelineRender {
 		return w.processTimelineRender(task, ctx)
 	}
+	if task.Type == model.TaskTypePluginOperation {
+		return w.processPluginOperation(task, ctx)
+	}
 
 	s.markAgentMemoryCompactRunning(*task)
 	task.Stage = "调用生成模型"
@@ -313,6 +316,8 @@ func taskExecutionTimeoutWithPolicy(taskType string, policy RuntimeTaskPolicy) t
 	case taskType == model.TaskTypeTimelineRender:
 		// 渲染是整条时间线的重编码，耗时随长度线性增长。
 		return 60 * time.Minute
+	case taskType == model.TaskTypePluginOperation:
+		return max(time.Duration(policy.VideoTimeoutMinutes)*time.Minute, 5*time.Minute)
 	default:
 		return time.Duration(policy.DefaultTimeoutMinutes) * time.Minute
 	}

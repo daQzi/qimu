@@ -1,0 +1,56 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "remote-helper",
+  "name": "远程任务接入示例",
+  "version": "1.0.0",
+  "description": "通过已配置的远程服务执行受控 JSON 和异步媒体任务；示例地址需用户配置。",
+  "publisher": {
+    "id": "example-publisher",
+    "displayName": "示例作者"
+  },
+  "requires": {
+    "hostApi": "^3.0.0"
+  },
+  "permissions": [
+    "connection.use",
+    "resource.create"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "remote-task",
+        "name": "remote-task",
+        "description": "调用已配置的远程任务，先解释费用和输入并等待用户确认。",
+        "entry": "skills/remote-task/SKILL.md",
+        "activation": "auto",
+        "operations": [
+          "remote-helper.echo",
+          "remote-helper.preview"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "echo",
+        "ref": "operations/echo.json"
+      },
+      {
+        "id": "preview",
+        "ref": "operations/preview.json"
+      }
+    ],
+    "connectors": [
+      {
+        "id": "api",
+        "ref": "connectors/api.json"
+      }
+    ],
+    "views": [
+      {
+        "id": "message",
+        "ref": "views/message.json"
+      }
+    ]
+  }
+}

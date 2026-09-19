@@ -11,6 +11,20 @@ description: 信封、错误码与 OpenAPI
 
 ## 应用插件 P01
 
+P04 新增以下登录态接口，继续使用已有信封与当前用户身份：
+
+| 接口 | 内容 |
+| --- | --- |
+| GET `/plugin-connections` | 当前账号的连接配置、修订及 credentialConfigured，不返回凭据 |
+| PUT `/plugin-connections` | pluginId、connectorId、name、baseUrl、credential、enabled、revision；凭据留空保留，变更目标需重新填写 |
+| GET `/admin/plugin-operation-prices/:releaseId/:operationId` | 管理员读取平台固定服务费，默认 0 |
+| PUT `/admin/plugin-operation-prices` | 管理员以 revision 更新 feeMicrocredits；旧审批必须重新报价 |
+| POST `/plugin-runs/:id/resume` | revision、action、可选 providerJobId；action 为 retry_safe / attach_job / retry_import / retry_poll |
+
+远程调用仍用 `POST /plugin-invocations` 和用户批准接口。Task 类型为 plugin_operation，普通 Task 创建与重试不能绕过插件准入。运行输出含 taskId、remote 提交/取消/导入状态；Task/TaskSummary 提供 pluginRunId，paused 不自动领取。恢复保持原 Task、上游任务和提交身份，新生成必须新建 Run 并批准。
+
+连接地址与请求走严格出站防护，原始请求/响应持久化为密文；平台费用与供应商自带 Key 的外部费用分开。具体合同与人工验收见仓库 `docs/plans/qimu-plugin-p04-acceptance.md`。
+
 `POST /plugins` 保持管理员上传入口，按 apiVersion 分流。v1/v2 返回原 plugin 视图；v3 返回 `data.plugin = {id, apiVersion: "yingce.plugin/v3", kind: "application"}` 收据。详细数据从 `GET /plugins/applications` 获取，包含发布清单、固定依赖、技能版本、不可执行的操作描述及当前用户状态；响应不缓存。
 
 `PUT /plugins/applications/:id/activation` 接收 releaseId、enabled、grantedPermissions、revision，身份只来自登录态。超出包申请的授权拒绝；revision 不匹配返回 409。依赖版本/授权变动会使依赖应用需要重新启用。`PUT /admin/plugins/applications/:id` 接收 action（availability/uninstall/revoke）、revision 和所需的 available/releaseId；服务层再次验证管理员。

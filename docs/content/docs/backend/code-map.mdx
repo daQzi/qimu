@@ -7,7 +7,9 @@ description: 从产品功能快速定位主要代码入口
 
 这是一张入口地图，不罗列所有文件。先找到功能所属层，再沿调用关系阅读。
 
-## 应用插件 v3 合同与受控运行（P00–P03）
+## 应用插件 v3 合同与受控运行（P00–P04）
+
+P04 连接合同在 `plugins/contracts/http.go`，连接/费用管理在 `app/plugin_connections.go`，远程准入在 `app/plugin_remote_admission.go`；`plugin_remote_worker.go` 由已有 taskWorker 分派，`plugin_remote_import.go` 校验并导入媒体。`repository/plugin_remote.go` 负责配置修订、Task 锁、限流和资源引用；账务复用原 reserve/settle/refund。前端 `plugin-remote-panel.tsx` 与 `plugin-remote-status.tsx` 消费真实 API；`cmd/plugin-remote-demo` 仅用于本地协议验收。
 
 P01 新增 `internal/plugins/service.go/catalog.go/storage.go` 管理安装与版本，`repository/plugin_releases.go` 保证目录事务、用户授权和技能可见性，`skills/plugin_package.go` 复用已有技能归档。`app/application_plugins.go` 是身份/功能门禁与安装版本分流的组合根，`handler/application_plugins.go` 暴露目录及生命周期 API。P01 最初使用 schema v27；同步主线后，新数据库在 v28 建目录，迁移器仍识别原 v27 校验和。前端 `components/plugins/application-plugins-panel.tsx` 同时用于管理员页和用户插件中心。
 

@@ -39,6 +39,9 @@ func (w *taskLifecycleCoordinator) retryTask(userID string, id string) (*model.T
 	if err != nil {
 		return nil, err
 	}
+	if task.Type == model.TaskTypePluginOperation {
+		return nil, BadAuthRequest("请从插件运行恢复原任务；新生成需要重新报价与确认")
+	}
 	if task.CreationSubmissionID != nil {
 		return nil, creationConflict("智能创作重做需要新的报价批准，请回到创作会话继续")
 	}
@@ -116,6 +119,24 @@ func (w *taskLifecycleCoordinator) cancelTaskWithIntent(_ context.Context, userI
 	task, err := s.repo.TaskForUser(userID, id)
 	if err != nil {
 		return nil, err
+	}
+	if task.Type == model.TaskTypePluginOperation {
+		remote, err := s.repo.PluginRemoteTask(task.ID)
+		if err != nil {
+			return nil, err
+		}
+		run, err := s.repo.PluginRunForUser(userID, remote.RunID)
+		if err != nil {
+			return nil, err
+		}
+		if _, err = s.CancelPluginRun(userID, run.ID, run.Revision); err != nil {
+			return nil, err
+		}
+		latest, err := s.repo.TaskForUser(userID, id)
+		if err != nil {
+			return nil, err
+		}
+		return taskForOutput(*latest), nil
 	}
 	if task.Status != model.TaskStatusQueued && task.Status != model.TaskStatusRunning {
 		if task.Status == model.TaskStatusCancelled {
