@@ -1,6 +1,6 @@
 # Qimu 应用插件 v3：能力提升改造实施设计
 
-> 状态：起始设计基线 qimu `4eaa28b8`。P00–P03 已验收；P04 已同步 main `cb68476e`，实现远程连接与可恢复单任务。最终 schema 33 保留各历史迁移谱系，只在隔离数据库验证；真实供应商待接入，未部署业务环境。
+> 状态：起始基线 qimu `4eaa28b8`。P00–P04 已验收；P05 基于集成分支及 fork main `cb68476e`，实现顺序流程、输入和独立恢复，schema 34 追加迁移。真实供应商待接入，未部署或迁移业务环境。
 > 配套：[需求与整体架构](../design/qimu-plugin-platform-v3-design.md)、[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)。本文回答改哪里、如何迁移、如何验证、什么条件才算完成。
 
 实际分批执行统一使用[分阶段实施手册](qimu-agent-plugin-platform-execution-runbook.md)的 P00–P14 编号。本文 M0–M7 保留为设计模块映射；最小画布闭环已前移到 P03，多工作台与出海的分支依赖以手册为准，不重复执行多套计划。

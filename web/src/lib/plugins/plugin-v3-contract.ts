@@ -26,7 +26,12 @@ function validateHTTPConnector(c: ObjectValue) {
     const header = /^[A-Za-z][A-Za-z0-9-]{0,79}$/;
     const forbidden = (h: string) => ["authorization", "cookie", "host", "content-type", "content-length", "connection", "transfer-encoding", "proxy-authorization", "proxy-connection"].includes(h.toLowerCase());
     const pointer = (p: string) => p.startsWith("/") && p.length <= 500 && !/[\r\n]/.test(p);
-    let base: URL; try { base = new URL(c.baseUrl); } catch { return fail("contract_invalid", "connector baseUrl"); }
+    let base: URL;
+    try {
+        base = new URL(c.baseUrl);
+    } catch {
+        return fail("contract_invalid", "connector baseUrl");
+    }
     if (base.protocol !== "https:" || !base.hostname || base.username || base.password || base.search || base.hash) fail("contract_invalid", "connector baseUrl");
     if (c.auth.type === "header" && (!header.test(c.auth.header || "") || forbidden(c.auth.header))) fail("contract_invalid", "auth header");
     if (c.auth.type !== "header" && c.auth.header) fail("contract_invalid", "unexpected auth header");
@@ -37,7 +42,8 @@ function validateHTTPConnector(c: ObjectValue) {
         for (const p of [a.jobIdPath, a.statusPath, ...Object.values(a.outputs)] as string[]) if (p && !pointer(p)) fail("contract_invalid", "response pointer");
         if (a.artifact && (!pointer(a.artifact.urlPath) || !name.test(a.artifact.field) || Object.hasOwn(a.outputs, a.artifact.field))) fail("contract_invalid", "artifact mapping");
         for (const field of [...Object.keys(a.outputs), ...Object.keys(a.resources || {})]) if (!name.test(field)) fail("contract_invalid", "mapping field");
-        if (a.idempotency.mode === "header" && (!header.test(a.idempotency.header || "") || forbidden(a.idempotency.header) || a.idempotency.header.toLowerCase() === (c.auth.header || "").toLowerCase() || !a.idempotency.retentionSeconds)) fail("contract_invalid", "idempotency header/window");
+        if (a.idempotency.mode === "header" && (!header.test(a.idempotency.header || "") || forbidden(a.idempotency.header) || a.idempotency.header.toLowerCase() === (c.auth.header || "").toLowerCase() || !a.idempotency.retentionSeconds))
+            fail("contract_invalid", "idempotency header/window");
         if (a.idempotency.mode === "unsupported" && a.idempotency.header) fail("contract_invalid", "unsupported idempotency header");
         if ((a.cancellation.mode === "request") !== !!a.cancellation.request) fail("contract_invalid", "cancel request");
         for (const [kind, r] of Object.entries({ submit: a.submit, poll: a.poll, lookup: a.lookup, cancel: a.cancellation.request }) as [string, ObjectValue][]) {
@@ -183,7 +189,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
     }
     const contributions = manifest.contributes;
     const registry: Record<string, Set<string>> = Object.create(null);
-    for (const kind of ["skills", "operations", "views", "canvasBlueprints", "connectors"]) {
+    for (const kind of ["skills", "operations", "views", "canvasBlueprints", "connectors", "pipelines"]) {
         registry[kind] = new Set();
         for (const entry of contributions[kind] ?? []) {
             if (registry[kind].has(entry.id)) fail("contract_invalid", "duplicate contribution");
@@ -195,7 +201,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                 if (!target.endsWith("/SKILL.md") || !files[target]) fail("contract_invalid", "skill entry");
                 continue;
             }
-            validatePluginContract(({ operations: "operation", views: "view", canvasBlueprints: "blueprint", connectors: "httpConnector" } as Record<string, string>)[kind], files[target]);
+            validatePluginContract(({ operations: "operation", views: "view", canvasBlueprints: "blueprint", connectors: "httpConnector", pipelines: "pipeline" } as Record<string, string>)[kind], files[target]);
             if (kind === "connectors") validateHTTPConnector(docs[target]);
             if (docs[target].id !== entry.id) fail("contract_invalid", "contribution id mismatch");
         }
@@ -209,19 +215,53 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         requireSchema(op.outputSchemaRef);
         for (const p of op.requiredPermissions) if (!manifest.permissions.includes(p)) fail("scope_forbidden", "permission exceeds manifest");
         if (op.resultView && !registry.views.has(op.resultView)) fail("package_reference_invalid", op.resultView);
+        if (op.execution.kind === "pipeline") {
+            if (Object.entries(files).filter(([path]) => path.startsWith("schemas/")).reduce((total, [, raw]) => total + encoder.encode(raw).length, 0) > 24000) fail("operation_unavailable", "pipeline schema description exceeds 24000 bytes");
+            const ref = contributions.pipelines?.find((r: ObjectValue) => r.id === op.execution.pipeline);
+            if (!ref) fail("package_reference_invalid", "pipeline not registered");
+            const p = docs[ref.ref];
+            if (p.inputSchemaRef !== op.inputSchemaRef || p.outputSchemaRef !== op.outputSchemaRef) fail("contract_invalid", "pipeline entry schemas differ");
+            const effects = new Set<string>(["draft_write"]);
+            const permissions = new Set<string>();
+            p.steps.forEach((step: ObjectValue, i: number) => {
+                if (step.when || step.foreach || (i === 0 ? step.dependsOn.length !== 0 : !step.dependsOn.includes(p.steps[i - 1].key))) fail("operation_unavailable", "P05 requires an explicit sequential chain");
+                if (step.type === "wait_input") {
+                    if (step.view) fail("operation_unavailable", "custom input views require P07");
+                    requireSchema(step.formSchemaRef);
+                    return;
+                }
+                const entry = contributions.operations?.find((r: ObjectValue) => pluginID + "." + r.id === step.operation);
+                const child = entry && docs[entry.ref];
+                if (!child || child.execution.kind === "pipeline") fail("operation_unavailable", "P05 steps must reference local non-pipeline operations");
+                child.effects.forEach((e: string) => effects.add(e));
+                child.requiredPermissions.forEach((r: string) => permissions.add(r));
+                if ((child.context.requiresCanvas && !op.context.requiresCanvas) || (child.context.requiresProject && !op.context.requiresProject)) fail("scope_forbidden", "pipeline context weaker than step");
+            });
+            if ([...effects].some((e) => !op.effects.includes(e)) || [...permissions].some((r) => !op.requiredPermissions.includes(r))) fail("scope_forbidden", "pipeline must declare aggregate effects and permissions");
+            continue;
+        }
         if (op.execution.kind === "http") {
             const ref = contributions.connectors?.find((r: ObjectValue) => r.id === op.execution.connector);
             if (!ref) fail("operation_unavailable", "HTTP connector not registered");
             const actions = docs[ref.ref].actions;
             const action = Object.hasOwn(actions, op.execution.action) ? actions[op.execution.action] : undefined;
             if (!action) fail("package_reference_invalid", "connector action");
-            if (!op.requiredPermissions.includes("connection.use") || (Object.keys(action.resources || {}).length && !op.requiredPermissions.includes("media.read")) || (action.artifact && !op.requiredPermissions.includes("resource.create")) || op.effects.length !== 1 || !["external_write", "generation"].includes(op.effects[0])) fail("scope_forbidden", "HTTP operation effects and permissions");
+            if (
+                !op.requiredPermissions.includes("connection.use") ||
+                (Object.keys(action.resources || {}).length && !op.requiredPermissions.includes("media.read")) ||
+                (action.artifact && !op.requiredPermissions.includes("resource.create")) ||
+                op.effects.length !== 1 ||
+                !["external_write", "generation"].includes(op.effects[0])
+            )
+                fail("scope_forbidden", "HTTP operation effects and permissions");
             continue;
         }
         if (op.execution.kind !== "host" || !["resource.inspect", "resource.snapshot", "canvas.blueprint.instantiate"].includes(op.execution.adapter) || op.execution.mode !== "inline") fail("operation_unavailable", "host adapter profile");
         const snapshot = op.execution.adapter === "resource.snapshot";
         const projection = op.execution.adapter === "canvas.blueprint.instantiate";
-        const permissions = projection ? op.requiredPermissions.includes("canvas.read") && op.requiredPermissions.includes("canvas.write") && op.context.requiresCanvas : op.requiredPermissions.includes("media.read") && (!snapshot || op.requiredPermissions.includes("resource.create"));
+        const permissions = projection
+            ? op.requiredPermissions.includes("canvas.read") && op.requiredPermissions.includes("canvas.write") && op.context.requiresCanvas
+            : op.requiredPermissions.includes("media.read") && (!snapshot || op.requiredPermissions.includes("resource.create"));
         if (!permissions || op.effects.length !== 1 || op.effects[0] !== (snapshot || projection ? "draft_write" : "read")) fail("scope_forbidden", "adapter minimum contract");
     }
     for (const entry of contributions.skills ?? [])

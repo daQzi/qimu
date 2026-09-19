@@ -22,6 +22,9 @@ type resolvedOperation struct {
 }
 
 func (s *Service) adapterFor(op contracts.Operation) (ShortHostAdapter, error) {
+	if op.Execution.Kind == "pipeline" && op.Execution.Mode == "task" && contains(op.Effects, "draft_write") {
+		return ShortHostAdapter{Permissions: op.RequiredPermissions, Effects: op.Effects}, nil
+	}
 	if op.Execution.Kind == "http" && op.Execution.Mode == "task" && s.remote != nil {
 		if len(op.Effects) != 1 || (op.Effects[0] != "external_write" && op.Effects[0] != "generation") || !contains(op.RequiredPermissions, "connection.use") {
 			return ShortHostAdapter{}, issue(403, "scope_forbidden", "远程操作必须声明实际效果和连接权限")

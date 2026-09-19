@@ -22,7 +22,7 @@ func TestP04MigrationPreservesP03(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if err := db.Delete(&schemaMigration{}, "version=?", CurrentSchemaVersion).Error; err != nil {
+			if err := db.Delete(&schemaMigration{}, "version>=?", 33).Error; err != nil {
 				t.Fatal(err)
 			}
 			for i := 0; i < 2; i++ {

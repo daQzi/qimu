@@ -42,7 +42,7 @@ func (r *Repository) PluginRunByKey(userID, key string) (*model.PluginRun, error
 }
 func (r *Repository) LatestPluginRunForAgent(userID, agentID string) (*model.PluginRun, error) {
 	var run model.PluginRun
-	err := r.db.Where("user_id=? AND agent_run_id=?", userID, agentID).Order("created_at desc, id desc").First(&run).Error
+	err := r.db.Where("user_id=? AND agent_run_id=? AND (parent_run_id='' OR parent_run_id IS NULL)", userID, agentID).Order("created_at desc, id desc").First(&run).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}

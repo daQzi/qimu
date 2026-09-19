@@ -48,6 +48,23 @@ func (w *taskWorkerCoordinator) start(ctx context.Context) {
 				return
 			}
 			if !s.IsDraining() {
+				s.advancePluginPipelines()
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	})
+	s.runWorkerLoop(func(ctx context.Context) {
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+		for {
+			if ctx.Err() != nil {
+				return
+			}
+			if !s.IsDraining() {
 				s.advanceCloudAgents()
 			}
 			select {

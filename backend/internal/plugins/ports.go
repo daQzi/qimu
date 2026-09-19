@@ -65,6 +65,10 @@ type RemoteResumeRequest struct {
 }
 
 func (s *Service) WithRemoteHost(host RemoteHost) *Service { s.remote = host; return s }
+func (s *Service) WithRunAccess(check func(*repository.Repository, string) error) *Service {
+	s.runAccess = check
+	return s
+}
 
 type OperationDescription struct {
 	Address      string                     `json:"operation"`

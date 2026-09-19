@@ -5,6 +5,14 @@ description: 影策后端核心持久化表与状态边界
 
 # 后端数据库
 
+P05 追加 schema 34 `application_plugin_pipelines`，保留 v33 及各历史谱系：
+
+- plugin_runs 增加 pipeline_id、parent_run_id、parent_step_key，追溯流程、步骤、固定发布和原 Agent。
+- plugin_pipeline_executions 以 run_id 为主键，保存 cursor、child_run_id、outputs_json、lease_owner、lease_expires_at。目录事务与 Run CAS/租约 fence 保护调度、撤权和取消。
+- plugin_input_requests 保存 ID、run/step 唯一键、revision、status、schema_json、draft_json、submitted_json、submission_key/digest，草稿不作为提交事实。
+
+步骤推进与子 Run 准入同事务提交，重作业仍使用已有 Task/账务。部署前备份数据库、插件包及 .settings-key；旧二进制不调度流程，停机不等于取消远程任务。本次仅迁移隔离测试库。
+
 后端通过 GORM 管理 SQLite 与 PostgreSQL 表结构。结构变化由 `migrate-schema` 按版本顺序执行并写入 `schema_migrations`；受管生产部署在 Backend 启动前运行独立迁移服务，Backend 只校验当前 Schema 是否与二进制兼容。业务写路径必须通过 service 和 repository 的状态约束，不能直接依赖前端状态。
 
 ## 结构迁移与版本

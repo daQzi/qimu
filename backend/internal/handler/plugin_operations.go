@@ -10,6 +10,7 @@ import (
 
 func registerPluginOperationRoutes(api *gin.RouterGroup, svc *service.Service) {
 	registerPluginRemoteRoutes(api, svc)
+	registerPluginPipelineRoutes(api, svc)
 	api.GET("/plugin-canvases/:id/snapshot", func(c *gin.Context) {
 		user, err := currentUser(c, svc)
 		if err != nil {

@@ -297,10 +297,70 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /plugin-runs:
+    get:
+      tags: [agent]
+      summary: 当前用户的根运行历史，每页 30 条
+      parameters:
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 10000}}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+  /plugin-runs/{id}/inputs/{inputId}:
+    put:
+      tags: [agent]
+      summary: 保存输入草稿或提交完整输入
+      description: 草稿不推进流程；submit 必须符合固定 Schema。同键同值重放成功，同键异值或过期 revision 返回 409。提交不代表收费审批。
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+        - {name: inputId, in: path, required: true, schema: {type: string}}
+        - {name: Idempotency-Key, in: header, description: submit 时必需, schema: {type: string, minLength: 8, maxLength: 160}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision, mode, value]
+              additionalProperties: false
+              properties:
+                revision: {type: integer, minimum: 1}
+                mode: {type: string, enum: [draft, submit]}
+                value: {}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugin-runs/{id}/events:
+    get:
+      tags: [agent]
+      summary: 插件运行 SSE 状态事件与断线重放
+      description: event 为 plugin-run，id 为单运行 sequence。Last-Event-ID 优先于 after；超前游标返回 409。连接最多 25 秒，重连后刷新权威快照。
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+        - {name: after, in: query, schema: {type: integer, minimum: 0}}
+        - {name: Last-Event-ID, in: header, schema: {type: integer, minimum: 0}}
+      responses:
+        "200":
+          description: 状态通知，不包含凭据或表单正文
+          content:
+            text/event-stream:
+              schema: {type: string}
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /plugin-runs/{id}:
     get:
       tags: [agent]
-      summary: 读取当前用户的单步插件运行
+      summary: 读取当前用户的单步或流程运行
       description: 包含固定发布版本、声明式 view、可选 canvasActions 和 projectionStatus/failureMessage；历史结果读取不授予新调用权限。
       parameters:
         - $ref: "#/components/parameters/AgentRunID"

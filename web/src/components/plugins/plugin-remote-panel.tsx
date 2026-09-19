@@ -14,10 +14,10 @@ export function PluginRemotePanel({ pluginId, release, admin }: { pluginId: stri
                 <ConnectionForm key={`${userID}:${pluginId}:${connector.id}`} pluginId={pluginId} connectorId={connector.id} />
             ))}
             {release.operations
-                .filter((op) => op.execution.kind === "http")
+                .filter((op) => op.execution.kind === "http" || op.execution.kind === "pipeline")
                 .map((op) => (
                     <div key={`${userID}:${release.id}:${op.id}`} className="space-y-2">
-                        {admin && <PriceForm releaseId={release.id} operationId={op.id} />}
+                        {admin && op.execution.kind === "http" && <PriceForm releaseId={release.id} operationId={op.id} />}
                         <RemoteOperationForm pluginId={pluginId} releaseId={release.id} operationId={op.id} description={op.description} />
                     </div>
                 ))}
@@ -172,11 +172,11 @@ function RemoteOperationForm({ pluginId, releaseId, operationId, description }: 
     };
     return (
         <details className="space-y-2 text-sm">
-            <summary className="cursor-pointer">调试远程操作：{operationId}</summary>
+            <summary className="cursor-pointer">调试持久操作：{operationId}</summary>
             <p>{description}</p>
             <Input.TextArea aria-label="远程操作参数 JSON" rows={3} value={input} onChange={(e) => setInput(e.target.value)} />
             <Button loading={busy} onClick={() => void invoke()}>
-                创建待确认运行
+                创建运行（副作用需确认）
             </Button>
             {error && (
                 <p role="alert" className="text-destructive">

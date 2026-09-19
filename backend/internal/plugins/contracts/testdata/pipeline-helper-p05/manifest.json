@@ -1,0 +1,59 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "pipeline-helper",
+  "name": "持久流程示例",
+  "version": "1.0.0",
+  "description": "检查已有视频，等待用户选择后调用远程演示服务。不包含视频分析或生成模型。",
+  "publisher": {
+    "id": "example-publisher",
+    "displayName": "示例作者"
+  },
+  "requires": {
+    "hostApi": "^3.0.0"
+  },
+  "permissions": [
+    "media.read",
+    "connection.use"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "workflow",
+        "name": "workflow",
+        "description": "先检查视频，再等待用户填写远程提示词，确认后执行。",
+        "entry": "skills/workflow/SKILL.md",
+        "activation": "auto",
+        "operations": [
+          "pipeline-helper.process"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "inspect",
+        "ref": "operations/inspect.json"
+      },
+      {
+        "id": "echo",
+        "ref": "operations/echo.json"
+      },
+      {
+        "id": "process",
+        "ref": "operations/process.json"
+      }
+    ],
+    "pipelines": [
+      {
+        "id": "process",
+        "ref": "pipelines/process.json"
+      }
+    ],
+    "connectors": [
+      {
+        "id": "api",
+        "ref": "connectors/api.json"
+      }
+    ]
+  }
+}

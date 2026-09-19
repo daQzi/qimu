@@ -1,0 +1,44 @@
+{
+  "id": "process",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/result.json",
+  "steps": [
+    {
+      "key": "inspect",
+      "type": "operation",
+      "operation": "pipeline-helper.inspect",
+      "dependsOn": [],
+      "inputs": {
+        "resourceId": {
+          "from": "input#/resourceId"
+        }
+      }
+    },
+    {
+      "key": "choose",
+      "type": "wait_input",
+      "dependsOn": [
+        "inspect"
+      ],
+      "formSchemaRef": "schemas/choice.json"
+    },
+    {
+      "key": "remote",
+      "type": "operation",
+      "operation": "pipeline-helper.echo",
+      "dependsOn": [
+        "choose"
+      ],
+      "inputs": {
+        "prompt": {
+          "from": "steps/choose#/prompt"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "message": {
+      "from": "steps/remote#/message"
+    }
+  }
+}

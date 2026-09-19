@@ -257,7 +257,7 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 	}
 	contributes := manifest["contributes"].(map[string]any)
 	registry := map[string]map[string]bool{}
-	for _, kind := range []string{"skills", "operations", "views", "canvasBlueprints", "connectors"} {
+	for _, kind := range []string{"skills", "operations", "views", "canvasBlueprints", "connectors", "pipelines"} {
 		registry[kind] = map[string]bool{}
 		entries, _ := contributes[kind].([]any)
 		for _, v := range entries {
@@ -289,7 +289,7 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 				}
 				continue
 			}
-			typ := map[string]string{"operations": "operation", "views": "view", "canvasBlueprints": "blueprint", "connectors": "httpConnector"}[kind]
+			typ := map[string]string{"operations": "operation", "views": "view", "canvasBlueprints": "blueprint", "connectors": "httpConnector", "pipelines": "pipeline"}[kind]
 			if err := Validate(typ, raw); err != nil {
 				return err
 			}
@@ -324,6 +324,12 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 			return invalid("package_reference_invalid", view)
 		}
 		execution := op["execution"].(map[string]any)
+		if execution["kind"] == "pipeline" {
+			if err := validateSequentialPackage(files, op); err != nil {
+				return err
+			}
+			continue
+		}
 		if execution["kind"] == "http" {
 			connectorID := execution["connector"].(string)
 			if !registry["connectors"][connectorID] {

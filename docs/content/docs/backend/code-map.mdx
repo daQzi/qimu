@@ -7,7 +7,9 @@ description: 从产品功能快速定位主要代码入口
 
 这是一张入口地图，不罗列所有文件。先找到功能所属层，再沿调用关系阅读。
 
-## 应用插件 v3 合同与受控运行（P00–P04）
+## 应用插件 v3 合同与受控运行（P00–P05）
+
+P05 顺序校验在 `plugins/contracts/sequential.go`；调度与输入分别在 `plugins/pipeline_runner.go`、`pipeline_input.go`，持久化在 `repository/plugin_pipeline.go`。`app/plugin_pipeline.go` 对接后台 Worker 与身份门禁，`handler/plugin_pipeline.go` 提供输入、历史与 SSE；`plugin-input-form.tsx`、`plugin-run-history.tsx` 与原运行卡片组成交互。副作用步骤仍使用 P04 子 Run/Task，没有第二套重作业队列。
 
 P04 连接合同在 `plugins/contracts/http.go`，连接/费用管理在 `app/plugin_connections.go`，远程准入在 `app/plugin_remote_admission.go`；`plugin_remote_worker.go` 由已有 taskWorker 分派，`plugin_remote_import.go` 校验并导入媒体。`repository/plugin_remote.go` 负责配置修订、Task 锁、限流和资源引用；账务复用原 reserve/settle/refund。前端 `plugin-remote-panel.tsx` 与 `plugin-remote-status.tsx` 消费真实 API；`cmd/plugin-remote-demo` 仅用于本地协议验收。
 

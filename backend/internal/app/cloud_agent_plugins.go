@@ -37,7 +37,7 @@ func cloudAgentPluginDescriptionReceipt(result any) any {
 
 func isCloudAgentPluginTool(name string) bool {
 	switch name {
-	case "operation_search", "operation_describe", "operation_invoke", "plugin_run_get", "plugin_run_resume", "plugin_run_cancel", "result_read":
+	case "operation_search", "operation_describe", "operation_invoke", "plugin_run_get", "plugin_run_resume", "plugin_run_cancel", "plugin_input_submit", "result_read":
 		return true
 	}
 	return false
@@ -62,6 +62,34 @@ func (s *Service) executeCloudAgentPluginTool(run *model.CloudAgentExecution, st
 	}
 	policy := plugins.InvocationPolicy{PermissionMode: state.Request.PermissionMode, AgentRunID: run.ID, AgentRevision: run.Revision}
 	switch call.Function.Name {
+	case "plugin_input_submit":
+		if state.Request.PermissionMode == "read_only" {
+			return nil, Forbidden("只读模式不能提交用户输入")
+		}
+		var args struct {
+			RunID    string          `json:"runId"`
+			InputID  string          `json:"inputRequestId"`
+			Revision int64           `json:"revision"`
+			Value    json.RawMessage `json:"value"`
+		}
+		if err := decodeCloudAgentJSONObject(call.Function.Arguments, &args); err != nil {
+			return nil, err
+		}
+		digest := sha256.Sum256([]byte(run.ID + "\x00" + call.ID))
+		var result plugins.RunView
+		err := s.repo.WithPluginCatalog(func(repo *repository.Repository) error {
+			if err := repo.LockActivePluginAgent(run.UserID, run.ID, run.Revision); err != nil {
+				return creationConflict("Agent 已停止或检查点已变化")
+			}
+			local := &Service{repo: repo, dataDir: s.dataDir}
+			var err error
+			result, err = local.UpdatePluginInput(run.UserID, args.RunID, args.InputID, "agent-input:"+hex.EncodeToString(digest[:]), PluginInputUpdate{Revision: args.Revision, Mode: "submit", Value: args.Value})
+			return err
+		})
+		if err == nil {
+			state.PendingExecution = &cloudAgentExecutionRef{Kind: "plugin_run", ID: result.ID}
+		}
+		return result, err
 	case "operation_search":
 		var args struct {
 			Query  string `json:"query"`
@@ -157,6 +185,15 @@ func (s *Service) executeCloudAgentPluginTool(run *model.CloudAgentExecution, st
 				return nil, BadAuthRequest("运行尚无成功结果")
 			}
 			return map[string]any{"result": result.Result, "reference": result.ResultRef}, nil
+		}
+		if result.Pipeline != nil {
+			state.PendingExecution = &cloudAgentExecutionRef{Kind: "plugin_run", ID: result.ID}
+			if call.Function.Name == "plugin_run_resume" && result.Status == "paused" {
+				if state.Request.PermissionMode == "read_only" {
+					return nil, Forbidden("只读模式不能恢复流程")
+				}
+				return service.Resume(run.UserID, args.RunID, result.Revision, "retry_safe", "")
+			}
 		}
 		if call.Function.Name == "plugin_run_resume" && result.Status == "paused" && result.Remote != nil {
 			if state.Request.PermissionMode == "read_only" {

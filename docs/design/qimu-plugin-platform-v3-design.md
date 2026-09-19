@@ -1,6 +1,6 @@
 # Qimu 应用插件平台 v3：需求与整体架构设计
 
-> 状态：P00–P03 已验收；P04 实现加密连接、受控 HTTP 单任务、恢复、费用和资源导入。真实供应商待选择联调；Pipeline 和输入节点仍为目标设计，进度以实施手册为准。
+> 状态：P00–P04 已验收；P05 实现顺序 Pipeline、持久输入、独立调度与运行历史，待验收。并行/批次预算属于 P06，画布输入节点属于 P07；真实供应商待联调。
 > 设计起始代码基线：qimu `4eaa28b8`；P02 开始前已同步 main v1.5.4。旧 v1/v2 保留；v3 尚未部署到实际业务环境。
 
 配套文档：[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)、[改造实施设计](../plans/qimu-plugin-platform-v3-implementation.md)。目标合同以本文件和接入指南为准，实施顺序以实施设计为准。

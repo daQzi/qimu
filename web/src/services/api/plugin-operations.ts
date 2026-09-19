@@ -5,7 +5,35 @@ export type OperationDescription = { operation: string; releaseId: string; contr
 export type InvocationOutput = { kind: "inline"; result: unknown; digest: string } | { kind: "run"; runId: string; status: string; revision: number; approvalId: string };
 export type PluginResultView = { id: string; component: "key-value/v1"; fields: { path: string; label: string }[] };
 export type PluginCanvasAction = { operation: string; releaseId: string; blueprintId: string };
-export type PluginRunView = { id: string; operation: string; releaseId: string; releaseVersion: string; status: string; revision: number; approvalId?: string; sourceResourceId?: string; preview?: unknown; result?: unknown; resultRef?: PluginResultRef; view?: PluginResultView; canvasActions?: PluginCanvasAction[]; executionAdapter?: string; projectionStatus?: string; failureMessage?: string; taskId?: string; remote?: { taskId: string; submissionState: string; providerJobId?: string; cancelStatus?: string; cancelRequested: boolean; failureReason?: string; failureMessage?: string; importAttempts: number } };
+export type PluginInputRequest = { id: string; runId: string; stepKey: string; revision: number; status: string; schema: Record<string, unknown>; draft?: unknown; submitted?: unknown };
+export type PluginRunView = {
+    id: string;
+    operation: string;
+    releaseId: string;
+    releaseVersion: string;
+    status: string;
+    revision: number;
+    eventSequence?: number;
+    approvalId?: string;
+    sourceResourceId?: string;
+    preview?: unknown;
+    result?: unknown;
+    resultRef?: PluginResultRef;
+    view?: PluginResultView;
+    canvasActions?: PluginCanvasAction[];
+    executionAdapter?: string;
+    projectionStatus?: string;
+    failureMessage?: string;
+    taskId?: string;
+    pipeline?: { cursor: number; steps: { key: string; type: string }[]; childRunId?: string; inputs: PluginInputRequest[]; outputs: Record<string, unknown>; schemas?: Record<string, unknown> };
+    remote?: { taskId: string; submissionState: string; providerJobId?: string; cancelStatus?: string; cancelRequested: boolean; failureReason?: string; failureMessage?: string; importAttempts: number };
+};
+export function listPluginRuns(offset = 0, signal?: AbortSignal) {
+    return http.get<PluginRunView[]>("/plugin-runs", { params: { offset }, signal });
+}
+export function updatePluginInput(runId: string, input: PluginInputRequest, value: unknown, mode: "draft" | "submit", key: string) {
+    return http.put<PluginRunView>(`/plugin-runs/${encodeURIComponent(runId)}/inputs/${encodeURIComponent(input.id)}`, { revision: input.revision, value, mode }, { headers: { "Idempotency-Key": key } });
+}
 export function describePluginOperation(pluginId: string, operationId: string, releaseId: string, context?: PluginInvocationContext) {
     return http.get<OperationDescription>(`/plugin-operations/${encodeURIComponent(pluginId)}/${encodeURIComponent(operationId)}`, { params: { releaseId, ...context } });
 }

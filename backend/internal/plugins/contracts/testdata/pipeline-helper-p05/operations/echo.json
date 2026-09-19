@@ -1,0 +1,22 @@
+{
+  "id": "echo",
+  "description": "调用远程演示服务，需用户单独确认",
+  "inputSchemaRef": "schemas/choice.json",
+  "outputSchemaRef": "schemas/result.json",
+  "requiredPermissions": [
+    "connection.use"
+  ],
+  "effects": [
+    "external_write"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "http",
+    "connector": "api",
+    "action": "echo",
+    "mode": "task"
+  }
+}

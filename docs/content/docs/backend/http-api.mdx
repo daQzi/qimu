@@ -11,6 +11,16 @@ description: 信封、错误码与 OpenAPI
 
 ## 应用插件 P01
 
+### P05 顺序流程、输入与历史
+
+GET `/plugin-runs?offset=0` 每页返回当前账号的 30 个根运行。GET Run 的 pipeline 包含 cursor、steps、inputs、schemas、outputs、childRunId、stepRuns；审批使用子 Run 的 approvalId/revision，父流程没有“一次批准全部”。
+
+PUT `/plugin-runs/:id/inputs/:inputId` 接收 `{revision, mode: "draft" | "submit", value}`，submit 必须带 Idempotency-Key。草稿不推进，提交必须符合固定 Schema；旧 revision、同键异值返回 409，单次输入最多 64KB。Agent 的 plugin_input_submit 与表单共用服务方法，不能授权收费。
+
+GET `/plugin-runs/:id/events` 为 SSE，event=plugin-run，id 为递增 sequence。Last-Event-ID 优先于 after，超前游标返回 409；连接最多 25 秒后重连。通知只含状态/revision，客户端重新读取快照。Nginx 精确匹配该路径关闭缓冲，卡片保留轮询恢复。
+
+暂停父流程支持 retry_safe 重新检查条件，不能绕过待输入/审批，也不会重建未知远程任务。取消先阻止新步骤，再收束原子任务；Agent 结束轮次后仍保留其预算约束。
+
 P04 新增以下登录态接口，继续使用已有信封与当前用户身份：
 
 | 接口 | 内容 |

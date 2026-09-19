@@ -32,6 +32,7 @@ type RunView struct {
 	CanvasActions    []CanvasAction               `json:"canvasActions,omitempty"`
 	ExecutionAdapter string                       `json:"executionAdapter,omitempty"`
 	Remote           *model.PluginRemoteExecution `json:"remote,omitempty"`
+	Pipeline         *PipelineView                `json:"pipeline,omitempty"`
 }
 
 func hashBytes(value []byte) string { sum := sha256.Sum256(value); return hex.EncodeToString(sum[:]) }
@@ -109,6 +110,10 @@ func (s *Service) Invoke(userID, key string, request contracts.Invocation, polic
 			}
 		}
 		hostContext := HostOperationContext{InvocationContext: ctx, ReleaseID: resolved.Release.ID, Files: resolved.Files}
+		if resolved.Definition.Execution.Kind == "pipeline" {
+			output, err = s.createPipeline(repo, userID, key, requestHash, raw, resolved, policy)
+			return err
+		}
 		var plan PreparedOperation
 		var remote PreparedRemoteOperation
 		if resolved.Definition.Execution.Kind == "http" {
@@ -205,6 +210,12 @@ func (s *Service) GetRun(userID, id string, viewID ...string) (RunView, error) {
 			return RunView{}, err
 		}
 		view.Remote = remote
+	}
+	if run.PipelineID != "" {
+		view.Pipeline, err = s.pipelineView(run)
+		if err != nil {
+			return RunView{}, err
+		}
 	}
 	return view, nil
 }
@@ -327,6 +338,9 @@ func (s *Service) Cancel(userID, id string, revision int64) (RunView, error) {
 		if run.Status == "cancelled" || run.Status == "cancelling" {
 			return nil
 		}
+		if run.PipelineID != "" {
+			return s.cancelPipeline(repo, run, revision)
+		}
 		if run.TaskID != nil {
 			if s.remote == nil || run.Revision != revision || (run.Status != "running" && run.Status != "paused") {
 				return issue(409, "run_revision_conflict", "运行状态已变化")
@@ -366,6 +380,14 @@ func (s *Service) Resume(userID, id string, revision int64, action, providerJobI
 		}
 		if err != nil {
 			return err
+		}
+		if run.PipelineID != "" {
+			if run.Revision != revision || run.Status != "paused" || action != "retry_safe" {
+				return issue(409, "run_revision_conflict", "流程当前不可恢复")
+			}
+			run.Status = "running"
+			run.FailureMessage = ""
+			return SaveRunTransition(repo, run, "run.resumed")
 		}
 		if run.Revision != revision || run.Status != "paused" || run.TaskID == nil || s.remote == nil {
 			return issue(409, "run_revision_conflict", "运行当前不可恢复")

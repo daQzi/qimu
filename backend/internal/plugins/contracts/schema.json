@@ -263,6 +263,12 @@
               "minItems": 1,
               "maxItems": 32
             },
+            "pipelines": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/contribution" },
+              "minItems": 1,
+              "maxItems": 16
+            },
             "connectors": {
               "type": "array",
               "items": {

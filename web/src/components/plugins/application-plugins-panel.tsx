@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserStore } from "@/stores/use-user-store";
 import { PluginOperationTester } from "./plugin-operation-tester";
 import { PluginRemotePanel } from "./plugin-remote-panel";
+import { PluginRunHistory } from "./plugin-run-history";
 import { activateApplicationPlugin, fetchApplicationPlugins, manageApplicationPlugin, type ApplicationPlugin } from "@/services/api/application-plugins";
 
 const reasonLabels: Record<string, string> = {
@@ -91,6 +92,7 @@ export function ApplicationPluginsPanel({ admin = false, refreshToken = 0 }: { a
                 </Button>
             </div>
             <p className="text-sm text-muted-foreground">启用后，获准使用的技能会进入“我的技能”。可用操作支持读取视频信息和保存元数据快照，写入前需确认。</p>
+            <PluginRunHistory key={userID || "anonymous"} />
             {error && (
                 <p role="alert" className="text-sm text-destructive">
                     {error}
@@ -201,7 +203,7 @@ export function ApplicationPluginsPanel({ admin = false, refreshToken = 0 }: { a
                             </ul>
                         </details>
                         <PluginOperationTester key={release.id} pluginId={item.id} release={release} />
-                        {!!release.manifest.contributes.connectors?.length && <PluginRemotePanel key={`${userID}:${release.id}:remote`} pluginId={item.id} release={release} admin={admin} />}
+                        {!!(release.manifest.contributes.connectors?.length || release.manifest.contributes.pipelines?.length) && <PluginRemotePanel key={`${userID}:${release.id}:remote`} pluginId={item.id} release={release} admin={admin} />}
                     </article>
                 );
             })}

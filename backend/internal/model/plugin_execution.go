@@ -2,7 +2,8 @@ package model
 
 import "time"
 
-// P02 runs hold one short host operation. They are not a second task queue.
+// Runs own durable invocation/approval state; pipeline parents coordinate child
+// runs while heavy execution stays in the existing Task queue.
 type PluginRun struct {
 	ID                  string    `json:"id" gorm:"primaryKey;size:36"`
 	UserID              string    `json:"-" gorm:"size:36;not null;uniqueIndex:idx_plugin_run_key,priority:1"`
@@ -12,6 +13,9 @@ type PluginRun struct {
 	ReleaseVersion      string    `json:"releaseVersion" gorm:"size:40;not null"`
 	AgentRunID          string    `json:"agentRunId,omitempty" gorm:"size:36;index"`
 	Operation           string    `json:"operation" gorm:"size:161;not null"`
+	PipelineID          string    `json:"pipelineId,omitempty" gorm:"size:80;index"`
+	ParentRunID         string    `json:"parentRunId,omitempty" gorm:"size:36;index"`
+	ParentStepKey       string    `json:"parentStepKey,omitempty" gorm:"size:80"`
 	ContractHash        string    `json:"contractHash" gorm:"size:64;not null"`
 	RequestJSON         string    `json:"-" gorm:"type:text;not null"`
 	PlanJSON            string    `json:"-" gorm:"type:text;not null"`

@@ -67,6 +67,7 @@ func Models() []any {
 		&model.PluginCanvasProjection{},
 		&model.PluginConnection{}, &model.PluginConnectionVersion{}, &model.PluginConnectionRate{},
 		&model.PluginOperationPrice{}, &model.PluginRemoteExecution{}, &model.PluginRunResource{},
+		&model.PluginPipelineExecution{}, &model.PluginInputRequest{},
 		&model.ArkPrivateAssetBinding{},
 		&model.UserOSSSetting{},
 		&model.StorageLocation{},

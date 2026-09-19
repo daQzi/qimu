@@ -29,7 +29,7 @@ export type PluginManifestV3 = {
     requires: { hostApi: "^3.0.0" };
     permissions: PluginV3Permission[];
     dependencies: Array<{ id: string; version: string; optional: boolean }>;
-    contributes: { skills?: PluginV3Skill[]; operations?: PluginContributionRef[]; views?: PluginContributionRef[]; canvasBlueprints?: PluginContributionRef[]; connectors?: PluginContributionRef[] };
+    contributes: { skills?: PluginV3Skill[]; operations?: PluginContributionRef[]; views?: PluginContributionRef[]; canvasBlueprints?: PluginContributionRef[]; connectors?: PluginContributionRef[]; pipelines?: PluginContributionRef[] };
 };
 export type PluginExecution = { kind: "host"; adapter: string; mode: "inline" | "task" } | { kind: "http"; connector: string; action: string; mode: "task" } | { kind: "pipeline"; pipeline: string; mode: "task" };
 export type PluginOperation = {
