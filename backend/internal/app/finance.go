@@ -531,7 +531,7 @@ func (s *Service) newLogicalModelBillingOrder(userID string, task *model.Task, i
 	if logicalModel.BillingMode == "token" && tokenEstimate.Video != nil {
 		videoFormulaTokens = tokenEstimate.Video.FormulaTokens
 	}
-	return &model.BillingOrder{
+	order := &model.BillingOrder{
 		ID: newID(), UserID: userID, IdempotencyKey: "task:" + task.ID + ":" + newID(), TaskID: task.ID,
 		ChannelID: channelModel.ChannelID, ChannelModelID: channelModel.ID, Model: logicalModel.Code, Capability: capability,
 		Scene: truncateRunes(firstNonEmpty(strings.TrimSpace(task.Operation), task.Type), 80), BillingMode: logicalModel.BillingMode, PriceVersion: int64(revision.Version),
@@ -540,7 +540,11 @@ func (s *Service) newLogicalModelBillingOrder(userID string, task *model.Task, i
 		OutputTokenPriceMicrocredits: logicalModel.OutputPriceMicrocredits, CachedTokenPriceMicrocredits: logicalModel.CachedPriceMicrocredits,
 		VideoFormulaTokens: videoFormulaTokens,
 		Status:             model.BillingStatusReserved,
-	}, nil
+	}
+	intent := ModelRequestIntentFromTaskInput(input, task.Type, task.Operation)
+	priceTierID, _ := config["priceTierId"].(string)
+	snapshotCreditCost(order, channelModelPriceTierForBilling(*channelModel, priceTierID, capability, intent), billingQuantity(capability, config["videoSeconds"]), tokenEstimate)
+	return order, nil
 }
 
 func (s *Service) ReserveProxyBilling(userID string, channelID string, modelKey string, capability string, scene string, idempotencyKey string, quantity int64) (*model.BillingOrder, error) {
@@ -639,7 +643,7 @@ func (s *Service) newBillingOrderWithPriceTier(userID string, taskID string, ide
 	if tier.BillingMode == "token" && tokenEstimate.Video != nil {
 		videoFormulaTokens = tokenEstimate.Video.FormulaTokens
 	}
-	return &model.BillingOrder{
+	order := &model.BillingOrder{
 		ID: newID(), UserID: userID, IdempotencyKey: idempotencyKey, TaskID: taskID,
 		ChannelID: channelID, ChannelModelID: item.ID, PriceTierID: tier.ID, PriceTierVersion: tier.PriceVersion, PriceSelectorJSON: tier.SelectorJSON, Model: modelKey, Capability: capability,
 		Scene: truncateRunes(scene, 80), BillingMode: tier.BillingMode, PriceVersion: item.PriceVersion,
@@ -648,7 +652,9 @@ func (s *Service) newBillingOrderWithPriceTier(userID string, taskID string, ide
 		OutputTokenPriceMicrocredits: tier.OutputTokenPriceMicrocredits, CachedTokenPriceMicrocredits: tier.CachedTokenPriceMicrocredits,
 		VideoFormulaTokens: videoFormulaTokens,
 		Status:             model.BillingStatusReserved,
-	}, nil
+	}
+	snapshotCreditCost(order, tier, requestedQuantity, tokenEstimate)
+	return order, nil
 }
 
 func channelModelPriceTierForBilling(channelModel model.ChannelModel, priceTierID string, capability string, intents ...ModelRequestIntent) *model.ChannelModelPriceTier {

@@ -247,10 +247,10 @@ export function ChannelModelEditor({
                                             <Form.Item name="providerModelKey" label="上游模型 ID" tooltip="实际发送给供应商；留空时使用产品模型标识。价格档可配置独立上游 ID，命中时优先于此处。">
                                                 <Input placeholder="留空则使用产品模型标识" />
                                             </Form.Item>
-                                            <Form.Item name="displayName" label="模型展示名" tooltip="创作端一级菜单名称。同一产品模型标识请使用相同名称和 Logo，不改变调用 ID。">
+                                            <Form.Item name="displayName" label="模型展示名（一级目录）" tooltip="跨所有系统渠道按此名称分组，例如 MiniMax H3。同名模型归入同一组，不改变调用 ID。">
                                                 <Input placeholder="不填则使用模型标识" />
                                             </Form.Item>
-                                            <Form.Item name="channelLabel" label="渠道展示名" tooltip="创作端二级菜单名称，仅作用于此渠道中的当前模型。留空使用渠道公开名称。" rules={[{ max: 80, message: "渠道展示名不能超过 80 字" }]}>
+                                            <Form.Item name="channelLabel" label="渠道展示名（二级目录）" tooltip="此模型下的渠道选项，例如秘塔（满血渠道）。留空使用所属渠道名称。" rules={[{ max: 80, message: "渠道展示名不能超过 80 字" }]}>
                                                 <Input maxLength={80} placeholder="例如：正常渠道、优惠渠道-993、特惠渠道-730" />
                                             </Form.Item>
                                             <Form.Item name="icon" label="模型 Logo">

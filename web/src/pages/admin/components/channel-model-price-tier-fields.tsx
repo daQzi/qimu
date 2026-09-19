@@ -5,6 +5,7 @@ import { modelProtocolSupportsTokenBilling, type ModelProtocol } from "@/lib/mod
 import type { ModelCapabilityChoice as EditableCapability } from "@/components/model-protocol-picker";
 import type { ChannelModelFormValues as FormValues } from "./channel-model-editor-form";
 import { normalizeUpstreamModelKey } from "./channel-model-price-tier-form";
+import { CreditCostFields } from "./credit-cost-fields";
 
 export function PriceTierFields({
     index,
@@ -84,6 +85,7 @@ export function PriceTierFields({
                     </Form.Item>
                 </div>
                 <div className="admin-price-tier-block admin-price-tier-billing-block">
+                    <div className="mb-2 text-sm font-medium">销售价格</div>
                     <div className="admin-price-tier-billing-grid">
                         <Form.Item className="admin-price-tier-billing-mode mb-0" name={[index, "billingMode"]} label="计费方式" rules={[{ required: true }]}>
                             <Segmented
@@ -125,6 +127,7 @@ export function PriceTierFields({
                         </p>
                     ) : null}
                 </div>
+                <CreditCostFields index={index} form={form} billingMode={billingMode} isVideo={isVideo} />
                 {matchMode !== "default" && (
                     <div className="admin-price-tier-match-grid">
                         <Form.Item className="mb-0" name={[index, "operation"]} label="生成方式" rules={[{ required: true, message: "请选择生成方式" }]}>

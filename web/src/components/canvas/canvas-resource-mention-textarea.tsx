@@ -42,13 +42,22 @@ type Props = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "val
     containerClassName?: string;
     highlightLabels?: boolean;
     mentionMenuWidth?: number;
-    sendOnEnter?: boolean;
+    sendOnEnter?: boolean | "both";
     onContentSizeChange?: (height: number) => void;
     includeAssetLibrary?: boolean;
     activeDropReferenceId?: string | null;
     onReferenceFilesDrop?: (reference: CanvasResourceReference, files: File[]) => void;
     autoLinkEnabled?: boolean;
 };
+
+// 回车提交语义由调用方决定：false 只在 ⌘/Ctrl+Enter 提交，"both" 两种都提交；Shift+Enter 始终换行。
+function shouldSubmitOnEnter(event: { key: string; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }, sendOnEnter: boolean | "both") {
+    if (event.key !== "Enter" || event.shiftKey) return false;
+    const modifier = event.ctrlKey || event.metaKey;
+    if (sendOnEnter === false) return modifier;
+    if (sendOnEnter === "both") return true;
+    return !modifier;
+}
 
 export const CanvasResourceMentionTextarea = forwardRef<HTMLTextAreaElement, Props>(function CanvasResourceMentionTextarea(
     { value, references, onSelectReference, onChange, onSubmit, onKeyDown, className, containerClassName, style, highlightLabels = true, mentionMenuWidth = 320, sendOnEnter = true, onContentSizeChange, includeAssetLibrary = false, activeDropReferenceId, onReferenceFilesDrop, autoLinkEnabled = false, ...props },
@@ -433,7 +442,7 @@ if (event.key === "Enter" && (event.nativeEvent.isComposing || composingRef.curr
                         }
                         if (event.key === "Enter") {
                             event.preventDefault();
-                            const shouldSubmit = sendOnEnter ? !event.ctrlKey && !event.metaKey && !event.shiftKey : (event.ctrlKey || event.metaKey) && !event.shiftKey;
+                            const shouldSubmit = shouldSubmitOnEnter(event, sendOnEnter);
                             if (onSubmit && shouldSubmit) {
                                 onSubmit();
                                 return;
@@ -547,7 +556,7 @@ if (event.key === "Enter" && (event.nativeEvent.isComposing || composingRef.curr
                             return;
                         }
                     }
-                    const shouldSubmit = event.key === "Enter" && (sendOnEnter ? !event.ctrlKey && !event.metaKey && !event.shiftKey : (event.ctrlKey || event.metaKey) && !event.shiftKey);
+                    const shouldSubmit = shouldSubmitOnEnter(event, sendOnEnter);
                     if (shouldSubmit && onSubmit) {
                         event.preventDefault();
                         onSubmit();

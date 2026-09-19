@@ -245,7 +245,7 @@ export function ModelPicker({
                                             theme={theme}
                                             creationVariant
                                             showConfiguredModelName={showConfiguredModelName}
-                                            label={group.kind === "product" || group.kind === "system-channel" ? modelGroup.label : undefined}
+                                            label={group.kind === "product" ? modelGroup.label : undefined}
                                             requirements={requirements}
                                             showPrice={showOptionPrices && creditsEnabled}
                                             disabledReason={disabledReason}

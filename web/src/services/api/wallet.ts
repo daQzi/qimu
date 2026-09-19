@@ -74,6 +74,8 @@ export type ChannelModel = {
 };
 
 export type ChannelModelPriceTier = {
+    /** 仅管理员模型编辑接口返回，不能复制到用户模型目录。 */
+    costPricing?: CreditCostPricing;
     id: string;
     channelModelId: string;
     selector: Record<string, string>;
@@ -91,6 +93,14 @@ export type ChannelModelPriceTier = {
     priceVersion: number;
     createdAt: string;
     updatedAt: string;
+};
+
+export type CreditCostPricing = {
+    configured: boolean;
+    unitPriceMicrocredits: number;
+    inputTokenPriceMicrocredits: number;
+    outputTokenPriceMicrocredits: number;
+    cachedTokenPriceMicrocredits: number;
 };
 
 // 系统渠道模型的写入合同。标量价格只用于兼容旧管理请求；新的后台界面只提交 priceTiers。

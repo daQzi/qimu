@@ -103,11 +103,7 @@
     border-radius: 8px;
     background: transparent;
     padding: 5px 2px;
-    transition: background-color 160ms ease, transform 160ms ease;
-}
-
-.agent-tool-row:hover {
-    background: color-mix(in srgb, var(--foreground) 3%, transparent);
+    transition: transform 160ms ease;
 }
 
 /* 没有节点明细的“读取信息 / 操作画布”只保留时间线语义，不再撑成一张空卡片。 */
@@ -117,11 +113,6 @@
     border-radius: 9px;
     background: transparent;
     padding: 3px 2px;
-}
-
-.agent-tool-row--plain:hover {
-    border-color: transparent;
-    background: transparent;
 }
 
 .agent-tool-row--read {
@@ -373,10 +364,18 @@
     white-space: nowrap;
 }
 
-/* 面板宽度包含内边距；默认 448px 面板的输入区已不足以同时容纳控制区和快捷键提示。 */
+/* 面板宽度包含内边距；默认 448px 面板放不下完整快捷键说明，窄态降级为短文案而不是隐藏提示本身。 */
+.agent-composer-send-hint .agent-composer-send-hint-compact {
+    display: none;
+}
+
 @container (max-width: 520px) {
-    .agent-composer-send-hint {
+    .agent-composer-send-hint .agent-composer-send-hint-full {
         display: none;
+    }
+
+    .agent-composer-send-hint .agent-composer-send-hint-compact {
+        display: inline;
     }
 }
 

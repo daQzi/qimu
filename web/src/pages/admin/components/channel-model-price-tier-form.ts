@@ -23,6 +23,11 @@ export type PriceTierFormValues = {
     inputTokenPrice: number;
     outputTokenPrice: number;
     cachedTokenPrice: number;
+    costConfigured: boolean;
+    costUnitPrice: number;
+    costInputTokenPrice: number;
+    costOutputTokenPrice: number;
+    costCachedTokenPrice: number;
     priceConfigured: boolean;
     enabled: boolean;
 };
@@ -43,6 +48,11 @@ export function defaultPriceTier(matchMode: PriceTierMatchMode = "default"): Pri
         inputTokenPrice: 0,
         outputTokenPrice: 0,
         cachedTokenPrice: 0,
+        costConfigured: false,
+        costUnitPrice: 0,
+        costInputTokenPrice: 0,
+        costOutputTokenPrice: 0,
+        costCachedTokenPrice: 0,
         priceConfigured: true,
         enabled: true,
     };
@@ -66,6 +76,11 @@ export function priceTierToForm(tier: ChannelModelPriceTier): PriceTierFormValue
         inputTokenPrice: tier.inputTokenPriceMicrocredits / 1_000_000,
         outputTokenPrice: tier.outputTokenPriceMicrocredits / 1_000_000,
         cachedTokenPrice: tier.cachedTokenPriceMicrocredits / 1_000_000,
+        costConfigured: tier.costPricing?.configured === true,
+        costUnitPrice: (tier.costPricing?.unitPriceMicrocredits ?? 0) / 1_000_000,
+        costInputTokenPrice: (tier.costPricing?.inputTokenPriceMicrocredits ?? 0) / 1_000_000,
+        costOutputTokenPrice: (tier.costPricing?.outputTokenPriceMicrocredits ?? 0) / 1_000_000,
+        costCachedTokenPrice: (tier.costPricing?.cachedTokenPriceMicrocredits ?? 0) / 1_000_000,
         priceConfigured: tier.priceConfigured,
         enabled: tier.enabled,
     };
@@ -123,6 +138,13 @@ export function priceTierPayloadFromForm(capability: ModelCapabilityChoice, tier
         inputTokenPriceMicrocredits: videoTokens ? 0 : Math.round((tier.inputTokenPrice || 0) * 1_000_000),
         outputTokenPriceMicrocredits: Math.round((tier.outputTokenPrice || 0) * 1_000_000),
         cachedTokenPriceMicrocredits: videoTokens ? 0 : Math.round((tier.cachedTokenPrice || 0) * 1_000_000),
+        costPricing: {
+            configured: tier.costConfigured,
+            unitPriceMicrocredits: Math.round(tier.costUnitPrice * 1_000_000),
+            inputTokenPriceMicrocredits: videoTokens ? 0 : Math.round(tier.costInputTokenPrice * 1_000_000),
+            outputTokenPriceMicrocredits: Math.round(tier.costOutputTokenPrice * 1_000_000),
+            cachedTokenPriceMicrocredits: videoTokens ? 0 : Math.round(tier.costCachedTokenPrice * 1_000_000),
+        },
         priceConfigured: tier.priceConfigured !== false,
         enabled: tier.enabled !== false,
     };

@@ -96,5 +96,9 @@ export function validateChannelModelPrices(values: Pick<ChannelModelFormValues, 
         }
         const prices = tier.billingMode !== "token" ? [tier.unitPrice] : capability === "video" ? [tier.outputTokenPrice] : [tier.inputTokenPrice, tier.outputTokenPrice, tier.cachedTokenPrice];
         if (prices.some((price) => typeof price !== "number" || !Number.isFinite(price) || price < 0 || price > 1_000_000)) fail("积分价格必须是 0 到 1000000 之间的有效数值");
+        if (tier.costConfigured) {
+            const costs = tier.billingMode !== "token" ? [tier.costUnitPrice] : capability === "video" ? [tier.costOutputTokenPrice] : [tier.costInputTokenPrice, tier.costOutputTokenPrice, tier.costCachedTokenPrice];
+            if (costs.some((price) => typeof price !== "number" || !Number.isFinite(price) || price < 0 || price > 1_000_000)) fail("积分成本价必须是 0 到 1000000 之间的有效数值");
+        }
     });
 }

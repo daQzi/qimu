@@ -344,7 +344,6 @@ export const PUBLIC_MODEL_CATALOG_ID = "managed";
 export type ModelChannel = {
     id: string;
     name: string;
-    publicAlias?: string;
     sortOrder?: number;
     baseUrl: string;
     apiKey: string;

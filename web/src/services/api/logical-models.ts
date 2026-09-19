@@ -153,7 +153,7 @@ export type ModelQuoteRequest = {
     intent: ModelRequestIntent;
 };
 
-export type ModelCatalogSource = "frontend" | "system";
+export type ModelCatalogSource = "system";
 
 export type PublicChannelCatalog = {
     id: string;
@@ -199,7 +199,7 @@ export type ModelCatalogResponse = {
     channels?: PublicChannelCatalog[];
 };
 
-// 统一模型目录接口 - 根据 frontendModelsEnabled 开关返回前台模型或系统渠道模型
+// 创作目录直接读取系统渠道模型，不使用逻辑模型及其功能开关。
 export function getModelCatalog() {
     return http.get<ModelCatalogResponse>("/model-catalog");
 }

@@ -130,11 +130,12 @@ paths:
       tags: [models]
       summary: 获取创作端模型目录
       description: |
-        source=system 时读取 channels，source=frontend 时读取 models；两个集合始终为数组。
-        系统渠道模型按渠道聚合展示，渠道内模型保持独立选择及价格；模型请求仍使用 channelId + modelKey 定位。
-        channelLabel 是后台渠道模型创建和更新时配置的公开渠道展示名，去除首尾空白后最多 80 字，空字符串表示使用渠道公开名称。
+        固定 source=system，channels 直接来自系统渠道下的模型列表，models 为空数组；不反查逻辑模型。
+        一级跨渠道按 displayName 分组，二级显示 channelLabel；模型请求仍使用 channelId + modelKey 定位。
+        channelLabel 是后台渠道模型创建和更新时配置的渠道展示名，去除首尾空白后最多 80 字，空字符串表示使用所属渠道名称。
         description 是后台渠道模型创建和更新时填写的公开模型描述，去除首尾空白后最多 500 字；空字符串表示未填写。
-        displayName 和 icon 用于渠道内模型菜单，channelLabel 不参与路由、权限或计费。
+        displayName 和 icon 用于一级模型菜单，channelLabel 不参与路由、权限或计费。
+        渠道级 publicAlias 已废弃；成本配置和成本快照仅供管理端，不包含在本接口及用户报价中。
       responses:
         "200":
           description: 当前启用的模型目录
@@ -154,7 +155,7 @@ paths:
                     properties:
                       source:
                         type: string
-                        enum: [system, frontend]
+                        enum: [system]
                       models:
                         type: array
                         items:

@@ -6,7 +6,7 @@ export type ModelPickerGroup = {
     label: string;
     icon: string;
     scope: string;
-    kind: "product" | "channel" | "system-channel";
+    kind: "product" | "channel";
     models: DisplayModelGroup[];
 };
 
@@ -20,29 +20,24 @@ export function isDirectSystemModel(config: AiConfig, value: string) {
 export function modelChannelLabel(config: AiConfig, value: string) {
     const channel = resolveModelChannel(config, value);
     const cost = channel.modelCosts?.find((item) => item.model === modelOptionName(value));
-    return cost?.channelLabel?.trim() || channel.publicAlias?.trim() || channel.name || "未命名渠道";
+    return cost?.channelLabel?.trim() || channel.name || "未命名渠道";
 }
 
-// 系统模型按渠道聚合展示，但每个模型仍保留独立的 channelId::modelKey 选择值。
+// 一级按模型展示名跨渠道聚合；二级保留每条渠道模型的独立选择值、能力和售价。
 export function groupModelsForPicker(config: AiConfig, options: string[]): ModelPickerGroup[] {
     const groups = new Map<string, ModelPickerGroup>();
     for (const channel of config.channels) {
         const models = options.filter((value) => resolveModelChannel(config, value).id === channel.id);
         const directModels = models.filter((value) => isDirectSystemModel(config, value));
-        if (directModels.length) {
-            const key = JSON.stringify(["system-channel", channel.id]);
-            groups.set(key, {
-                key,
-                label: channel.name || "未命名渠道",
-                icon: modelIcon(config, directModels[0]),
-                scope: "平台服务",
-                kind: "system-channel",
-                models: directModels.map((value) => ({
-                    key: value,
-                    label: configuredModelDisplayName(config, value),
-                    models: [value],
-                })),
-            });
+        for (const value of directModels) {
+            const label = configuredModelDisplayName(config, value);
+            const key = JSON.stringify(["product", label]);
+            let group = groups.get(key);
+            if (!group) {
+                group = { key, label, icon: modelIcon(config, value), scope: "平台服务", kind: "product", models: [] };
+                groups.set(key, group);
+            }
+            group.models.push({ key: value, label: modelChannelLabel(config, value), models: [value] });
         }
         const otherModels = models.filter((value) => !isDirectSystemModel(config, value));
         if (otherModels.length) {

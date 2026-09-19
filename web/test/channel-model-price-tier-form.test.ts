@@ -2,8 +2,27 @@ import { describe, expect, test } from "bun:test";
 
 import { defaultPriceTier, priceTierPayloadFromForm, priceTierResolutionFromForm, priceTierToForm, priceTierVideoSecondsFromForm, skuSelectorFromForm } from "../src/pages/admin/components/channel-model-price-tier-form";
 import type { ChannelModelPriceTier } from "../src/services/api/wallet";
+import { validateChannelModelPrices } from "../src/pages/admin/components/channel-model-editor-form";
 
 describe("channel model price tier defaults", () => {
+    test("cost edit payload preserves independent sale and cost prices including explicit zero", () => {
+        const tier = { ...defaultPriceTier(), unitPrice: 0.09, costConfigured: true, costUnitPrice: 0.035678 };
+        const payload = priceTierPayloadFromForm("video", tier, "MiniMax-H3");
+        expect(payload.unitPriceMicrocredits).toBe(90_000);
+        expect(payload.costPricing).toMatchObject({ configured: true, unitPriceMicrocredits: 35_678 });
+        expect(priceTierToForm(payload as ChannelModelPriceTier)).toMatchObject({ unitPrice: 0.09, costConfigured: true, costUnitPrice: 0.035678 });
+        expect(priceTierPayloadFromForm("video", { ...tier, costUnitPrice: 0 }, "MiniMax-H3").costPricing).toMatchObject({ configured: true, unitPriceMicrocredits: 0 });
+        expect(defaultPriceTier().costConfigured).toBe(false);
+        for (const costUnitPrice of [-1, NaN, Infinity, 1_000_001]) {
+            expect(() => validateChannelModelPrices({ capability: "video", protocol: "minimax-video", priceTiers: [{ ...tier, costUnitPrice }] })).toThrow("积分成本价");
+        }
+    });
+
+    test("video Token cost uses only output price while text cost keeps separate token rates", () => {
+        const tier = { ...defaultPriceTier(), billingMode: "token" as const, costConfigured: true, costInputTokenPrice: 1.5, costOutputTokenPrice: 3, costCachedTokenPrice: 0.1 };
+        expect(priceTierPayloadFromForm("video", tier, "video").costPricing).toMatchObject({ configured: true, inputTokenPriceMicrocredits: 0, outputTokenPriceMicrocredits: 3_000_000, cachedTokenPriceMicrocredits: 0 });
+        expect(priceTierPayloadFromForm("text", tier, "text").costPricing).toMatchObject({ inputTokenPriceMicrocredits: 1_500_000, outputTokenPriceMicrocredits: 3_000_000, cachedTokenPriceMicrocredits: 100_000 });
+    });
     test("creates a usable all-spec fallback price by default", () => {
         const tier = defaultPriceTier();
 
