@@ -21,6 +21,10 @@ P01 不提供 `/plugin-invocations` 或运行接口；目录中的操作 availab
 
 ### P02 统一操作与单步运行
 
+P02 已验收。P03 在同一调用入口新增 `canvas.blueprint.instantiate`，不另设 Agent 专用写入接口：输入包含成功 `runId`、`resultDigest`、`blueprintId`、`snapshotHash`、`instanceKey` 和可选 x/y，画布来自 invocation context。需要 canvas.read/canvas.write，并创建 waiting_approval 运行；用户批准前再次检查权限、固定版本及画布。成功返回 bindings，重复绑定不重复建节点；修改/删除后的冲突返回 `projection_conflict`，旧审批运行查询可见 `projectionStatus=conflict`。
+
+`GET /plugin-canvases/:id/snapshot` 返回当前用户画布的 snapshotHash，供按钮路径与 Agent 的 canvas_get_state 使用相同冲突规则。`GET /plugin-runs/:id?viewId=...` 可读取固定发布中的结果视图；返回 releaseVersion、view、canvasActions、executionAdapter。公共画布分享不赋予私有结果读取权限。inline 读取新增 digest，资源助手 1.3.0 保存快照必须回传 expectedDigest；客户端不能提交任意结果 JSON 冒充成功事实。
+
 P02 在上述版本目录之上开放 `GET /plugin-operations`、`GET /plugin-operations/:pluginId/:operationId` 和 `POST /plugin-invocations`。检索只返回当前用户已启用、已授权且上下文可用的操作；describe 返回固定 releaseId、contractHash 和包内 Schema。调用身份来自 Cookie，不接受客户端 userId、approved、price 或 credentialRef。
 
 `resource-helper.inspect-video` 是同步只读操作，不创建 PluginRun；只返回数据库已有的 resourceId、kind、name、MIME、正数尺寸/时长，不返回 ObjectKey、PublicURL、Endpoint、Bucket 或存储凭据，也不以 0 伪造未知值。资源必须属于当前用户、kind=video 且 ready。

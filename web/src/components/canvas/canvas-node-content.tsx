@@ -19,6 +19,7 @@ import { cacheResourceObjectUrl, getCachedResourceObjectUrl, peekCachedResourceO
 import { resolveMediaUrl } from "@/services/file-storage";
 import { hydrateCanvasVideoPreview } from "@/services/canvas-video-preview";
 import { CanvasNodeType, type CanvasNodeData } from "@/types/canvas";
+import { PluginResultNodeContent } from "./plugin-result-node-content";
 import { getNodeDefinition } from "@/lib/canvas/node-registry";
 import { ART_CRITIQUE_NODE_TYPE } from "@/lib/art-critique/contracts";
 import { createDefaultSubtitleStyle } from "@/types/timeline";
@@ -108,6 +109,7 @@ function formatPluginValue(value: unknown) {
 
 const nodeContentRenderers: Partial<Record<string, (props: CanvasNodeContentProps) => ReactNode>> = {
     [CanvasNodeType.Text]: TextContent,
+	[CanvasNodeType.PluginResult]: PluginResultNodeContent,
     [CanvasNodeType.Script]: UnknownNodeContent,
     [CanvasNodeType.Skill]: SkillContent,
     [CanvasNodeType.Image]: ImageNodeContent,

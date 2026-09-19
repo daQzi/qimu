@@ -706,7 +706,7 @@ export function CanvasCloudAgentPanel({ canvasId, domainProjectId, nodeCount, re
                                             {connectionStatus === "disconnected" ? <Button size="small" onClick={() => setConnectionEpoch((value) => value + 1)}>重新连接</Button> : null}
                                         </div>
                                     ) : null}
-                                    {run?.pendingExecution?.kind === "plugin_run" ? <PluginRunCard key={run.pendingExecution.id} runId={run.pendingExecution.id} /> : null}
+                                    {run?.pendingExecution?.kind === "plugin_run" ? <PluginRunCard key={run.pendingExecution.id} runId={run.pendingExecution.id} canvasId={canvasId} /> : null}
                                     <AgentConversation
                                         key={activeConversationId}
                                         theme={theme}

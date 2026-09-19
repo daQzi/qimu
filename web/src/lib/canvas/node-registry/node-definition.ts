@@ -43,6 +43,7 @@ export type CanvasNodeDefinition = {
     generationMode?: (node: CanvasNodeData) => CanvasGenerationMode | null;
     /** 是否显示右侧输出连接点；缺省为 true，消费型终点节点可关闭。 */
     showOutputConnection?: boolean;
+    showInputConnection?: boolean;
     /** 若设置，作为目标时只接受这些上游节点类型。 */
     acceptsInputKind?: CanvasNodeInputKind | CanvasNodeInputKind[];
     /** 限制直接输入数量；转换节点等一进一出节点通常为 1。 */

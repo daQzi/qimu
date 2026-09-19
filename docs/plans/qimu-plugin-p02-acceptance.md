@@ -1,6 +1,6 @@
 # P02 交付与用户验收：统一操作入口与 Agent 调用
 
-> 状态：代码完成待用户验收。P00/P01 已通过；尚未进入 P03。
+> 状态：用户已确认 P02 验收通过，提交 `0783a2e1`，已合入 `codex/codex-plugin`；当前继续 P03。本文保留 P02 交付时的能力与 schema 记录。
 > 开发流程：独立 worktree 的 `codex/plugin-p02-operations` 同步 main v1.5.4 后实施，阶段完成后合并到 `codex/codex-plugin`；不合并 main、不推送。
 
 ## 1. 本阶段交付
@@ -112,4 +112,4 @@ bun run build
 
 操作执行没有按插件 ID写进 Agent 主循环；Agent 只使用通用工具，实际 Adapter 在 app 组合根注册。`internal/plugins` 不依赖 app/service。插件工具结果有大小和 Schema 上限，Skill/Manifest 不能修改用户授权、实际效果或审批状态。
 
-P02 验收通过后回复 **“P02 验收通过，继续 P03”**。P03 将把成功结果保存/投影为真实 `plugin-result` 画布节点；在你确认前暂停，不开始 P03、不合并 main、不推送。
+用户已回复 **“P02 验收通过，继续 P03”**。后续结果卡片与画布绑定见 [P03 验收说明](qimu-plugin-p03-acceptance.md)；仍按阶段合入 `codex/codex-plugin`，不合并 main、不推送。

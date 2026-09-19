@@ -19,6 +19,7 @@ const DEFAULT_MIN_SIZE = { width: 220, height: 160 } as const;
  * 内置节点保持集中定义；第三方节点通过同一 registry 以命名空间 ID 动态注册。
  */
 const BUILTIN_NODE_TRAITS = {
+	[CanvasNodeType.PluginResult]: { label: "插件结果", icon: <FileText />, minSize: DEFAULT_MIN_SIZE, showInCreateMenu: false, showOutputConnection: false, showInputConnection: false, resourceKind: () => null },
     [CanvasNodeType.Image]: {
         label: "图片",
         icon: <ImageIcon />,

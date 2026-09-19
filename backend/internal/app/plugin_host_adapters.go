@@ -15,7 +15,7 @@ import (
 )
 
 func pluginHostAdapters() []plugins.ShortHostAdapter {
-	prepare := func(repo *repository.Repository, userID string, input map[string]json.RawMessage, _ contracts.InvocationContext) (plugins.PreparedOperation, error) {
+	prepare := func(repo *repository.Repository, userID string, input map[string]json.RawMessage, _ plugins.HostOperationContext) (plugins.PreparedOperation, error) {
 		var id string
 		if err := json.Unmarshal(input["resourceId"], &id); err != nil || id == "" {
 			return plugins.PreparedOperation{}, BadAuthRequest("需要真实资源 ID")
@@ -44,12 +44,20 @@ func pluginHostAdapters() []plugins.ShortHostAdapter {
 		if err != nil {
 			return plugins.PreparedOperation{}, err
 		}
+		if expected, ok := input["expectedDigest"]; ok {
+			var value string
+			sum := sha256.Sum256(raw)
+			if json.Unmarshal(expected, &value) != nil || value != hex.EncodeToString(sum[:]) {
+				return plugins.PreparedOperation{}, creationConflict("视频信息与读取结果不一致，请重新检查后保存")
+			}
+		}
 		digest := sha256.Sum256(append(append([]byte{}, raw...), []byte(resource.UpdatedAt.UTC().Format(time.RFC3339Nano))...))
 		return plugins.PreparedOperation{Result: raw, SourceResourceID: resource.ID, SourceDigest: hex.EncodeToString(digest[:])}, nil
 	}
 	return []plugins.ShortHostAdapter{
 		{ID: "resource.inspect", Permissions: []string{"media.read"}, Effects: []string{"read"}, Prepare: prepare},
 		{ID: "resource.snapshot", Permissions: []string{"media.read", "resource.create"}, Effects: []string{"draft_write"}, Prepare: prepare},
+		{ID: "canvas.blueprint.instantiate", Permissions: []string{"canvas.read", "canvas.write"}, Effects: []string{"draft_write"}, Prepare: preparePluginCanvasProjection},
 	}
 }
 func (s *Service) pluginOperationAccess(userID string) error {
@@ -93,8 +101,8 @@ func (s *Service) SearchPluginOperations(userID, query string, offset int, ctx c
 	}
 	return s.applicationPlugins().Search(userID, query, offset, ctx, plugins.InvocationPolicy{PermissionMode: "request_approval"})
 }
-func (s *Service) PluginRun(userID, id string) (plugins.RunView, error) {
-	return s.applicationPlugins().GetRun(userID, id)
+func (s *Service) PluginRun(userID, id string, viewID ...string) (plugins.RunView, error) {
+	return s.applicationPlugins().GetRun(userID, id, viewID...)
 }
 func (s *Service) DecidePluginRun(userID, id, approvalID, decision string, revision int64) (plugins.RunView, error) {
 	if err := s.pluginOperationAccess(userID); err != nil {

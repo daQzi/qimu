@@ -1,5 +1,5 @@
 /** P00 wire contracts only; not part of RegisteredPlugin or the live installer. */
-export type PluginInvocationResult = { kind: "inline"; result: unknown } | { kind: "run"; runId: string; status: PluginRunStatus };
+export type PluginInvocationResult = { kind: "inline"; result: unknown; digest?: string } | { kind: "run"; runId: string; status: PluginRunStatus };
 export type PluginStepRecord = {
     id: string;
     runId: string;

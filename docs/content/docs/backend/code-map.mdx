@@ -7,11 +7,13 @@ description: 从产品功能快速定位主要代码入口
 
 这是一张入口地图，不罗列所有文件。先找到功能所属层，再沿调用关系阅读。
 
-## 应用插件 v3 合同（P00，尚未接入运行）
+## 应用插件 v3 合同与受控运行（P00–P03）
 
 P01 新增 `internal/plugins/service.go/catalog.go/storage.go` 管理安装与版本，`repository/plugin_releases.go` 保证目录事务、用户授权和技能可见性，`skills/plugin_package.go` 复用已有技能归档。`app/application_plugins.go` 是身份/功能门禁与安装版本分流的组合根，`handler/application_plugins.go` 暴露目录及生命周期 API。P01 最初使用 schema v27；同步主线后，新数据库在 v28 建目录，迁移器仍识别原 v27 校验和。前端 `components/plugins/application-plugins-panel.tsx` 同时用于管理员页和用户插件中心。
 
 P02 的统一调用位于 `internal/plugins/operations.go/invocation.go/ports.go`，只通过 app 注入的 `plugin_host_adapters.go` 读取真实资源；`model/plugin_execution.go` 和 `repository/plugin_execution.go` 保存单步 Run/Step/Event。HTTP 在 `handler/plugin_operations.go`，Agent 工具桥在 `app/cloud_agent_plugins.go`。前端 `services/api/plugin-operations.ts`、`plugin-operation-tester.tsx` 和 `plugin-run-card.tsx` 复用同一入口。当前只开放本地短操作；远程 Connector、Task 执行与 Pipeline 仍未开放。
+
+P03 的蓝图准入和画布提交在 `app/plugin_canvas_projection.go`，复用现有画布配额、历史快照与 revision；`plugins/result_view.go` 从固定发布读取视图和画布动作，领域只通过 Host port 执行已批准的本地提交。`plugin_canvas_projections` 保存持久绑定。前端 `plugin-result-values.tsx` 渲染声明式字段，`plugin-canvas-save.tsx` 提交保存，`canvas/plugin-result-node-content.tsx` 按真实 Run 与 digest 读取结果。`capability` 与前端 node-registry 同时注册节点，禁止通用 Agent 新建接口编造结果。
 
 `backend/internal/plugins/contracts/schema.json` 是前后端共用合同，`profile.json` 固定离线范围和上限；同目录 Go 校验器与 `web/src/lib/plugins/plugin-v3-contract.ts` 分别检查字段、包内引用、依赖及流程环。`testdata/resource-helper` 为七文件样例，`testdata/cases.json` 是共同正反例，`cmd/plugin-contract` 提供离线目录校验。现有 v1/v2 安装、Agent 和 Task 路径没有挂接此模块；用户验收见仓库 `docs/plans/qimu-plugin-p00-acceptance.md`。
 

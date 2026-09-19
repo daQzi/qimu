@@ -90,6 +90,31 @@ type ResultRef struct {
 	Digest        string `json:"digest"`
 	ResourceID    string `json:"resourceId,omitempty"`
 }
+
+type ResultView struct {
+	ID        string `json:"id"`
+	Component string `json:"component"`
+	SchemaRef string `json:"schemaRef"`
+	Fields    []struct {
+		Path  string `json:"path"`
+		Label string `json:"label"`
+	} `json:"fields"`
+}
+
+type CanvasBlueprint struct {
+	ID    string `json:"id"`
+	Nodes []struct {
+		Key      string `json:"key"`
+		NodeType string `json:"nodeType"`
+		Title    string `json:"title"`
+		Position struct {
+			X float64 `json:"x"`
+			Y float64 `json:"y"`
+		} `json:"position"`
+		Binding string `json:"binding"`
+		View    string `json:"view"`
+	} `json:"nodes"`
+}
 type SkillBinding struct {
 	ReleaseID      string `json:"releaseId"`
 	LocalSkillID   string `json:"localSkillId"`
@@ -146,6 +171,7 @@ type StepRecord struct {
 }
 
 type InvocationResult struct {
+	Digest string          `json:"digest,omitempty"`
 	Kind   string          `json:"kind"`
 	Result json.RawMessage `json:"result,omitempty"`
 	RunID  string          `json:"runId,omitempty"`

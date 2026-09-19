@@ -61,6 +61,7 @@ func Models() []any {
 		&model.PluginRun{},
 		&model.PluginRunStep{},
 		&model.PluginRunEvent{},
+		&model.PluginCanvasProjection{},
 		&model.ArkPrivateAssetBinding{},
 		&model.UserOSSSetting{},
 		&model.StorageLocation{},

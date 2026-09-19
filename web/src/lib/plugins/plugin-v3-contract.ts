@@ -170,9 +170,11 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         requireSchema(op.outputSchemaRef);
         for (const p of op.requiredPermissions) if (!manifest.permissions.includes(p)) fail("scope_forbidden", "permission exceeds manifest");
         if (op.resultView && !registry.views.has(op.resultView)) fail("package_reference_invalid", op.resultView);
-        if (op.execution.kind !== "host" || !["resource.inspect", "resource.snapshot"].includes(op.execution.adapter) || op.execution.mode !== "inline") fail("operation_unavailable", "host adapter profile");
+        if (op.execution.kind !== "host" || !["resource.inspect", "resource.snapshot", "canvas.blueprint.instantiate"].includes(op.execution.adapter) || op.execution.mode !== "inline") fail("operation_unavailable", "host adapter profile");
         const snapshot = op.execution.adapter === "resource.snapshot";
-        if (!op.requiredPermissions.includes("media.read") || (snapshot && !op.requiredPermissions.includes("resource.create")) || op.effects.length !== 1 || op.effects[0] !== (snapshot ? "draft_write" : "read")) fail("scope_forbidden", "adapter minimum contract");
+        const projection = op.execution.adapter === "canvas.blueprint.instantiate";
+        const permissions = projection ? op.requiredPermissions.includes("canvas.read") && op.requiredPermissions.includes("canvas.write") && op.context.requiresCanvas : op.requiredPermissions.includes("media.read") && (!snapshot || op.requiredPermissions.includes("resource.create"));
+        if (!permissions || op.effects.length !== 1 || op.effects[0] !== (snapshot || projection ? "draft_write" : "read")) fail("scope_forbidden", "adapter minimum contract");
     }
     for (const entry of contributions.skills ?? [])
         for (const address of entry.operations) {

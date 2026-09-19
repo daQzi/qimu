@@ -17,6 +17,7 @@ import (
 type InvocationOutput struct {
 	Kind       string          `json:"kind"`
 	Result     json.RawMessage `json:"result,omitempty"`
+	Digest     string          `json:"digest,omitempty"`
 	RunID      string          `json:"runId,omitempty"`
 	Status     string          `json:"status,omitempty"`
 	Revision   int64           `json:"revision,omitempty"`
@@ -24,9 +25,12 @@ type InvocationOutput struct {
 }
 type RunView struct {
 	model.PluginRun
-	Preview   json.RawMessage      `json:"preview,omitempty"`
-	Result    json.RawMessage      `json:"result,omitempty"`
-	ResultRef *contracts.ResultRef `json:"resultRef,omitempty"`
+	Preview          json.RawMessage       `json:"preview,omitempty"`
+	Result           json.RawMessage       `json:"result,omitempty"`
+	ResultRef        *contracts.ResultRef  `json:"resultRef,omitempty"`
+	View             *contracts.ResultView `json:"view,omitempty"`
+	CanvasActions    []CanvasAction        `json:"canvasActions,omitempty"`
+	ExecutionAdapter string                `json:"executionAdapter,omitempty"`
 }
 
 func hashBytes(value []byte) string { sum := sha256.Sum256(value); return hex.EncodeToString(sum[:]) }
@@ -103,7 +107,7 @@ func (s *Service) Invoke(userID, key string, request contracts.Invocation, polic
 				return nil
 			}
 		}
-		plan, err := resolved.Adapter.Prepare(repo, userID, normalized.Input, ctx)
+		plan, err := resolved.Adapter.Prepare(repo, userID, normalized.Input, HostOperationContext{InvocationContext: ctx, ReleaseID: resolved.Release.ID, Files: resolved.Files})
 		if err != nil {
 			return err
 		}
@@ -114,7 +118,7 @@ func (s *Service) Invoke(userID, key string, request contracts.Invocation, polic
 			return issue(400, "upstream_output_invalid", "操作输出不符合 Schema")
 		}
 		if readOnly {
-			output = InvocationOutput{Kind: "inline", Result: plan.Result}
+			output = InvocationOutput{Kind: "inline", Result: plan.Result, Digest: hashBytes(plan.Result)}
 			return nil
 		}
 		run := model.PluginRun{ID: kernel.NewID(), UserID: userID, AgentRunID: policy.AgentRunID, IdempotencyKey: key, RequestDigest: requestHash, ReleaseID: resolved.Release.ID, ReleaseVersion: resolved.Release.Version, Operation: request.Operation, ContractHash: resolved.ContractHash, RequestJSON: string(raw), PlanJSON: string(plan.Result), SourceResourceID: plan.SourceResourceID, SourceDigest: plan.SourceDigest, Status: "waiting_approval", Revision: 1, ApprovalID: kernel.NewID()}
@@ -153,7 +157,7 @@ func appendRunEvent(repo *repository.Repository, run *model.PluginRun, kind stri
 	}
 	return repo.AppendPluginRunEvent(&model.PluginRunEvent{ID: kernel.NewID(), RunID: run.ID, Sequence: run.EventSequence, Type: kind, PayloadJSON: string(payload)})
 }
-func (s *Service) GetRun(userID, id string) (RunView, error) {
+func (s *Service) GetRun(userID, id string, viewID ...string) (RunView, error) {
 	run, err := s.repo.PluginRunForUser(userID, id)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return RunView{}, kernel.NotFound("插件运行不存在")
@@ -165,6 +169,9 @@ func (s *Service) GetRun(userID, id string) (RunView, error) {
 	if run.Status == "succeeded" {
 		view.Result = json.RawMessage(run.ResultJSON)
 		view.ResultRef = &contracts.ResultRef{RunID: run.ID, StepKey: "invoke", Attempt: 1, OutputKey: "result", SchemaID: run.Operation + "/result", SchemaVersion: run.ReleaseVersion, Digest: hashBytes([]byte(run.ResultJSON))}
+	}
+	if err := s.decorateRunView(&view, viewID...); err != nil {
+		return RunView{}, err
 	}
 	return view, nil
 }
@@ -206,7 +213,7 @@ func (s *Service) Decide(userID, id, approvalID, decision string, revision int64
 			if resolved.ContractHash != run.ContractHash {
 				return issue(409, "plugin_version_conflict", "合同摘要已变化")
 			}
-			prepared, err := resolved.Adapter.Prepare(repo, userID, request.Input, ctx)
+			prepared, err := resolved.Adapter.Prepare(repo, userID, request.Input, HostOperationContext{InvocationContext: ctx, ReleaseID: resolved.Release.ID, Files: resolved.Files})
 			if err != nil {
 				return err
 			}
@@ -215,6 +222,15 @@ func (s *Service) Decide(userID, id, approvalID, decision string, revision int64
 			}
 			run.Status = "succeeded"
 			run.ResultJSON = run.PlanJSON
+			if prepared.Commit != nil {
+				if err = prepared.Commit(repo); err != nil {
+					return err
+				}
+			}
+			if prepared.ProjectsToCanvas {
+				run.ProjectionStatus = "applied"
+			}
+			run.FailureMessage = ""
 		} else {
 			run.Status = "cancelled"
 			run.SourceResourceID = ""
@@ -234,6 +250,12 @@ func (s *Service) Decide(userID, id, approvalID, decision string, revision int64
 		return repo.SavePluginRun(run, revision, run.Status)
 	})
 	if err != nil {
+		var appErr *kernel.AppError
+		if errors.As(err, &appErr) && appErr.Reason == "projection_conflict" {
+			if recordErr := s.repo.RecordPluginProjectionConflict(userID, id, revision, appErr.Message); recordErr != nil {
+				return RunView{}, recordErr
+			}
+		}
 		return RunView{}, err
 	}
 	return s.GetRun(userID, id)

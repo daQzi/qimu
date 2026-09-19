@@ -1153,6 +1153,7 @@
             "kind": {
               "const": "inline"
             },
+            "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
             "result": {}
           },
           "required": [

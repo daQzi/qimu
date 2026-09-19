@@ -11,6 +11,19 @@ import (
 type cloudAgentStructuredProjector func(value any, offset int, precise bool) (any, error)
 
 var cloudAgentStructuredProjectors = map[string]cloudAgentStructuredProjector{
+	"plugin_result": func(value any, _ int, _ bool) (any, error) {
+		binding, ok := value.(map[string]any)
+		if !ok {
+			return nil, nil
+		}
+		out := map[string]any{}
+		for _, key := range []string{"runId", "digest", "releaseId", "viewId", "bindingKey"} {
+			if text, ok := binding[key].(string); ok {
+				out[key] = truncateRunes(text, 160)
+			}
+		}
+		return out, nil
+	},
 	"storyboard": func(value any, offset int, precise bool) (any, error) {
 		storyboard, ok := value.(map[string]any)
 		if !ok {
@@ -152,7 +165,8 @@ func cloudAgentCanvasState(repo *repository.Repository, userID string, doc map[s
 				// The model only needs the verified public characteristics; never
 				// forward the provider payload or storage locator into the read tool.
 				item["asset"] = map[string]any{
-					"mimeType": ref["mimeType"], "bytes": ref["bytes"],
+					"resourceId": strings.TrimPrefix(stringValue(ref["storageKey"]), "resource:"),
+					"mimeType":   ref["mimeType"], "bytes": ref["bytes"],
 					"width": ref["width"], "height": ref["height"],
 					"durationMs": ref["durationMs"], "inputKind": ref["inputKind"],
 				}

@@ -28,7 +28,7 @@ func invocationPackage(t *testing.T) []byte {
 }
 
 func invocationAdapters() []ShortHostAdapter {
-	prepare := func(repo *repository.Repository, userID string, input map[string]json.RawMessage, _ contracts.InvocationContext) (PreparedOperation, error) {
+	prepare := func(repo *repository.Repository, userID string, input map[string]json.RawMessage, _ HostOperationContext) (PreparedOperation, error) {
 		var id string
 		_ = json.Unmarshal(input["resourceId"], &id)
 		resource, err := repo.LockResourceForUser(userID, id)

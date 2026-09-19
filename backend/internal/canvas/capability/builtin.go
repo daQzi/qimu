@@ -8,6 +8,14 @@ const (
 func BuiltinRegistry() *Registry {
 	registry, err := NewRegistry([]Descriptor{
 		{
+			Type: "plugin-result", Version: "1", Label: "插件结果", DefaultWidth: 420, DefaultHeight: 320,
+			Purpose: "展示插件的持久成功结果；通过插件蓝图操作绑定，不能直接编写结果事实。",
+			Actions: []string{"result_read"}, RequiresPluginResult: true, CanUpdate: true,
+			SummaryFields: []string{"pluginResult"}, DetailFields: []string{"pluginResult"},
+			ProjectionKind: "plugin_result", ProjectionField: "pluginResult",
+			PatchFields: map[string]PatchField{"title": {Path: "title", Kind: patchKindString, Label: "节点名称", Order: 10, MaxRunes: maxAgentNodeTitleRunes}},
+		},
+		{
 			Type: "text", Version: "1", Label: "文本", DefaultWidth: 340, DefaultHeight: 240,
 			Purpose:     "承载普通说明、创意草稿和单段提示词。",
 			GoodFor:     []string{"单个创意", "一次性提示词", "临时备注", "快速试验"},

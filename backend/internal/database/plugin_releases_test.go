@@ -122,7 +122,7 @@ func TestP02MigrationAcceptsMainAndP01Version27Lineages(t *testing.T) {
 					t.Fatal(err)
 				}
 				status, err := ReadSchemaStatus(db)
-				if err != nil || !status.Ready || status.Current != 29 {
+				if err != nil || !status.Ready || status.Current != CurrentSchemaVersion {
 					t.Fatalf("status=%+v err=%v", status, err)
 				}
 				for _, table := range []any{&model.PluginApplication{}, &model.PluginRun{}, &model.PluginRunStep{}, &model.PluginRunEvent{}} {

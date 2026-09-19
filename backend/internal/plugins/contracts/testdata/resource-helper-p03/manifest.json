@@ -1,0 +1,21 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "resource-helper",
+  "name": "视频资源检查助手",
+  "version": "1.3.0",
+  "description": "检查真实视频元数据，确认保存后将结果绑定到画布。",
+  "publisher": { "id": "example-publisher", "displayName": "示例作者" },
+  "requires": { "hostApi": "^3.0.0" },
+  "permissions": ["media.read", "resource.create", "canvas.read", "canvas.write"],
+  "dependencies": [],
+  "contributes": {
+    "skills": [{ "id": "check-source", "name": "check-source", "description": "检查视频信息，按用户要求保存结果或放到画布。", "entry": "skills/check-source/SKILL.md", "activation": "auto", "operations": ["resource-helper.inspect-video", "resource-helper.snapshot-video", "resource-helper.place-result"] }],
+    "operations": [
+      { "id": "inspect-video", "ref": "operations/inspect-video.json" },
+      { "id": "snapshot-video", "ref": "operations/snapshot-video.json" },
+      { "id": "place-result", "ref": "operations/place-result.json" }
+    ],
+    "views": [{ "id": "inspect-result", "ref": "views/inspect-result.json" }],
+    "canvasBlueprints": [{ "id": "inspect-board", "ref": "blueprints/inspect-board.json" }]
+  }
+}

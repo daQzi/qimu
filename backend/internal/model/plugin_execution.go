@@ -23,8 +23,24 @@ type PluginRun struct {
 	EventSequence    int64     `json:"eventSequence" gorm:"not null"`
 	ApprovalID       string    `json:"approvalId,omitempty" gorm:"size:36"`
 	ApprovalDecision string    `json:"approvalDecision,omitempty" gorm:"size:16"`
+	ProjectionStatus string    `json:"projectionStatus,omitempty" gorm:"size:24"`
+	FailureMessage   string    `json:"failureMessage,omitempty" gorm:"type:text"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
+}
+
+// One immutable binding per canvas/result/template/instance; node content remains user-owned.
+type PluginCanvasProjection struct {
+	ID           string `gorm:"primaryKey;size:64"`
+	UserID       string `gorm:"size:36;not null;index"`
+	CanvasID     string `gorm:"size:80;not null;index"`
+	SourceRunID  string `gorm:"size:36;not null;index"`
+	ReleaseID    string `gorm:"size:36;not null"`
+	BlueprintID  string `gorm:"size:80;not null"`
+	BindingsJSON string `gorm:"type:text;not null"`
+	NodesJSON    string `gorm:"type:text;not null"`
+	ResultJSON   string `gorm:"type:text;not null"`
+	CreatedAt    time.Time
 }
 type PluginRunStep struct {
 	ID          string  `gorm:"primaryKey;size:36"`

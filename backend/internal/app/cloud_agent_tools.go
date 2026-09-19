@@ -805,11 +805,12 @@ func cloudAgentNodeTypes() map[string]any {
 	types := make([]map[string]any, 0, len(canvasCapabilityRegistry.List()))
 	for _, capability := range canvasCapabilityRegistry.List() {
 		item := map[string]any{
-			"type":        capability.Type,
-			"label":       capability.Label,
-			"purpose":     capability.Purpose,
-			"defaultSize": map[string]any{"width": capability.DefaultWidth, "height": capability.DefaultHeight},
-			"canUpdate":   capability.CanUpdate,
+			"type":                 capability.Type,
+			"label":                capability.Label,
+			"purpose":              capability.Purpose,
+			"defaultSize":          map[string]any{"width": capability.DefaultWidth, "height": capability.DefaultHeight},
+			"canUpdate":            capability.CanUpdate,
+			"requiresPluginResult": capability.RequiresPluginResult,
 		}
 		if len(capability.GoodFor) > 0 {
 			item["goodFor"] = capability.GoodFor

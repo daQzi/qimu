@@ -62,7 +62,7 @@ func (r *Repository) CreatePluginRun(run *model.PluginRun, step *model.PluginRun
 	return r.db.Create(step).Error
 }
 func (r *Repository) SavePluginRun(run *model.PluginRun, expected int64, stepStatus string) error {
-	result := r.db.Model(&model.PluginRun{}).Where("id=? AND user_id=? AND revision=?", run.ID, run.UserID, expected).Updates(map[string]any{"status": run.Status, "revision": run.Revision, "event_sequence": run.EventSequence, "approval_decision": run.ApprovalDecision, "result_json": run.ResultJSON, "source_resource_id": run.SourceResourceID, "updated_at": time.Now()})
+	result := r.db.Model(&model.PluginRun{}).Where("id=? AND user_id=? AND revision=?", run.ID, run.UserID, expected).Updates(map[string]any{"status": run.Status, "revision": run.Revision, "event_sequence": run.EventSequence, "approval_decision": run.ApprovalDecision, "result_json": run.ResultJSON, "source_resource_id": run.SourceResourceID, "projection_status": run.ProjectionStatus, "failure_message": run.FailureMessage, "updated_at": time.Now()})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -70,6 +70,23 @@ func (r *Repository) SavePluginRun(run *model.PluginRun, expected int64, stepSta
 		return ErrTaskStateConflict
 	}
 	return r.db.Model(&model.PluginRunStep{}).Where("run_id=?", run.ID).Updates(map[string]any{"status": stepStatus, "updated_at": time.Now()}).Error
+}
+
+func (r *Repository) RecordPluginProjectionConflict(userID, id string, revision int64, message string) error {
+	return r.db.Model(&model.PluginRun{}).Where("id=? AND user_id=? AND revision=? AND status=?", id, userID, revision, "waiting_approval").Updates(map[string]any{"projection_status": "conflict", "failure_message": message}).Error
+}
+
+func (r *Repository) PluginCanvasProjection(userID, id string) (*model.PluginCanvasProjection, error) {
+	var row model.PluginCanvasProjection
+	err := r.db.Where("id=? AND user_id=?", id, userID).First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &row, err
+}
+
+func (r *Repository) CreatePluginCanvasProjection(row *model.PluginCanvasProjection) error {
+	return r.db.Create(row).Error
 }
 func (r *Repository) AppendPluginRunEvent(event *model.PluginRunEvent) error {
 	return r.db.Create(event).Error

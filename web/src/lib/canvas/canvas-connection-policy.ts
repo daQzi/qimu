@@ -1,5 +1,5 @@
 import { maxModelInputCapacity, type ModelInputSummary } from "@/lib/model-selection";
-import { getNodeAcceptedInputKinds, getNodeGenerationMode, getNodeInputKind, getNodeMaxInputCount } from "@/lib/canvas/node-registry";
+import { getNodeAcceptedInputKinds, getNodeDefinition, getNodeGenerationMode, getNodeInputKind, getNodeMaxInputCount } from "@/lib/canvas/node-registry";
 import type { AiConfig } from "@/stores/use-config-store";
 import { CanvasNodeType, type CanvasConnection, type CanvasNodeData } from "@/types/canvas";
 
@@ -12,6 +12,9 @@ type CanvasConnectionPolicyOptions = {
 export function canvasConnectionError(config: AiConfig, nodes: CanvasNodeData[], connections: CanvasConnection[], candidate: ConnectionCandidate, options: CanvasConnectionPolicyOptions = {}) {
     const target = nodes.find((node) => node.id === candidate.toNodeId);
     if (!target) return "找不到连线目标节点";
+    if (getNodeDefinition(target.type)?.showInputConnection === false) return "该节点不接受连线输入";
+    const source = nodes.find((node) => node.id === candidate.fromNodeId);
+    if (source && getNodeDefinition(source.type)?.showOutputConnection === false) return "该节点不是生成参考素材";
     const acceptedInputKinds = getNodeAcceptedInputKinds(target.type);
     if (acceptedInputKinds.length) {
         const source = nodes.find((node) => node.id === candidate.fromNodeId);

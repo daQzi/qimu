@@ -116,6 +116,9 @@ func applyCloudAgentCanvasPlan(doc map[string]any, ops []agentCanvasOp) ([]cloud
 			if !ok {
 				return nil, BadAuthRequest("不支持的节点类型")
 			}
+			if capability.RequiresPluginResult {
+				return nil, BadAuthRequest("该节点必须通过插件蓝图绑定真实成功结果")
+			}
 			node := creationAddedNode(CreationCanvasOp{Type: op.Type, ID: op.ID, NodeType: op.NodeType, Title: title, X: &op.X, Y: &op.Y, Metadata: capability.Metadata(content)})
 			nodes = append(nodes, node)
 			nodeTitle := cloudAgentApprovalNodeTitle(node, capability.Label)

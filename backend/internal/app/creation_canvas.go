@@ -44,7 +44,7 @@ func validateCreationOps(ops []CreationCanvasOp) error {
 				return BadAuthRequest("新增节点必须使用不重复的稳定 ID")
 			}
 			ids[op.ID] = true
-			if _, ok := cloudAgentNodeCapabilityForType(op.NodeType); !ok {
+			if capability, ok := cloudAgentNodeCapabilityForType(op.NodeType); !ok || capability.RequiresPluginResult {
 				return BadAuthRequest("该节点类型不在本期创作范围")
 			}
 		case "update_node":

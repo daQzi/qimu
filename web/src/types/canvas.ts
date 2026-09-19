@@ -19,6 +19,7 @@ export type ViewportTransform = {
 };
 
 export enum CanvasNodeType {
+	PluginResult = "plugin-result",
     Image = "image",
     Text = "text",
     Drawing = "drawing",
@@ -200,6 +201,7 @@ export type CanvasSkillSnapshot = {
 };
 
 export type CanvasNodeMetadata = {
+	pluginResult?: { runId: string; digest: string; releaseId: string; viewId: string; projectionId: string; bindingKey: string };
     /** Namespaced extension ownership for nodes contributed by a unified plugin. */
     pluginId?: string;
     pluginNodeId?: string;

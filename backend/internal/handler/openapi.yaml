@@ -125,6 +125,20 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/Envelope"
+  /plugin-canvases/{id}/snapshot:
+    get:
+      tags: [agent]
+      summary: 读取当前用户画布的插件写入快照标识
+      description: 返回 canvasId 和 snapshotHash；不包含画布内容，也不授权写入。蓝图实例化仍走 plugin-invocations 和用户审批。
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /plugin-operations:
     get:
       tags: [agent]
@@ -197,8 +211,10 @@ paths:
     get:
       tags: [agent]
       summary: 读取当前用户的单步插件运行
+      description: 包含固定发布版本、声明式 view、可选 canvasActions 和 projectionStatus/failureMessage；历史结果读取不授予新调用权限。
       parameters:
         - $ref: "#/components/parameters/AgentRunID"
+        - {name: viewId, in: query, schema: {type: string}, description: 固定发布中的视图 ID；需与结果 Schema 匹配}
       responses:
         "200":
           $ref: "#/components/responses/Envelope"

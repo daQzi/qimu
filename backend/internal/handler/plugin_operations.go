@@ -9,6 +9,20 @@ import (
 )
 
 func registerPluginOperationRoutes(api *gin.RouterGroup, svc *service.Service) {
+	api.GET("/plugin-canvases/:id/snapshot", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		result, err := svc.PluginCanvasSnapshot(user.ID, c.Param("id"))
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		c.Header("Cache-Control", "private, no-store")
+		ok(c, result)
+	})
 	api.GET("/plugin-operations", func(c *gin.Context) {
 		user, err := currentUser(c, svc)
 		if err != nil {
@@ -72,7 +86,7 @@ func registerPluginOperationRoutes(api *gin.RouterGroup, svc *service.Service) {
 			failService(c, err)
 			return
 		}
-		run, err := svc.PluginRun(user.ID, c.Param("id"))
+		run, err := svc.PluginRun(user.ID, c.Param("id"), c.Query("viewId"))
 		if err != nil {
 			failService(c, err)
 			return

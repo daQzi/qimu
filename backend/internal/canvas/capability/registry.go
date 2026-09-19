@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const SetVersion = "canvas-capabilities/v4"
+const SetVersion = "canvas-capabilities/v5"
 
 type Registry struct{ descriptors map[string]Descriptor }
 
@@ -203,25 +203,26 @@ func cloneDescriptor(descriptor Descriptor) Descriptor {
 }
 
 type hashDescriptor struct {
-	Type            string
-	Version         string
-	Label           string
-	Purpose         string
-	GoodFor         []string
-	NotIdealFor     []string
-	Tradeoffs       []string
-	Actions         []string
-	DefaultWidth    float64
-	DefaultHeight   float64
-	InputKind       string
-	GenerationMode  string
-	Connection      hashConnectionPolicy
-	CanUpdate       bool
-	SummaryFields   []string
-	DetailFields    []string
-	ProjectionKind  string
-	ProjectionField string
-	PatchFields     []hashPatchField
+	Type                 string
+	Version              string
+	Label                string
+	Purpose              string
+	GoodFor              []string
+	NotIdealFor          []string
+	Tradeoffs            []string
+	Actions              []string
+	DefaultWidth         float64
+	DefaultHeight        float64
+	InputKind            string
+	GenerationMode       string
+	Connection           hashConnectionPolicy
+	CanUpdate            bool
+	RequiresPluginResult bool
+	SummaryFields        []string
+	DetailFields         []string
+	ProjectionKind       string
+	ProjectionField      string
+	PatchFields          []hashPatchField
 }
 
 type hashConnectionPolicy struct {
@@ -265,6 +266,7 @@ func registryHashItems(descriptors []Descriptor) []hashDescriptor {
 			ProjectionKind: descriptor.ProjectionKind, ProjectionField: descriptor.ProjectionField,
 			Connection: hashConnectionPolicy{CanSource: descriptor.Connection.CanSource, CanTarget: descriptor.Connection.CanTarget, CanReference: descriptor.Connection.CanReference, AcceptedInputKinds: descriptor.Connection.AcceptedInputKinds, RejectedInputKinds: descriptor.Connection.RejectedInputKinds, MaxInputCount: descriptor.Connection.MaxInputCount},
 			CanUpdate:  descriptor.CanUpdate, SummaryFields: descriptor.SummaryFields, DetailFields: descriptor.DetailFields, PatchFields: patchFields,
+			RequiresPluginResult: descriptor.RequiresPluginResult,
 		})
 	}
 	return items

@@ -347,6 +347,11 @@ func TestCloudAgentAdmissionAndContinuation(t *testing.T) {
 
 func TestCloudAgentAdmissionAcceptsTokenPricingWithQuotedChargeLimit(t *testing.T) {
 	s, db, _, _ := creationTestService(t)
+	// This tests token-priced admission, not low balance. Cover the request's
+	// one-credit budget as the registered capability descriptions grow.
+	if err := db.Model(&model.CreditAccount{}).Where("user_id = ?", "user").Update("available_microcredits", int64(1_000_000)).Error; err != nil {
+		t.Fatal(err)
+	}
 	if err := db.Create(&model.CanvasProject{ID: "agent-canvas", UserID: "user", PayloadJSON: `{"nodes":[]}`}).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -564,12 +569,15 @@ func TestCloudAgentToolLoopPersistsApprovalAndAppliesCanvasWrite(t *testing.T) {
 func TestCloudAgentNodeTypesExposeExecutableAllowList(t *testing.T) {
 	result := cloudAgentNodeTypes()
 	nodes, ok := result["nodes"].([]map[string]any)
-	if !ok || len(nodes) != 8 {
+	if !ok || len(nodes) != 9 {
 		t.Fatalf("unexpected node registry: %#v", result)
 	}
 	for _, node := range nodes {
 		if node["type"] == "panorama" {
 			t.Fatal("UI-only node must not be exposed")
+		}
+		if node["type"] == "plugin-result" && (node["requiresPluginResult"] != true || node["canSource"] != false || node["canTarget"] != false) {
+			t.Fatal("result nodes must require a plugin binding and cannot act as media inputs")
 		}
 	}
 }

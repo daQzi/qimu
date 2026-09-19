@@ -321,21 +321,28 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 		execution := op["execution"].(map[string]any)
 		// Installation validates the admitted host contract, never permissions
 		// invented by a package. Execution repeats the host minimum checks.
-		if execution["kind"] != "host" || (execution["adapter"] != "resource.inspect" && execution["adapter"] != "resource.snapshot") || execution["mode"] != "inline" {
+		if execution["kind"] != "host" || (execution["adapter"] != "resource.inspect" && execution["adapter"] != "resource.snapshot" && execution["adapter"] != "canvas.blueprint.instantiate") || execution["mode"] != "inline" {
 			return invalid("operation_unavailable", "host adapter profile")
 		}
 		permissions := asArray(op["requiredPermissions"])
 		hasRead := false
 		hasCreate := false
+		hasCanvasRead, hasCanvasWrite := false, false
 		for _, p := range permissions {
 			hasRead = hasRead || p == "media.read"
 			hasCreate = hasCreate || p == "resource.create"
+			hasCanvasRead = hasCanvasRead || p == "canvas.read"
+			hasCanvasWrite = hasCanvasWrite || p == "canvas.write"
 		}
 		effects := asArray(op["effects"])
 		expectedEffect := "read"
 		if execution["adapter"] == "resource.snapshot" {
 			expectedEffect = "draft_write"
 			hasRead = hasRead && hasCreate
+		}
+		if execution["adapter"] == "canvas.blueprint.instantiate" {
+			expectedEffect = "draft_write"
+			hasRead = hasCanvasRead && hasCanvasWrite && op["context"].(map[string]any)["requiresCanvas"] == true
 		}
 		if !hasRead || len(effects) != 1 || effects[0] != expectedEffect {
 			return invalid("scope_forbidden", "adapter minimum contract")

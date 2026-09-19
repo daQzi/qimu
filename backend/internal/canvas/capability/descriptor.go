@@ -35,26 +35,27 @@ type PatchField struct {
 // persistence and state projection all consume this registry; no caller owns a
 // second node allow-list.
 type Descriptor struct {
-	Type            string
-	Version         string
-	Label           string
-	Purpose         string
-	GoodFor         []string
-	NotIdealFor     []string
-	Tradeoffs       []string
-	Actions         []string
-	DefaultWidth    float64
-	DefaultHeight   float64
-	InputKind       string
-	GenerationMode  string
-	Connection      ConnectionPolicy
-	CanUpdate       bool
-	SummaryFields   []string
-	DetailFields    []string
-	ProjectionKind  string
-	ProjectionField string
-	PatchFields     map[string]PatchField
-	CreateMetadata  func(content string) map[string]any
+	Type                 string
+	Version              string
+	Label                string
+	Purpose              string
+	GoodFor              []string
+	NotIdealFor          []string
+	Tradeoffs            []string
+	Actions              []string
+	DefaultWidth         float64
+	DefaultHeight        float64
+	InputKind            string
+	GenerationMode       string
+	Connection           ConnectionPolicy
+	CanUpdate            bool
+	RequiresPluginResult bool
+	SummaryFields        []string
+	DetailFields         []string
+	ProjectionKind       string
+	ProjectionField      string
+	PatchFields          map[string]PatchField
+	CreateMetadata       func(content string) map[string]any
 }
 
 func (d Descriptor) Metadata(content string) map[string]any {

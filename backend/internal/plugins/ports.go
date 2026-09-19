@@ -10,6 +10,15 @@ type PreparedOperation struct {
 	Result           json.RawMessage
 	SourceResourceID string
 	SourceDigest     string
+	ProjectsToCanvas bool
+	// Commit runs only after explicit approval, in the run transaction.
+	Commit func(*repository.Repository) error
+}
+
+type HostOperationContext struct {
+	contracts.InvocationContext
+	ReleaseID string
+	Files     contracts.PackageFiles
 }
 
 // ShortHostAdapter prepares bounded local data in the caller's transaction.
@@ -18,7 +27,7 @@ type ShortHostAdapter struct {
 	ID          string
 	Permissions []string
 	Effects     []string
-	Prepare     func(*repository.Repository, string, map[string]json.RawMessage, contracts.InvocationContext) (PreparedOperation, error)
+	Prepare     func(*repository.Repository, string, map[string]json.RawMessage, HostOperationContext) (PreparedOperation, error)
 }
 
 func (s *Service) WithAdapters(adapters []ShortHostAdapter) *Service {
@@ -41,6 +50,7 @@ type OperationDescription struct {
 	Definition   contracts.Operation        `json:"definition"`
 	Schemas      map[string]json.RawMessage `json:"schemas"`
 	Available    bool                       `json:"available"`
+	ResultView   *contracts.ResultView      `json:"resultView,omitempty"`
 	Reason       string                     `json:"reason,omitempty"`
 }
 type OperationSummary struct {

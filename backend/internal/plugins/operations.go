@@ -189,7 +189,19 @@ func (s *Service) Describe(userID, address, releaseID string, ctx contracts.Invo
 			schemas[path] = json.RawMessage(raw)
 		}
 	}
-	return OperationDescription{Address: address, ReleaseID: resolved.Release.ID, ContractHash: resolved.ContractHash, Definition: resolved.Definition, Schemas: schemas, Available: true}, nil
+	var manifest contracts.Manifest
+	if err = json.Unmarshal(resolved.Files["manifest.json"], &manifest); err != nil {
+		return OperationDescription{}, err
+	}
+	var view *contracts.ResultView
+	for _, ref := range manifest.Contributes.Views {
+		if ref.ID == resolved.Definition.ResultView {
+			if err = json.Unmarshal(resolved.Files[ref.Ref], &view); err != nil {
+				return OperationDescription{}, err
+			}
+		}
+	}
+	return OperationDescription{Address: address, ReleaseID: resolved.Release.ID, ContractHash: resolved.ContractHash, Definition: resolved.Definition, Schemas: schemas, Available: true, ResultView: view}, nil
 }
 
 func (s *Service) Search(userID, query string, offset int, ctx contracts.InvocationContext, policy InvocationPolicy) ([]OperationSummary, int, error) {

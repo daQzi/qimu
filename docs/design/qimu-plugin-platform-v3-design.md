@@ -1,6 +1,6 @@
 # Qimu 应用插件平台 v3：需求与整体架构设计
 
-> 状态：按阶段实施的架构目标。P00/P01 已验收；P02 已实现统一操作、短运行审批和无画布 Agent，待页面验收。其余远程任务/流程/画布能力仍为目标设计，进度以实施手册为准。
+> 状态：按阶段实施的架构目标。P00–P02 已验收；P03 实现结果卡片、plugin-result 和最小蓝图实例化。其余远程任务、Pipeline 和输入节点仍为目标设计，进度以实施手册为准。
 > 设计起始代码基线：qimu `4eaa28b8`；P02 开始前已同步 main v1.5.4。旧 v1/v2 保留；v3 尚未部署到实际业务环境。
 
 配套文档：[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)、[改造实施设计](../plans/qimu-plugin-platform-v3-implementation.md)。目标合同以本文件和接入指南为准，实施顺序以实施设计为准。
