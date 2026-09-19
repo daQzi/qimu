@@ -9,7 +9,9 @@ description: 从产品功能快速定位主要代码入口
 
 ## 应用插件 v3 合同（P00，尚未接入运行）
 
-P01 新增 `internal/plugins/service.go/catalog.go/storage.go` 管理安装与版本，`repository/plugin_releases.go` 保证目录事务、用户授权和技能可见性，`skills/plugin_package.go` 复用已有技能归档。`app/application_plugins.go` 是身份/功能门禁与安装版本分流的组合根，`handler/application_plugins.go` 暴露目录及生命周期 API，schema v27 位于 `database/migrations.go`。前端 `components/plugins/application-plugins-panel.tsx` 同时用于管理员页和用户插件中心。P00 合同仍不注册执行器；P01 仅安装元数据和技能，操作执行留待 P02。
+P01 新增 `internal/plugins/service.go/catalog.go/storage.go` 管理安装与版本，`repository/plugin_releases.go` 保证目录事务、用户授权和技能可见性，`skills/plugin_package.go` 复用已有技能归档。`app/application_plugins.go` 是身份/功能门禁与安装版本分流的组合根，`handler/application_plugins.go` 暴露目录及生命周期 API。P01 最初使用 schema v27；同步主线后，新数据库在 v28 建目录，迁移器仍识别原 v27 校验和。前端 `components/plugins/application-plugins-panel.tsx` 同时用于管理员页和用户插件中心。
+
+P02 的统一调用位于 `internal/plugins/operations.go/invocation.go/ports.go`，只通过 app 注入的 `plugin_host_adapters.go` 读取真实资源；`model/plugin_execution.go` 和 `repository/plugin_execution.go` 保存单步 Run/Step/Event。HTTP 在 `handler/plugin_operations.go`，Agent 工具桥在 `app/cloud_agent_plugins.go`。前端 `services/api/plugin-operations.ts`、`plugin-operation-tester.tsx` 和 `plugin-run-card.tsx` 复用同一入口。当前只开放本地短操作；远程 Connector、Task 执行与 Pipeline 仍未开放。
 
 `backend/internal/plugins/contracts/schema.json` 是前后端共用合同，`profile.json` 固定离线范围和上限；同目录 Go 校验器与 `web/src/lib/plugins/plugin-v3-contract.ts` 分别检查字段、包内引用、依赖及流程环。`testdata/resource-helper` 为七文件样例，`testdata/cases.json` 是共同正反例，`cmd/plugin-contract` 提供离线目录校验。现有 v1/v2 安装、Agent 和 Task 路径没有挂接此模块；用户验收见仓库 `docs/plans/qimu-plugin-p00-acceptance.md`。
 

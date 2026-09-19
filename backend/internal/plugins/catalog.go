@@ -103,14 +103,21 @@ func (s *Service) applicationView(userID string, app model.PluginApplication) (A
 		for _, key := range keys {
 			op := ops[key]
 			opReason := reason
+			available := false
 			if opReason == "operation_unavailable" {
 				for _, p := range op.RequiredPermissions {
 					if !grants[p] {
 						opReason = "scope_forbidden"
 					}
 				}
+				if opReason == "operation_unavailable" && s.enabled {
+					if _, adapterErr := s.adapterFor(op); adapterErr == nil {
+						opReason = ""
+						available = true
+					}
+				}
 			}
-			release.Operations = append(release.Operations, OperationView{Operation: op, Available: false, Reason: opReason})
+			release.Operations = append(release.Operations, OperationView{Operation: op, Available: available, Reason: opReason})
 		}
 		item.Releases = append(item.Releases, release)
 	}

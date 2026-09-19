@@ -22,9 +22,10 @@ import (
 )
 
 type Service struct {
-	repo    *repository.Repository
-	dataDir string
-	enabled bool
+	adapters map[string]ShortHostAdapter
+	repo     *repository.Repository
+	dataDir  string
+	enabled  bool
 }
 
 func New(repo *repository.Repository, dataDir string, enabled bool) *Service {

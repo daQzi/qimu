@@ -15,6 +15,7 @@ import (
 
 func RegisterPluginRoutes(r *gin.RouterGroup, svc *service.Service) {
 	registerApplicationPluginRoutes(r, svc)
+	registerPluginOperationRoutes(r, svc)
 	statusRoutes := r.Group("/plugins")
 	statusRoutes.GET("/status", func(c *gin.Context) {
 		user, err := currentUser(c, svc)

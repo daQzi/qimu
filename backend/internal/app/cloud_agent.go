@@ -23,18 +23,20 @@ const cloudAgentOperation = "cloud_agent"
 // turns reference the previous run, not a mutable in-memory conversation. This
 // reuses transactional billing, worker leases, cancellation and text replay.
 type CloudAgentRequest struct {
-	ReasoningMode   string   `json:"reasoningMode,omitempty"`
-	ProfileRevision string   `json:"profileRevision,omitempty"`
-	CanvasID        string   `json:"canvasId"`
-	Prompt          string   `json:"prompt"`
-	Model           string   `json:"model,omitempty"`
-	LogicalModelID  string   `json:"logicalModelId,omitempty"`
-	ChannelID       string   `json:"channelId,omitempty"`
-	ChannelModelKey string   `json:"channelModelKey,omitempty"`
-	PermissionMode  string   `json:"permissionMode"`
-	SkillIDs        []string `json:"skillIds,omitempty"`
-	ContextScope    []string `json:"contextScope"`
-	Budget          struct {
+	HostSurface        string   `json:"hostSurface,omitempty"`
+	PluginToolsVersion int      `json:"pluginToolsVersion,omitempty"`
+	ReasoningMode      string   `json:"reasoningMode,omitempty"`
+	ProfileRevision    string   `json:"profileRevision,omitempty"`
+	CanvasID           string   `json:"canvasId"`
+	Prompt             string   `json:"prompt"`
+	Model              string   `json:"model,omitempty"`
+	LogicalModelID     string   `json:"logicalModelId,omitempty"`
+	ChannelID          string   `json:"channelId,omitempty"`
+	ChannelModelKey    string   `json:"channelModelKey,omitempty"`
+	PermissionMode     string   `json:"permissionMode"`
+	SkillIDs           []string `json:"skillIds,omitempty"`
+	ContextScope       []string `json:"contextScope"`
+	Budget             struct {
 		MaxCredits         float64 `json:"maxCredits"`
 		MaxGenerationTasks int     `json:"maxGenerationTasks,omitempty"`
 		MaxVideoSeconds    int     `json:"maxVideoSeconds,omitempty"`
@@ -66,23 +68,24 @@ type cloudAgentState struct {
 }
 
 type CloudAgentRun struct {
-	ID             string              `json:"id"`
-	CanvasID       string              `json:"canvasId"`
-	ParentID       string              `json:"parentId,omitempty"`
-	Status         string              `json:"status"`
-	Revision       int64               `json:"revision"`
-	CleanupPending bool                `json:"cleanupPending,omitempty"`
-	FailureMessage string              `json:"failureMessage,omitempty"`
-	PermissionMode string              `json:"permissionMode"`
-	Model          string              `json:"model"`
-	CreatedAt      time.Time           `json:"createdAt"`
-	UpdatedAt      time.Time           `json:"updatedAt"`
-	Events         []CloudAgentEvent   `json:"events,omitempty"`
-	Skills         []cloudAgentSkill   `json:"skills,omitempty"`
-	Approval       *cloudAgentApproval `json:"approval,omitempty"`
-	SpentCredits   float64             `json:"spentCredits"`
-	Step           int                 `json:"step"`
-	ActiveMessage  map[string]string   `json:"activeMessage,omitempty"`
+	PendingExecution *cloudAgentExecutionRef `json:"pendingExecution,omitempty"`
+	ID               string                  `json:"id"`
+	CanvasID         string                  `json:"canvasId"`
+	ParentID         string                  `json:"parentId,omitempty"`
+	Status           string                  `json:"status"`
+	Revision         int64                   `json:"revision"`
+	CleanupPending   bool                    `json:"cleanupPending,omitempty"`
+	FailureMessage   string                  `json:"failureMessage,omitempty"`
+	PermissionMode   string                  `json:"permissionMode"`
+	Model            string                  `json:"model"`
+	CreatedAt        time.Time               `json:"createdAt"`
+	UpdatedAt        time.Time               `json:"updatedAt"`
+	Events           []CloudAgentEvent       `json:"events,omitempty"`
+	Skills           []cloudAgentSkill       `json:"skills,omitempty"`
+	Approval         *cloudAgentApproval     `json:"approval,omitempty"`
+	SpentCredits     float64                 `json:"spentCredits"`
+	Step             int                     `json:"step"`
+	ActiveMessage    map[string]string       `json:"activeMessage,omitempty"`
 }
 
 func validateCloudAgentRequest(req *CloudAgentRequest) error {
@@ -91,8 +94,16 @@ func validateCloudAgentRequest(req *CloudAgentRequest) error {
 	}
 	// IDs and protocol selectors are identifiers, not free-form text. Keep their
 	// validation in one place so byte/rune and Unicode handling cannot drift.
-	if err := validateCloudAgentID(req.CanvasID, "画布 ID", 80); err != nil {
-		return err
+	if req.HostSurface != "" && req.HostSurface != "canvas" && req.HostSurface != "agent-home" {
+		return BadAuthRequest("未知 Agent 入口")
+	}
+	if req.PluginToolsVersion < 0 || req.PluginToolsVersion > 1 {
+		return BadAuthRequest("插件工具合同版本无效")
+	}
+	if req.CanvasID != "" || req.HostSurface != "agent-home" {
+		if err := validateCloudAgentID(req.CanvasID, "画布 ID", 80); err != nil {
+			return err
+		}
 	}
 	req.CanvasID = strings.TrimSpace(req.CanvasID)
 	if err := validateCloudAgentPrompt(req.Prompt, 16000); err != nil {
@@ -167,6 +178,9 @@ func validateCloudAgentRequest(req *CloudAgentRequest) error {
 	if len(req.ContextScope) > 1 || (len(req.ContextScope) == 1 && req.ContextScope[0] != "canvas") {
 		return BadAuthRequest("当前仅支持已保存画布摘要，其他上下文尚未开放")
 	}
+	if req.CanvasID == "" && (len(req.ContextScope) > 0 || req.Budget.MaxGenerationTasks != 0 || req.Budget.MaxVideoSeconds != 0) {
+		return BadAuthRequest("无画布 Agent 不接受画布上下文或媒体生成预算")
+	}
 	if len(req.ContextScope) == 1 && req.ContextScope[0] == "canvas" {
 		req.ContextScope[0] = "canvas"
 	}
@@ -178,7 +192,7 @@ func validateCloudAgentRequest(req *CloudAgentRequest) error {
 
 func validateCloudAgentPrompt(value string, maxRunes int) error {
 	if !utf8.ValidString(value) || strings.TrimSpace(value) == "" || utf8.RuneCountInString(strings.TrimSpace(value)) > maxRunes {
-		return BadAuthRequest("需要有效画布和 1–16000 个字符的提示词")
+		return BadAuthRequest("需要 1–16000 个字符的有效提示词")
 	}
 	for _, r := range value {
 		if unicode.IsControl(r) && r != '\n' && r != '\r' && r != '\t' {
@@ -309,12 +323,17 @@ func (s *Service) CreateCloudAgentRun(userID string, req CloudAgentRequest, pare
 	if userID == "" {
 		return nil, kernel.Unauthorized("请先登录")
 	}
-	canvas, err := s.repo.CanvasProjectForUser(userID, req.CanvasID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, kernel.NotFound("画布不存在或尚未保存到服务端，请先完成画布同步")
+	req.PluginToolsVersion = 1
+	var canvas *model.CanvasProject
+	var err error
+	if req.CanvasID != "" {
+		canvas, err = s.repo.CanvasProjectForUser(userID, req.CanvasID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, kernel.NotFound("画布不存在或尚未保存到服务端，请先完成画布同步")
+			}
+			return nil, err
 		}
-		return nil, err
 	}
 	// Resolve and freeze the effective preference document before idempotency
 	// lookup. A retry without an explicit revision must still refer to the same
@@ -406,9 +425,12 @@ func (s *Service) CreateCloudAgentRun(userID string, req CloudAgentRequest, pare
 	if len(encodedHistory) > cloudAgentHistoryMaxBytes {
 		return nil, BadAuthRequest("对话上下文超过 64KB，请新建对话")
 	}
-	creativeAnchor, err = cloudAgentCreativeAnchorForCanvas(s.repo, userID, canvas, req.Prompt)
-	if err != nil {
-		return nil, err
+	creativeAnchor = cloudAgentCreativeAnchor{Version: 2, UserPrompt: req.Prompt}
+	if canvas != nil {
+		creativeAnchor, err = cloudAgentCreativeAnchorForCanvas(s.repo, userID, canvas, req.Prompt)
+		if err != nil {
+			return nil, err
+		}
 	}
 	skillSnapshots, err := s.cloudAgentSkills(userID, req.SkillIDs)
 	if err != nil {

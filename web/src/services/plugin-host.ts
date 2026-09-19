@@ -1,4 +1,14 @@
 import { requestToolResponse, type ResponseFunctionTool, type ResponseInputMessage, type ToolChoice } from "@/services/api/image";
+import { describePluginOperation, invokePluginOperation } from "@/services/api/plugin-operations";
+
+// Applications bind an immutable release. Authorization and execution remain
+// server-side; this bridge never uses the legacy browser AI credentials.
+export function createApplicationPluginHost(pluginId: string, releaseId: string) {
+    return {
+        describe: (operationId: string) => describePluginOperation(pluginId, operationId, releaseId),
+        invoke: (operationId: string, input: Record<string, unknown>, key: string) => invokePluginOperation({ operation: `${pluginId}.${operationId}`, releaseId, input }, key),
+    };
+}
 import { pluginStorageFor } from "@/lib/plugins/plugin-storage";
 import type { AiConfig } from "@/stores/use-config-store";
 import type { PluginHostContext, PluginInstallation, PluginTextRequest, RegisteredPlugin } from "@/lib/plugins/plugin-types";

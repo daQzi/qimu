@@ -319,18 +319,25 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 			return invalid("package_reference_invalid", view)
 		}
 		execution := op["execution"].(map[string]any)
-		// Only a known read-only host contract is admitted by this offline profile.
-		// This is not registration of a runtime adapter.
-		if execution["kind"] != "host" || execution["adapter"] != "resource.inspect" || execution["mode"] != "inline" {
-			return invalid("operation_unavailable", "P00 adapter profile")
+		// Installation validates the admitted host contract, never permissions
+		// invented by a package. Execution repeats the host minimum checks.
+		if execution["kind"] != "host" || (execution["adapter"] != "resource.inspect" && execution["adapter"] != "resource.snapshot") || execution["mode"] != "inline" {
+			return invalid("operation_unavailable", "host adapter profile")
 		}
 		permissions := asArray(op["requiredPermissions"])
 		hasRead := false
+		hasCreate := false
 		for _, p := range permissions {
 			hasRead = hasRead || p == "media.read"
+			hasCreate = hasCreate || p == "resource.create"
 		}
 		effects := asArray(op["effects"])
-		if !hasRead || len(effects) != 1 || effects[0] != "read" {
+		expectedEffect := "read"
+		if execution["adapter"] == "resource.snapshot" {
+			expectedEffect = "draft_write"
+			hasRead = hasRead && hasCreate
+		}
+		if !hasRead || len(effects) != 1 || effects[0] != expectedEffect {
 			return invalid("scope_forbidden", "adapter minimum contract")
 		}
 	}

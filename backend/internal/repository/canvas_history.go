@@ -129,7 +129,7 @@ func (r *Repository) CanvasHistoryResourceReferences(resourceIDs []string) ([]Re
 	return refs, err
 }
 
-func (r *Repository) RequireNoCanvasHistoryReferences(resourceIDs []string) error {
+func (r *Repository) RequireNoRetainedResourceReferences(resourceIDs []string) error {
 	if len(resourceIDs) == 0 {
 		return nil
 	}
@@ -147,6 +147,13 @@ func (r *Repository) RequireNoCanvasHistoryReferences(resourceIDs []string) erro
 	}
 	if len(refs) > 0 {
 		return ErrCanvasHistoryResourceReferenced
+	}
+	var pluginReferences int64
+	if err := r.db.Model(&model.PluginRun{}).Where("source_resource_id IN ?", resourceIDs).Count(&pluginReferences).Error; err != nil {
+		return err
+	}
+	if pluginReferences > 0 {
+		return ErrPluginRunResourceReferenced
 	}
 	return nil
 }

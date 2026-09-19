@@ -48,6 +48,11 @@ func resolveRef(current, reference string, docs map[string]map[string]any) (stri
 }
 
 func validateUserSchemas(files PackageFiles, docs map[string]map[string]any) error {
+	_, err := compileUserSchemas(files, docs)
+	return err
+}
+
+func compileUserSchemas(files PackageFiles, docs map[string]map[string]any) (*jsonschema.Compiler, error) {
 	marks := map[string]int{}
 	var visit func(string, string, map[string]any, int) error
 	visit = func(file, pointer string, node map[string]any, depth int) error {
@@ -122,32 +127,32 @@ func validateUserSchemas(files PackageFiles, docs map[string]map[string]any) err
 	for file := range docs {
 		if strings.HasPrefix(file, "schemas/") {
 			if err := Validate("userSchema", files[file]); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 	for file, node := range docs {
 		if strings.HasPrefix(file, "schemas/") {
 			if err := visit(file, "", node, 0); err != nil {
-				return err
+				return nil, err
 			}
 		}
 	}
 	for file, node := range docs {
 		if strings.HasPrefix(file, "schemas/") {
 			if err := compiler.AddResource(packageURL+file, rewrite(file, node)); err != nil {
-				return invalid("contract_invalid", file)
+				return nil, invalid("contract_invalid", file)
 			}
 		}
 	}
 	for file := range docs {
 		if strings.HasPrefix(file, "schemas/") {
 			if _, err := compiler.Compile(packageURL + file); err != nil {
-				return invalid("contract_invalid", file)
+				return nil, invalid("contract_invalid", file)
 			}
 		}
 	}
-	return nil
+	return compiler, nil
 }
 
 // ValidateDependencyGraph is a pure catalog check. Version resolution,
@@ -187,6 +192,46 @@ func ValidateDependencyGraph(graph map[string][]string) error {
 		if err := visit(id); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// ValidateData applies the same bounded, package-root Schema rules to inputs
+// and outputs. It never resolves a URL outside the already verified package.
+func ValidateData(files PackageFiles, schemaRef string, raw []byte) error {
+	docs := map[string]map[string]any{}
+	for name, data := range files {
+		if !strings.HasPrefix(name, "schemas/") {
+			continue
+		}
+		value, err := Decode(data)
+		if err != nil {
+			return err
+		}
+		object, ok := value.(map[string]any)
+		if !ok {
+			return invalid("contract_invalid", name)
+		}
+		docs[name] = object
+	}
+	compiler, err := compileUserSchemas(files, docs)
+	if err != nil {
+		return err
+	}
+	file, pointer, _, err := resolveRef("", schemaRef, docs)
+	if err != nil {
+		return err
+	}
+	schema, err := compiler.Compile(packageURL + file + "#" + pointer)
+	if err != nil {
+		return invalid("contract_invalid", schemaRef)
+	}
+	value, err := Decode(raw)
+	if err != nil {
+		return err
+	}
+	if err = schema.Validate(value); err != nil {
+		return invalid("operation_input_invalid", schemaRef)
 	}
 	return nil
 }

@@ -103,7 +103,9 @@ func compileCloudAgentPolicies(req CloudAgentRequest, skills []cloudAgentSkill, 
 	b.WriteString("\n\n")
 	b.WriteString(media.Text)
 	b.WriteString("\n\n")
-	b.WriteString(cloudAgentCapabilityGuide())
+	if req.CanvasID != "" {
+		b.WriteString(cloudAgentCapabilityGuide())
+	}
 	// Behavior belongs to versioned policies; the compiler only projects facts.
 	context := map[string]any{
 		"source": "server_snapshot", "permissionMode": req.PermissionMode,

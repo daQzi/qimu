@@ -59,7 +59,7 @@ func testDB(t *testing.T, driver string) *gorm.DB {
 	sql, _ := db.DB()
 	sql.SetMaxOpenConns(4)
 	t.Cleanup(func() { sql.Close() })
-	if err = db.AutoMigrate(&model.PluginApplication{}, &model.PluginRelease{}, &model.PluginSkillBinding{}, &model.PluginReleaseDependency{}, &model.PluginCatalogLock{}, &model.PluginNamespace{}, &model.UserPluginState{}, &model.User{}, &model.Skill{}, &model.SkillVersion{}, &model.SkillFile{}, &model.UserSkillState{}, &model.AdminAuditEvent{}, &model.UserIdentity{}); err != nil {
+	if err = db.AutoMigrate(&model.PluginApplication{}, &model.PluginRelease{}, &model.PluginSkillBinding{}, &model.PluginReleaseDependency{}, &model.PluginCatalogLock{}, &model.PluginNamespace{}, &model.PluginRun{}, &model.PluginRunStep{}, &model.PluginRunEvent{}, &model.UserPluginState{}, &model.User{}, &model.Skill{}, &model.SkillVersion{}, &model.SkillFile{}, &model.UserSkillState{}, &model.AdminAuditEvent{}, &model.UserIdentity{}, &model.Resource{}); err != nil {
 		t.Fatal(err)
 	}
 	return db

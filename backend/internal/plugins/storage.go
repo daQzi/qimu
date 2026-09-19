@@ -70,21 +70,25 @@ func (s *Service) persistPackage(key string, files map[string][]byte) error {
 	return os.Rename(file.Name(), target)
 }
 func (s *Service) verifyPackage(release model.PluginRelease) error {
+	_, err := s.loadPackage(release)
+	return err
+}
+func (s *Service) loadPackage(release model.PluginRelease) (contracts.PackageFiles, error) {
 	if filepath.Base(release.PackageKey) != release.PackageKey {
-		return fmt.Errorf("invalid stored package key")
+		return nil, fmt.Errorf("invalid stored package key")
 	}
 	raw, err := os.ReadFile(filepath.Join(s.dataDir, "application-plugin-packages", release.PackageKey))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	pkg, err := protocol.ReadPluginPackageEnvelope(raw)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if contracts.PackageDigest(pkg.Files) != release.Digest {
-		return issue(409, "plugin_version_conflict", "发布文件摘要不匹配")
+		return nil, issue(409, "plugin_version_conflict", "发布文件摘要不匹配")
 	}
-	return nil
+	return pkg.Files, nil
 }
 
 // PruneOrphans only touches old, content-addressed application archives that

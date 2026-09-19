@@ -5,10 +5,10 @@ description: 启幕 Agent 应用插件的包合同、操作、技能、远程 AP
 
 # 应用插件 v3 开发与接入指南
 
-> 状态：目标 SDK 接入规范，按阶段实施。P01 已支持受控 v3 包安装、发布版本、用户授权和技能目录；Operation 执行、Pipeline、HTTP Connector 与画布节点仍未开放。正式页面验收见 P01 记录。
+> 状态：目标 SDK 接入规范，按阶段实施。P01 已验收；P02 已支持 resource.inspect/resource.snapshot 短操作、统一调用和单步运行审批，待页面验收。Pipeline、HTTP Connector 与画布节点仍未开放。
 > 本文示例不包含真实服务或密钥。带 `example.invalid` 的地址只说明协议结构；真实模型选择和质量验证属于应用接入工作。
 
-P00 已实现离线合同校验；P01 在现有上传入口按版本分流，允许该受控子集登记与技能启用，见[P01 验收说明](../../../plans/qimu-plugin-p01-acceptance.md)。当前 profile 比本文目标规范更窄：仅精确三段正式版本，包贡献限技能/操作/基础视图/结果蓝图，样例 Adapter 只认可 resource.inspect；HTTP/Pipeline 仅有独立合同、不允许安装执行。旧协议解析器仍不直接接收 v3，应用包由独立领域服务处理。
+P00 已实现离线合同校验；P01 在现有上传入口按版本分流；P02 开放两个可信 Host Adapter，见[P02 验收说明](../../../plans/qimu-plugin-p02-acceptance.md)。当前 profile 比目标规范更窄：仅精确三段正式版本，包贡献限技能/操作/基础视图/结果蓝图；HTTP/Pipeline 仅有独立合同、不允许安装执行。旧协议解析器仍不直接接收 v3，应用包由独立领域服务处理。
 
 配套：[需求与架构](../../../design/qimu-plugin-platform-v3-design.md)、[实施设计](../../../plans/qimu-plugin-platform-v3-implementation.md)。现有协议插件用法见 [当前开发指南](../../../../web/src/pages/plugins/plugin-development-guide.md)。
 
@@ -58,7 +58,7 @@ P00 已实现离线合同校验；P01 在现有上传入口按版本分流，允
 
 ## 3. 完整最小示例：视频资源检查助手
 
-以下七个文件构成目标 SDK 的最小教学样例。`resource.inspect` 是本次拟开放的宿主 Adapter，不是当前已注册 API。它只返回已有资源元数据；需要下载探测的媒体处理另建异步操作，避免把高成本工作藏在 inline 读取中。
+以下七个文件构成最小教学样例。P02 已注册 `resource.inspect` Host Adapter，它只返回已有资源元数据；需要下载探测的媒体处理另建异步操作，避免把高成本工作藏在 inline 读取中。该 Adapter 通过统一调用 API 使用，不是独立 HTTP 路径。
 
 ```text
 resource-helper/
@@ -206,7 +206,7 @@ description: 检查已上传视频的资源信息，不生成、替换或转码�
 
 `plugin-result` 为目标标准节点。`key` 是模板内标识，宿主将其解析为真实 nodeId。实例化动作需要当前画布 snapshotHash、实际授权和唯一调用键；读取 inspect-video 成功本身不等于自动获得 canvas.write。
 
-本例 inline 结果没有 runId。用户选择保留结果时，宿主保存动作校验来源与摘要，以单步 PluginRun 固化结果并生成 ResultRef，然后实例化蓝图；不使用虚构 runId，也不重新执行收费服务。
+本例 inline 结果没有 runId。P02 验收包另提供 `resource.snapshot` 操作：校验同一来源与摘要，在用户批准后以单步 PluginRun 固化结果并生成 ResultRef。P03 才使用成功 ResultRef 实例化蓝图；不使用虚构 runId，也不重新执行收费服务。
 
 ## 4. 接入一个真实远程 API
 
@@ -357,9 +357,9 @@ Pipeline 文件声明 `id/inputSchemaRef/outputSchemaRef/steps/outputs`。首期
 
 没有画布时结果可在 Agent 卡片或应用面板展示；纯技能和素材查询不得要求创建临时画布。用户关页面后后台流程继续；纯浏览器编辑功能必须标记 executionEnvironment=browser，并禁止被离线 Pipeline 当作已完成。
 
-## 7. 内部接口草案
+## 7. 内部接口与实施状态
 
-以下全是本期拟新增的登录态 API，不是对外开放平台。路径设计须在 M0 与当前 handler 注册表核对；不覆盖现有 `/api/plugins`、`/api/agent` 或 `/api/creation-runs`。
+以下均为登录态内部 API，不是对外开放平台。P02 已实现操作检索/描述/调用、Run 查询、批准与取消；输入、resume、SSE、派生、分页大结果和 Connection 仍是后续目标。不覆盖现有 `/api/plugins`、`/api/agent` 或 `/api/creation-runs`。
 
 | 方法与路径 | 用途 |
 | --- | --- |

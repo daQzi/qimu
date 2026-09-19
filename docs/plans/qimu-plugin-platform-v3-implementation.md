@@ -1,6 +1,6 @@
 # Qimu 应用插件 v3：能力提升改造实施设计
 
-> 状态：分阶段实施设计，起始基线为 qimu `4eaa28b8`。P00 已验收；P01 安装与技能目录代码已交付，schema v27 仅在隔离数据库验证，等待用户验收；没有部署到实际业务环境。
+> 状态：分阶段实施设计，起始基线为 qimu `4eaa28b8`。P00/P01 已验收；P02 统一操作、单步运行与无画布 Agent 代码已交付，schema v29 仅在隔离数据库验证，等待用户验收；没有部署到实际业务环境。
 > 配套：[需求与整体架构](../design/qimu-plugin-platform-v3-design.md)、[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)。本文回答改哪里、如何迁移、如何验证、什么条件才算完成。
 
 实际分批执行统一使用[分阶段实施手册](qimu-agent-plugin-platform-execution-runbook.md)的 P00–P14 编号。本文 M0–M7 保留为设计模块映射；最小画布闭环已前移到 P03，多工作台与出海的分支依赖以手册为准，不重复执行多套计划。

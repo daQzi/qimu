@@ -1,0 +1,11 @@
+{
+  "id": "snapshot-video",
+  "description": "保存当前视频元数据的结构化快照；写入前需要用户确认。",
+  "inputSchemaRef": "schemas/inspect-input.json",
+  "outputSchemaRef": "schemas/inspect-output.json",
+  "requiredPermissions": ["media.read", "resource.create"],
+  "effects": ["draft_write"],
+  "context": { "requiresCanvas": false, "requiresProject": false },
+  "execution": { "kind": "host", "adapter": "resource.snapshot", "mode": "inline" },
+  "resultView": "inspect-result"
+}

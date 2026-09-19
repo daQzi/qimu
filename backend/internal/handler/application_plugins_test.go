@@ -118,6 +118,26 @@ func TestP01ApplicationPluginHTTP(t *testing.T) {
 	if response.Code != 200 || !strings.Contains(response.Body.String(), "check-source") {
 		t.Fatalf("skills %d %s", response.Code, response.Body.String())
 	}
+	if err = db.Create(&model.Resource{ID: "video-api", UserID: "alice", Kind: "video", Status: model.ResourceStatusReady, MimeType: "video/mp4", Width: 720}).Error; err != nil {
+		t.Fatal(err)
+	}
+	response = request("GET", "/api/plugin-operations?q=inspect&hostSurface=agent-home", "alice", nil)
+	if response.Code != 200 || !strings.Contains(response.Body.String(), "inspect-video") {
+		t.Fatalf("operation search %d %s", response.Code, response.Body.String())
+	}
+	response = request("GET", "/api/plugin-operations/resource-helper/inspect-video?releaseId="+release.ID+"&hostSurface=agent-home", "alice", nil)
+	if response.Code != 200 || !strings.Contains(response.Body.String(), "contractHash") {
+		t.Fatalf("operation describe %d %s", response.Code, response.Body.String())
+	}
+	invoke, _ := json.Marshal(map[string]any{"operation": "resource-helper.inspect-video", "releaseId": release.ID, "input": map[string]any{"resourceId": "video-api"}})
+	response = request("POST", "/api/plugin-invocations", "alice", invoke)
+	if response.Code != 200 || !strings.Contains(response.Body.String(), `"kind":"inline"`) {
+		t.Fatalf("operation invoke %d %s", response.Code, response.Body.String())
+	}
+	response = request("POST", "/api/plugin-invocations", "bob", invoke)
+	if response.Code != 403 {
+		t.Fatalf("foreign invocation %d %s", response.Code, response.Body.String())
+	}
 	var binding model.PluginSkillBinding
 	db.First(&binding, "release_id=?", release.ID)
 	response = request("GET", "/api/skills/"+binding.SkillID+"/file?path=SKILL.md", "bob", nil)
@@ -137,7 +157,7 @@ func TestP01ApplicationPluginHTTP(t *testing.T) {
 		t.Fatalf("revoked discovery %s", response.Body.String())
 	}
 	response = request("POST", "/api/plugin-invocations", "alice", []byte(`{}`))
-	if response.Code != 404 {
-		t.Fatal("P01 exposed execution")
+	if response.Code != 400 {
+		t.Fatal("malformed plugin invocation was not rejected")
 	}
 }

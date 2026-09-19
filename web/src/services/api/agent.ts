@@ -62,6 +62,7 @@ export type AgentApproval = {
 };
 
 export type AgentRun = {
+    pendingExecution?: { kind: "plugin_run"; id: string };
     id: string;
     canvasId: string;
     status: "queued" | "running" | "waiting_approval" | "completed" | "failed" | "cancelled" | "rejected";
@@ -103,9 +104,10 @@ export class AgentStreamError extends Error {
 }
 
 export type CreateAgentRunInput = {
+    hostSurface?: "canvas" | "agent-home";
     reasoningMode?: AgentReasoningMode;
     profileRevision?: string;
-    canvasId: string;
+    canvasId?: string;
     prompt: string;
     model?: string;
     logicalModelId?: string;
@@ -255,7 +257,7 @@ export function subscribeAgentEvents(runId: string, onEvent: (event: AgentEvent)
                                         emit("assistant_message", run.activeMessage);
                                     }
                                 }
-                                const statusPayload = { status: run.status, revision: run.revision, cleanupPending: run.cleanupPending, failureMessage: run.failureMessage, skills: run.skills, spentCredits: run.spentCredits, step: run.step, approval: run.approval };
+                                const statusPayload = { status: run.status, revision: run.revision, cleanupPending: run.cleanupPending, failureMessage: run.failureMessage, skills: run.skills, spentCredits: run.spentCredits, step: run.step, approval: run.approval, pendingExecution: run.pendingExecution };
                                 const statusKey = JSON.stringify(statusPayload);
                                 if (statusKey !== lastStatusKey) {
                                     lastStatusKey = statusKey;

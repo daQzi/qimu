@@ -19,7 +19,7 @@ func testCanvasHistory(t *testing.T, db *gorm.DB) {
 			t.Fatal(err)
 		}
 	}
-	if err := db.AutoMigrate(&model.CanvasSnapshot{}, &model.CanvasSnapshotResource{}, &model.CanvasShare{}, &model.Task{}); err != nil {
+	if err := db.AutoMigrate(&model.CanvasSnapshot{}, &model.CanvasSnapshotResource{}, &model.CanvasShare{}, &model.Task{}, &model.PluginRun{}); err != nil {
 		t.Fatal(err)
 	}
 	repo := New(db)
@@ -59,7 +59,7 @@ func testCanvasHistory(t *testing.T, db *gorm.DB) {
 		t.Fatalf("5 minute boundary = %d", len(items))
 	}
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		return New(tx).RequireNoCanvasHistoryReferences([]string{resource.ID})
+		return New(tx).RequireNoRetainedResourceReferences([]string{resource.ID})
 	}); !errors.Is(err, ErrCanvasHistoryResourceReferenced) {
 		t.Fatalf("history protection = %v", err)
 	}
@@ -141,7 +141,7 @@ func testCanvasHistory(t *testing.T, db *gorm.DB) {
 		t.Fatal("canvas deletion left orphan history")
 	}
 	if err := db.Transaction(func(tx *gorm.DB) error {
-		return New(tx).RequireNoCanvasHistoryReferences([]string{resource.ID})
+		return New(tx).RequireNoRetainedResourceReferences([]string{resource.ID})
 	}); err != nil {
 		t.Fatalf("expired reference not released: %v", err)
 	}

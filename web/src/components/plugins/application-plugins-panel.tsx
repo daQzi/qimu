@@ -1,6 +1,7 @@
 import { App, Button, Checkbox, Select } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserStore } from "@/stores/use-user-store";
+import { PluginOperationTester } from "./plugin-operation-tester";
 import { activateApplicationPlugin, fetchApplicationPlugins, manageApplicationPlugin, type ApplicationPlugin } from "@/services/api/application-plugins";
 
 const reasonLabels: Record<string, string> = {
@@ -88,7 +89,7 @@ export function ApplicationPluginsPanel({ admin = false, refreshToken = 0 }: { a
                     刷新应用
                 </Button>
             </div>
-            <p className="text-sm text-muted-foreground">启用后，获准使用的技能会进入“我的技能”。操作清单可查阅，执行能力尚未开放。</p>
+            <p className="text-sm text-muted-foreground">启用后，获准使用的技能会进入“我的技能”。可用操作支持读取视频信息和保存元数据快照，写入前需确认。</p>
             {error && (
                 <p role="alert" className="text-sm text-destructive">
                     {error}
@@ -193,11 +194,12 @@ export function ApplicationPluginsPanel({ admin = false, refreshToken = 0 }: { a
                                 ))}
                                 {release.operations.map((op) => (
                                     <li key={op.id}>
-                                        操作：{item.id}.{op.id} — {reasonLabels[op.reason] || op.reason}
+                                        操作：{item.id}.{op.id} — {op.available ? "可调用" : reasonLabels[op.reason] || op.reason}
                                     </li>
                                 ))}
                             </ul>
                         </details>
+                        <PluginOperationTester key={release.id} pluginId={item.id} release={release} />
                     </article>
                 );
             })}

@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	"infinite-canvas/backend/internal/kernel"
 	"infinite-canvas/backend/internal/model"
+	"infinite-canvas/backend/internal/plugins/contracts"
 	"infinite-canvas/backend/internal/prompts"
 	"infinite-canvas/backend/internal/repository"
 )
@@ -46,6 +47,8 @@ type cloudAgentApproval struct {
 	Reason    string                    `json:"reason,omitempty"`
 }
 type cloudAgentRuntime struct {
+	PluginLocks          map[string]cloudAgentPluginLock         `json:"pluginLocks,omitempty"`
+	PendingExecution     *cloudAgentExecutionRef                 `json:"pendingExecution,omitempty"`
 	Request              CloudAgentRequest                       `json:"request"`
 	Policy               cloudAgentPolicySnapshot                `json:"policy"`
 	ParentID             string                                  `json:"parentId,omitempty"`
@@ -152,7 +155,7 @@ func validateCloudAgentRuntime(run *model.CloudAgentExecution, state *cloudAgent
 		// execution identity. Durable rows are always validated below.
 		return nil
 	}
-	if state.Request.CanvasID == "" || state.Request.Prompt == "" || state.Request.PermissionMode == "" {
+	if (state.Request.CanvasID == "" && state.Request.HostSurface != "agent-home") || state.Request.Prompt == "" || state.Request.PermissionMode == "" {
 		return errors.New("Agent runtime request is incomplete")
 	}
 	if err := validateCloudAgentRequest(&state.Request); err != nil {
@@ -249,6 +252,21 @@ func validateCloudAgentRuntime(run *model.CloudAgentExecution, state *cloudAgent
 	}
 	if state.CallIndex == len(state.Calls) && state.Approval != nil {
 		return errors.New("Agent runtime has approval without a pending call")
+	}
+	if len(state.PluginLocks) > 64 {
+		return errors.New("too many plugin operation locks")
+	}
+	for name, lock := range state.PluginLocks {
+		raw, _ := json.Marshal(name)
+		if err := contracts.Validate("address", raw); err != nil {
+			return errors.New("invalid plugin operation lock")
+		}
+		if len(lock.ContractHash) != 64 || lock.ReleaseID == "" {
+			return errors.New("invalid plugin release lock")
+		}
+	}
+	if state.PendingExecution != nil && (state.PendingExecution.Kind != "plugin_run" || state.PendingExecution.ID == "") {
+		return errors.New("invalid plugin execution reference")
 	}
 	return nil
 }
@@ -384,6 +402,16 @@ func (s *Service) cloudAgentExecutionOutput(task *model.Task, initial cloudAgent
 	out.UpdatedAt = run.UpdatedAt
 	out.Events = state.Events
 	out.Approval = state.Approval
+	out.PendingExecution = state.PendingExecution
+	if state.Request.PluginToolsVersion == 1 && out.PendingExecution == nil && cloudAgentHasPendingPluginInvocation(state) {
+		pending, readErr := s.repo.LatestPluginRunForAgent(task.UserID, task.ID)
+		if readErr != nil {
+			return nil, readErr
+		}
+		if pending != nil {
+			out.PendingExecution = &cloudAgentExecutionRef{Kind: "plugin_run", ID: pending.ID}
+		}
+	}
 	if cloudAgentRunTerminal(run.Status) {
 		out.Approval = nil
 	}
@@ -853,6 +881,9 @@ func cloudAgentToolResult(runID string, state *cloudAgentRuntime, call cloudAgen
 	}
 	raw, _ := json.Marshal(result)
 	payload["result"] = result
+	if call.Function.Name == "operation_describe" && err == nil {
+		payload["result"] = cloudAgentPluginDescriptionReceipt(result)
+	}
 	if call.Function.Name == "skill_read_file" && err == nil {
 		// SSE/UI needs the read receipt, not another durable copy of skill text.
 		if fields, ok := result.(map[string]any); ok {
@@ -884,6 +915,9 @@ func (s *Service) advanceCloudAgentTool(run *model.CloudAgentExecution, state *c
 		return s.terminateCloudAgent(run, "审批内容与待执行操作不一致，本轮已停止")
 	}
 	allowed := cloudAgentToolAllowed(state.Request, call.Function.Name)
+	if allowed && isCloudAgentPluginTool(call.Function.Name) {
+		return s.advanceCloudAgentPluginTool(run, state, call)
+	}
 	if allowed && cloudAgentWrite(call.Function.Name) && (state.Request.PermissionMode == "request_approval" || call.Function.Name == "generate_media" || call.Function.Name == "image_layer_split") && state.Approval == nil {
 		var plan *cloudAgentMediaPlan
 		var modelName string

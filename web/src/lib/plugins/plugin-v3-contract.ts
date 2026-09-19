@@ -170,8 +170,9 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         requireSchema(op.outputSchemaRef);
         for (const p of op.requiredPermissions) if (!manifest.permissions.includes(p)) fail("scope_forbidden", "permission exceeds manifest");
         if (op.resultView && !registry.views.has(op.resultView)) fail("package_reference_invalid", op.resultView);
-        if (op.execution.kind !== "host" || op.execution.adapter !== "resource.inspect" || op.execution.mode !== "inline") fail("operation_unavailable", "P00 adapter profile");
-        if (!op.requiredPermissions.includes("media.read") || op.effects.length !== 1 || op.effects[0] !== "read") fail("scope_forbidden", "adapter minimum contract");
+        if (op.execution.kind !== "host" || !["resource.inspect", "resource.snapshot"].includes(op.execution.adapter) || op.execution.mode !== "inline") fail("operation_unavailable", "host adapter profile");
+        const snapshot = op.execution.adapter === "resource.snapshot";
+        if (!op.requiredPermissions.includes("media.read") || (snapshot && !op.requiredPermissions.includes("resource.create")) || op.effects.length !== 1 || op.effects[0] !== (snapshot ? "draft_write" : "read")) fail("scope_forbidden", "adapter minimum contract");
     }
     for (const entry of contributions.skills ?? [])
         for (const address of entry.operations) {

@@ -513,6 +513,14 @@ func newResourceDeletionTestService(t *testing.T) (*Service, *gorm.DB, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Shared in-memory SQLite uses table locks rather than the file-backed WAL
+	// used in deployment. Serialize fixture connections so the async outbox
+	// worker cannot race assertion reads with SQLITE_LOCKED.
+	sqlDB, err := db.DB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.SetMaxOpenConns(1)
 	if err := database.MigrateSchema(db); err != nil {
 		t.Fatal(err)
 	}

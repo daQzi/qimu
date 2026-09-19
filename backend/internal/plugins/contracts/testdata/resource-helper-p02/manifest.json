@@ -1,0 +1,26 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "resource-helper",
+  "name": "视频资源检查助手",
+  "version": "1.2.0",
+  "description": "读取当前账号已上传视频的元数据，并可在用户确认后保存一份结构化快照。",
+  "publisher": { "id": "example-publisher", "displayName": "示例作者" },
+  "requires": { "hostApi": "^3.0.0" },
+  "permissions": ["media.read", "resource.create"],
+  "dependencies": [],
+  "contributes": {
+    "skills": [{
+      "id": "check-source",
+      "name": "check-source",
+      "description": "检查已上传视频的资源信息；仅在用户明确要求时保存元数据快照。",
+      "entry": "skills/check-source/SKILL.md",
+      "activation": "auto",
+      "operations": ["resource-helper.inspect-video", "resource-helper.snapshot-video"]
+    }],
+    "operations": [
+      { "id": "inspect-video", "ref": "operations/inspect-video.json" },
+      { "id": "snapshot-video", "ref": "operations/snapshot-video.json" }
+    ],
+    "views": [{ "id": "inspect-result", "ref": "views/inspect-result.json" }]
+  }
+}

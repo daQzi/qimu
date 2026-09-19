@@ -19,6 +19,18 @@ description: 信封、错误码与 OpenAPI
 
 P01 不提供 `/plugin-invocations` 或运行接口；目录中的操作 available 始终为 false。安装、启用和已有 Skill 的正文读取不代表获得模型/网络/画布执行权限。
 
+### P02 统一操作与单步运行
+
+P02 在上述版本目录之上开放 `GET /plugin-operations`、`GET /plugin-operations/:pluginId/:operationId` 和 `POST /plugin-invocations`。检索只返回当前用户已启用、已授权且上下文可用的操作；describe 返回固定 releaseId、contractHash 和包内 Schema。调用身份来自 Cookie，不接受客户端 userId、approved、price 或 credentialRef。
+
+`resource-helper.inspect-video` 是同步只读操作，不创建 PluginRun；只返回数据库已有的 resourceId、kind、name、MIME、正数尺寸/时长，不返回 ObjectKey、PublicURL、Endpoint、Bucket 或存储凭据，也不以 0 伪造未知值。资源必须属于当前用户、kind=video 且 ready。
+
+`resource-helper.snapshot-video` 的实际效果是持久写入，要求 media.read + resource.create。调用必须带 8–160 字符的 `Idempotency-Key`；相同身份和输入返回同一 Run，不同输入冲突。首次状态为 waiting_approval，只有 `POST /plugin-runs/:id/approvals/:approvalId` 的用户 approve 能发布成功结果；Agent 没有审批接口。批准前再次读取并比对资源摘要，资源变化会拒绝旧审批。`GET /plugin-runs/:id` 按用户隔离；`POST /plugin-runs/:id/cancel` 只取消仍待批准的运行。
+
+PluginRun 的 Preview 是同一用户即将保存的结构化内容，不是已发布结果；只有 succeeded 返回 ResultRef。当前 ResultRef 为小 JSON 内联引用，没有 resourceId；在 P03 用户选择投影画布时再建立画布绑定。源资源删除检查会阻止删除仍被 PluginRun 引用的视频。
+
+Cloud Agent 新增 hostSurface=agent-home 和插件工具版本 1。无画布请求不得带 canvas ContextScope 或媒体生成预算，工具集不含 canvas、generate_media 或 task_get。Agent 必须 operation_describe 后才能 invoke，并把 releaseId/contractHash 固定在检查点；写操作只返回 PluginRun 审批引用，CloudAgentExecution 不复制批准事实。
+
 ## 站点皮肤主按钮（外观合同）
 
 `GET /public/appearance` 返回当前 `activeSkin`；管理员通过 `GET/PUT /admin/settings/appearance` 读取、保存完整主题库。外观合同版本 8 新增 `tokens.buttons.light/dark`，字段为 `mode`（`solid|gradient`）、整数 `angle`（0–360）、HEX 色值 `start/end`、`hoverStart/hoverEnd`、`activeStart/activeEnd`、`foreground`。纯色模式使用既有主操作颜色，渐变仅用于主按钮。非法模式、角度、色值或修改锁定经典主题均拒绝保存；整块缺失的旧配置按主题身份补齐。此变更不增加数据表迁移。

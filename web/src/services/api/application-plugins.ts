@@ -8,7 +8,7 @@ export type ApplicationRelease = {
     revoked: boolean;
     manifest: PluginManifestV3;
     skills: Array<{ id: string; localSkillId: string; skillId: string; skillVersionId: string }>;
-    operations: Array<PluginOperation & { available: false; reason: string }>;
+    operations: Array<PluginOperation & { available: boolean; reason: string }>;
     dependencyLock: string[];
 };
 export type ApplicationPlugin = {

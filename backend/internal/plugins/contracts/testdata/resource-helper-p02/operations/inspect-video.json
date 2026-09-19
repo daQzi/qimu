@@ -1,0 +1,11 @@
+{
+  "id": "inspect-video",
+  "description": "读取当前用户视频资源的已知元数据。",
+  "inputSchemaRef": "schemas/inspect-input.json",
+  "outputSchemaRef": "schemas/inspect-output.json",
+  "requiredPermissions": ["media.read"],
+  "effects": ["read"],
+  "context": { "requiresCanvas": false, "requiresProject": false },
+  "execution": { "kind": "host", "adapter": "resource.inspect", "mode": "inline" },
+  "resultView": "inspect-result"
+}

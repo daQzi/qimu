@@ -125,6 +125,129 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/Envelope"
+  /plugin-operations:
+    get:
+      tags: [agent]
+      summary: 检索当前用户已启用且获准的插件操作
+      parameters:
+        - {name: q, in: query, schema: {type: string, maxLength: 200}}
+        - {name: cursor, in: query, schema: {type: integer, minimum: 0}}
+        - {name: hostSurface, in: query, schema: {type: string, enum: [agent-home, canvas, editor]}}
+        - {name: canvasId, in: query, schema: {type: string}}
+        - {name: projectId, in: query, schema: {type: string}}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "403":
+          $ref: "#/components/responses/Error"
+  /plugin-operations/{pluginId}/{operationId}:
+    get:
+      tags: [agent]
+      summary: 读取固定发布版本的操作及输入输出 Schema
+      parameters:
+        - {name: pluginId, in: path, required: true, schema: {type: string}}
+        - {name: operationId, in: path, required: true, schema: {type: string}}
+        - {name: releaseId, in: query, required: true, schema: {type: string}}
+        - {name: hostSurface, in: query, schema: {type: string, enum: [agent-home, canvas, editor]}}
+        - {name: canvasId, in: query, schema: {type: string}}
+        - {name: projectId, in: query, schema: {type: string}}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugin-invocations:
+    post:
+      tags: [agent]
+      summary: 调用已启用插件操作
+      description: 纯读取同步返回 inline；持久写操作必须带 Idempotency-Key，返回 waiting_approval 的 PluginRun，不由 Agent 自批。
+      parameters:
+        - {name: Idempotency-Key, in: header, schema: {type: string, minLength: 8, maxLength: 160}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [operation, releaseId, input]
+              additionalProperties: false
+              properties:
+                operation: {type: string}
+                releaseId: {type: string}
+                input: {type: object}
+                context:
+                  type: object
+                  additionalProperties: false
+                  properties:
+                    hostSurface: {type: string, enum: [agent-home, canvas, editor]}
+                    canvasId: {type: string}
+                    projectId: {type: string}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugin-runs/{id}:
+    get:
+      tags: [agent]
+      summary: 读取当前用户的单步插件运行
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "404":
+          $ref: "#/components/responses/Error"
+  /plugin-runs/{id}/approvals/{approvalId}:
+    post:
+      tags: [agent]
+      summary: 用户批准或拒绝持久插件操作
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+        - {name: approvalId, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, revision]
+              additionalProperties: false
+              properties:
+                decision: {type: string, enum: [approve, reject]}
+                revision: {type: integer, minimum: 1}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugin-runs/{id}/cancel:
+    post:
+      tags: [agent]
+      summary: 取消当前用户仍在等待确认的插件运行
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [revision]
+              additionalProperties: false
+              properties:
+                revision: {type: integer, minimum: 1}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "409":
+          $ref: "#/components/responses/Error"
   /model-catalog:
     get:
       tags: [models]
