@@ -1,0 +1,17 @@
+{
+  "id": "inspect-board",
+  "nodes": [
+    {
+      "key": "source-info",
+      "nodeType": "plugin-result",
+      "title": "视频资源信息",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "binding": "result",
+      "view": "inspect-result"
+    }
+  ],
+  "connections": []
+}

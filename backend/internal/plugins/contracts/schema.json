@@ -1,0 +1,1189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qimu.invalid/contracts/plugin-v3",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 80
+    },
+    "address": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
+      "maxLength": 161
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^(skills|operations|pipelines|schemas|views|connectors|blueprints)/[A-Za-z0-9_./-]+$",
+      "maxLength": 240
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$",
+      "maxLength": 40
+    },
+    "permission": {
+      "type": "string",
+      "enum": [
+        "canvas.read",
+        "canvas.write",
+        "media.read",
+        "asset.read",
+        "asset.search",
+        "asset.import",
+        "asset.upload",
+        "generation.run",
+        "timeline.read",
+        "timeline.command",
+        "export.run",
+        "connection.use",
+        "resource.create"
+      ]
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/permission"
+      },
+      "minItems": 0,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "effect": {
+      "type": "string",
+      "enum": [
+        "read",
+        "draft_write",
+        "generation",
+        "external_write",
+        "delete",
+        "publish"
+      ]
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "runStatus": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "running",
+        "waiting_input",
+        "waiting_approval",
+        "paused",
+        "succeeded",
+        "failed",
+        "cancelling",
+        "cancelled"
+      ]
+    },
+    "stepStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "ready",
+        "running",
+        "waiting_task",
+        "waiting_input",
+        "waiting_approval",
+        "succeeded",
+        "failed",
+        "skipped",
+        "cancelled"
+      ]
+    },
+    "contribution": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "ref": {
+          "$ref": "#/$defs/path"
+        }
+      },
+      "required": [
+        "id",
+        "ref"
+      ],
+      "additionalProperties": false
+    },
+    "skill": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "entry": {
+          "$ref": "#/$defs/path"
+        },
+        "activation": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "explicit"
+          ]
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/address"
+          },
+          "minItems": 0,
+          "maxItems": 32,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "entry",
+        "activation",
+        "operations"
+      ],
+      "additionalProperties": false
+    },
+    "dependency": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "optional": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "optional"
+      ],
+      "additionalProperties": false
+    },
+    "manifest": {
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "const": "yingce.plugin/v3"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "publisher": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "displayName": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          "required": [
+            "id",
+            "displayName"
+          ],
+          "additionalProperties": false
+        },
+        "requires": {
+          "type": "object",
+          "properties": {
+            "hostApi": {
+              "const": "^3.0.0"
+            }
+          },
+          "required": [
+            "hostApi"
+          ],
+          "additionalProperties": false
+        },
+        "permissions": {
+          "$ref": "#/$defs/permissions"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependency"
+          },
+          "minItems": 0,
+          "maxItems": 32
+        },
+        "contributes": {
+          "type": "object",
+          "properties": {
+            "skills": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/skill"
+              },
+              "minItems": 1,
+              "maxItems": 32
+            },
+            "operations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contribution"
+              },
+              "minItems": 1,
+              "maxItems": 64
+            },
+            "views": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contribution"
+              },
+              "minItems": 1,
+              "maxItems": 32
+            },
+            "canvasBlueprints": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contribution"
+              },
+              "minItems": 1,
+              "maxItems": 32
+            }
+          },
+          "required": [],
+          "additionalProperties": false,
+          "minProperties": 1
+        }
+      },
+      "required": [
+        "apiVersion",
+        "id",
+        "name",
+        "version",
+        "description",
+        "publisher",
+        "requires",
+        "permissions",
+        "dependencies",
+        "contributes"
+      ],
+      "additionalProperties": false,
+      "description": "P00 offline contract profile; runtime still rejects v3. Pipeline/HTTP are separately frozen but not admitted as package contributions yet."
+    },
+    "contextRequirements": {
+      "type": "object",
+      "properties": {
+        "requiresCanvas": {
+          "type": "boolean"
+        },
+        "requiresProject": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "requiresCanvas",
+        "requiresProject"
+      ],
+      "additionalProperties": false
+    },
+    "execution": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "host"
+            },
+            "adapter": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9.-]+$",
+              "maxLength": 120
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "inline",
+                "task"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "adapter",
+            "mode"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "http"
+            },
+            "connector": {
+              "$ref": "#/$defs/id"
+            },
+            "action": {
+              "$ref": "#/$defs/id"
+            },
+            "mode": {
+              "const": "task"
+            }
+          },
+          "required": [
+            "kind",
+            "connector",
+            "action",
+            "mode"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "pipeline"
+            },
+            "pipeline": {
+              "$ref": "#/$defs/id"
+            },
+            "mode": {
+              "const": "task"
+            }
+          },
+          "required": [
+            "kind",
+            "pipeline",
+            "mode"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "operation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "inputSchemaRef": {
+          "$ref": "#/$defs/path"
+        },
+        "outputSchemaRef": {
+          "$ref": "#/$defs/path"
+        },
+        "requiredPermissions": {
+          "$ref": "#/$defs/permissions"
+        },
+        "effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/effect"
+          },
+          "minItems": 1,
+          "maxItems": 6,
+          "uniqueItems": true
+        },
+        "context": {
+          "$ref": "#/$defs/contextRequirements"
+        },
+        "execution": {
+          "$ref": "#/$defs/execution"
+        },
+        "resultView": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "inputSchemaRef",
+        "outputSchemaRef",
+        "requiredPermissions",
+        "effects",
+        "context",
+        "execution"
+      ],
+      "additionalProperties": false
+    },
+    "view": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "component": {
+          "type": "string",
+          "enum": [
+            "key-value/v1"
+          ]
+        },
+        "schemaRef": {
+          "$ref": "#/$defs/path"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "pattern": "^/"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              }
+            },
+            "required": [
+              "path",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "schemaRef",
+        "fields"
+      ],
+      "additionalProperties": false
+    },
+    "blueprint": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "$ref": "#/$defs/id"
+              },
+              "nodeType": {
+                "const": "plugin-result"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": -100000,
+                    "maximum": 100000
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": -100000,
+                    "maximum": 100000
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "additionalProperties": false
+              },
+              "binding": {
+                "const": "result"
+              },
+              "view": {
+                "$ref": "#/$defs/id"
+              }
+            },
+            "required": [
+              "key",
+              "nodeType",
+              "title",
+              "position",
+              "binding",
+              "view"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "connections": {
+          "type": "array",
+          "maxItems": 0
+        }
+      },
+      "required": [
+        "id",
+        "nodes",
+        "connections"
+      ],
+      "additionalProperties": false
+    },
+    "resultRef": {
+      "type": "object",
+      "properties": {
+        "runId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "stepKey": {
+          "$ref": "#/$defs/id"
+        },
+        "itemKey": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "outputKey": {
+          "$ref": "#/$defs/id"
+        },
+        "schemaId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "schemaVersion": {
+          "$ref": "#/$defs/version"
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "resourceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
+      },
+      "required": [
+        "runId",
+        "stepKey",
+        "itemKey",
+        "attempt",
+        "outputKey",
+        "schemaId",
+        "schemaVersion",
+        "digest"
+      ],
+      "additionalProperties": false
+    },
+    "invocation": {
+      "type": "object",
+      "properties": {
+        "operation": {
+          "$ref": "#/$defs/address"
+        },
+        "releaseId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": {},
+          "maxProperties": 128
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "hostSurface": {
+              "type": "string",
+              "enum": [
+                "agent-home",
+                "canvas",
+                "editor"
+              ]
+            },
+            "canvasId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "projectId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "threadId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "workbenchId": {
+              "$ref": "#/$defs/address"
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "operation",
+        "releaseId",
+        "input"
+      ],
+      "additionalProperties": false
+    },
+    "skillBinding": {
+      "type": "object",
+      "properties": {
+        "releaseId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "localSkillId": {
+          "$ref": "#/$defs/id"
+        },
+        "skillVersionId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "entryDigest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "releaseId",
+        "localSkillId",
+        "skillVersionId",
+        "entryDigest"
+      ],
+      "additionalProperties": false
+    },
+    "runRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "entryOperation": {
+          "$ref": "#/$defs/address"
+        },
+        "releaseId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 160
+        },
+        "requestDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "status": {
+          "$ref": "#/$defs/runStatus"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "context": {
+          "$ref": "#/$defs/invocationContext"
+        },
+        "parentRunId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "entryOperation",
+        "releaseId",
+        "idempotencyKey",
+        "requestDigest",
+        "status",
+        "revision",
+        "context"
+      ],
+      "additionalProperties": false
+    },
+    "invocationContext": {
+      "type": "object",
+      "properties": {
+        "hostSurface": {
+          "type": "string",
+          "enum": [
+            "agent-home",
+            "canvas",
+            "editor"
+          ]
+        },
+        "canvasId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "projectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "threadId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "workbenchId": {
+          "$ref": "#/$defs/address"
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "binding": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "literal": {}
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "pattern": "^(input#|item#|steps/[a-z][a-z0-9-]*#)(/.*)?$",
+              "maxLength": 512
+            }
+          },
+          "required": [
+            "from"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "condition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "exists": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          "required": [
+            "exists"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "equals": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/binding"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "required": [
+            "equals"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "foreach": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "itemKey": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "maxConcurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        }
+      },
+      "required": [
+        "from",
+        "itemKey",
+        "maxConcurrency"
+      ],
+      "additionalProperties": false
+    },
+    "pipeline": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "inputSchemaRef": {
+          "$ref": "#/$defs/path"
+        },
+        "outputSchemaRef": {
+          "$ref": "#/$defs/path"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pipelineStep"
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "outputs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/binding"
+          },
+          "maxProperties": 32
+        }
+      },
+      "required": [
+        "id",
+        "inputSchemaRef",
+        "outputSchemaRef",
+        "steps",
+        "outputs"
+      ],
+      "additionalProperties": false
+    },
+    "pipelineStep": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "operation"
+            },
+            "operation": {
+              "$ref": "#/$defs/address"
+            },
+            "dependsOn": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/id"
+              },
+              "minItems": 0,
+              "maxItems": 64,
+              "uniqueItems": true
+            },
+            "inputs": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/binding"
+              },
+              "maxProperties": 128
+            },
+            "when": {
+              "$ref": "#/$defs/condition"
+            },
+            "foreach": {
+              "$ref": "#/$defs/foreach"
+            }
+          },
+          "required": [
+            "key",
+            "type",
+            "operation",
+            "dependsOn",
+            "inputs"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/id"
+            },
+            "type": {
+              "const": "wait_input"
+            },
+            "dependsOn": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/id"
+              },
+              "minItems": 0,
+              "maxItems": 64,
+              "uniqueItems": true
+            },
+            "formSchemaRef": {
+              "$ref": "#/$defs/path"
+            },
+            "view": {
+              "$ref": "#/$defs/id"
+            }
+          },
+          "required": [
+            "key",
+            "type",
+            "dependsOn",
+            "formSchemaRef"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "userSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "object",
+            "array",
+            "string",
+            "number",
+            "integer",
+            "boolean",
+            "null"
+          ]
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/userSchema"
+          },
+          "maxProperties": 128
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "minItems": 0,
+          "maxItems": 128,
+          "uniqueItems": true
+        },
+        "additionalProperties": {
+          "type": "boolean"
+        },
+        "items": {
+          "$ref": "#/$defs/userSchema"
+        },
+        "enum": {
+          "type": "array",
+          "items": {},
+          "minItems": 1,
+          "maxItems": 128
+        },
+        "const": {},
+        "minimum": {
+          "type": "number"
+        },
+        "maximum": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "$defs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/userSchema"
+          },
+          "maxProperties": 128
+        },
+        "$ref": {
+          "type": "string",
+          "maxLength": 240,
+          "minLength": 1
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "stepRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "stepKey": {
+          "$ref": "#/$defs/id"
+        },
+        "itemKey": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "status": {
+          "$ref": "#/$defs/stepStatus"
+        },
+        "inputDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "taskId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "submissionState": {
+          "enum": [
+            "not_started",
+            "prepared",
+            "submitted",
+            "unknown",
+            "upstream_completed",
+            "import_pending",
+            "imported"
+          ]
+        },
+        "outputRefs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resultRef"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "id",
+        "runId",
+        "stepKey",
+        "itemKey",
+        "attempt",
+        "status",
+        "inputDigest",
+        "submissionState",
+        "outputRefs"
+      ],
+      "additionalProperties": false
+    },
+    "invocationResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "inline"
+            },
+            "result": {}
+          },
+          "required": [
+            "kind",
+            "result"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "run"
+            },
+            "runId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "status": {
+              "$ref": "#/$defs/runStatus"
+            }
+          },
+          "required": [
+            "kind",
+            "runId",
+            "status"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

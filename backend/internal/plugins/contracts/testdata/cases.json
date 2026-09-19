@@ -1,0 +1,1217 @@
+[
+  {
+    "name": "minimal-resource-helper",
+    "kind": "package",
+    "changes": [],
+    "reason": ""
+  },
+  {
+    "name": "pure-skill",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/contributes",
+        "value": {
+          "skills": [
+            {
+              "id": "check-source",
+              "name": "check-source",
+              "description": "检查用户选中的已上传视频；不执行生成或转码。",
+              "entry": "skills/check-source/SKILL.md",
+              "activation": "auto",
+              "operations": []
+            }
+          ]
+        }
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "name": "unknown-contribution",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/contributes/workbenches",
+        "value": []
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "empty-contributions",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/contributes",
+        "value": {}
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "unknown-manifest-field",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/runtime",
+        "value": {
+          "backend": "rpc"
+        }
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "unsupported-api",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/apiVersion",
+        "value": "yingce.plugin/v4"
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "reserved-prefix",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/id",
+        "value": "qimu-admin"
+      }
+    ],
+    "reason": "scope_forbidden"
+  },
+  {
+    "name": "reserved-catalog-id",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/id",
+        "value": "official-tools"
+      }
+    ],
+    "reason": "scope_forbidden"
+  },
+  {
+    "name": "bad-version",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/version",
+        "value": "01.0.0"
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "self-dependency",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/dependencies",
+        "value": [
+          {
+            "id": "resource-helper",
+            "version": "1.0.0",
+            "optional": false
+          }
+        ]
+      }
+    ],
+    "reason": "dependency_cycle"
+  },
+  {
+    "name": "missing-file",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "views/inspect-result.json",
+        "removeFile": true
+      }
+    ],
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "traversal-ref",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/contributes/operations/0/ref",
+        "value": "operations/../schemas/inspect-input.json"
+      }
+    ],
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "bad-root",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "server/code.js",
+        "text": "alert(1)"
+      }
+    ],
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "duplicate-contribution",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/contributes/operations",
+        "value": [
+          {
+            "id": "inspect-video",
+            "ref": "operations/inspect-video.json"
+          },
+          {
+            "id": "inspect-video",
+            "ref": "operations/inspect-video.json"
+          }
+        ]
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "mismatched-operation-id",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "operations/inspect-video.json",
+        "pointer": "/id",
+        "value": "other"
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "excess-permission",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "operations/inspect-video.json",
+        "pointer": "/requiredPermissions",
+        "value": [
+          "media.read",
+          "generation.run"
+        ]
+      }
+    ],
+    "reason": "scope_forbidden"
+  },
+  {
+    "name": "missing-minimum-permission",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "operations/inspect-video.json",
+        "pointer": "/requiredPermissions",
+        "value": []
+      }
+    ],
+    "reason": "scope_forbidden"
+  },
+  {
+    "name": "false-read-effect",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "operations/inspect-video.json",
+        "pointer": "/effects",
+        "value": [
+          "generation"
+        ]
+      }
+    ],
+    "reason": "scope_forbidden"
+  },
+  {
+    "name": "unknown-adapter",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "operations/inspect-video.json",
+        "pointer": "/execution/adapter",
+        "value": "shell.run"
+      }
+    ],
+    "reason": "operation_unavailable"
+  },
+  {
+    "name": "future-http-disabled",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "operations/inspect-video.json",
+        "pointer": "/execution",
+        "value": {
+          "kind": "http",
+          "connector": "remote",
+          "action": "inspect",
+          "mode": "task"
+        }
+      }
+    ],
+    "reason": "operation_unavailable"
+  },
+  {
+    "name": "missing-view",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "operations/inspect-video.json",
+        "pointer": "/resultView",
+        "value": "missing"
+      }
+    ],
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "missing-skill-operation",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/contributes/skills/0/operations",
+        "value": [
+          "resource-helper.missing"
+        ]
+      }
+    ],
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "undeclared-plugin-dependency",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "manifest.json",
+        "pointer": "/contributes/skills/0/operations",
+        "value": [
+          "other.inspect"
+        ]
+      }
+    ],
+    "reason": "plugin_dependency_missing"
+  },
+  {
+    "name": "unknown-schema-keyword",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/format",
+        "value": "uri"
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "remote-schema-ref",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/$ref",
+        "value": "https://example.invalid/schema"
+      }
+    ],
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "self-schema-cycle",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/$ref",
+        "value": "#"
+      }
+    ],
+    "reason": "schema_reference_cycle"
+  },
+  {
+    "name": "cross-schema-cycle",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/$ref",
+        "value": "schemas/inspect-output.json"
+      },
+      {
+        "file": "schemas/inspect-output.json",
+        "pointer": "/$ref",
+        "value": "schemas/inspect-input.json"
+      }
+    ],
+    "reason": "schema_reference_cycle"
+  },
+  {
+    "name": "missing-schema-pointer",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/$ref",
+        "value": "#/$defs/missing"
+      }
+    ],
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "valid-local-schema-ref",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/$defs",
+        "value": {
+          "identifier": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/properties/resourceId",
+        "value": {
+          "$ref": "#/$defs/identifier"
+        }
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "name": "valid-cross-schema-ref",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/properties/resourceId",
+        "value": {
+          "$ref": "schemas/inspect-output.json#/properties/resourceId"
+        }
+      }
+    ],
+    "reason": ""
+  },
+  {
+    "name": "invalid-ref-target-structure",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/$ref",
+        "value": "schemas/inspect-output.json"
+      },
+      {
+        "file": "schemas/inspect-output.json",
+        "pointer": "/properties",
+        "value": {
+          "broken": 42
+        }
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "malformed-schema-bound",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "pointer": "/properties/resourceId/maxLength",
+        "value": -1
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "duplicate-blueprint-key",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "blueprints/inspect-board.json",
+        "pointer": "/nodes",
+        "value": [
+          {
+            "key": "source-info",
+            "nodeType": "plugin-result",
+            "title": "视频资源信息",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "binding": "result",
+            "view": "inspect-result"
+          },
+          {
+            "key": "source-info",
+            "nodeType": "plugin-result",
+            "title": "视频资源信息",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "binding": "result",
+            "view": "inspect-result"
+          }
+        ]
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "duplicate-json-key",
+    "kind": "package",
+    "changes": [
+      {
+        "file": "schemas/inspect-input.json",
+        "text": "{\"type\":\"object\",\"type\":\"string\"}"
+      }
+    ],
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "no-canvas-invocation",
+    "kind": "contract",
+    "contract": "invocation",
+    "value": {
+      "operation": "resource-helper.inspect-video",
+      "releaseId": "release-test",
+      "input": {
+        "resourceId": "resource-test"
+      },
+      "context": {
+        "hostSurface": "agent-home"
+      }
+    },
+    "reason": ""
+  },
+  {
+    "name": "forged-owner-invocation",
+    "kind": "contract",
+    "contract": "invocation",
+    "value": {
+      "operation": "resource-helper.inspect-video",
+      "releaseId": "release-test",
+      "input": {},
+      "userId": "someone-else"
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "forged-approval-invocation",
+    "kind": "contract",
+    "contract": "invocation",
+    "value": {
+      "operation": "resource-helper.inspect-video",
+      "releaseId": "release-test",
+      "input": {},
+      "approved": true
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "empty-canvas-id",
+    "kind": "contract",
+    "contract": "invocation",
+    "value": {
+      "operation": "resource-helper.inspect-video",
+      "releaseId": "release-test",
+      "input": {},
+      "context": {
+        "canvasId": ""
+      }
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "unknown-host-surface",
+    "kind": "contract",
+    "contract": "invocation",
+    "value": {
+      "operation": "resource-helper.inspect-video",
+      "releaseId": "release-test",
+      "input": {},
+      "context": {
+        "hostSurface": "marketing"
+      }
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "result-ref",
+    "kind": "contract",
+    "contract": "resultRef",
+    "value": {
+      "runId": "run-test",
+      "stepKey": "inspect",
+      "itemKey": "",
+      "attempt": 1,
+      "outputKey": "result",
+      "schemaId": "media.video-metadata",
+      "schemaVersion": "1.0.0",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "reason": ""
+  },
+  {
+    "name": "inline-is-not-result-ref",
+    "kind": "contract",
+    "contract": "resultRef",
+    "value": {
+      "resourceId": "resource-test"
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "trailing-json",
+    "kind": "contract",
+    "contract": "invocation",
+    "value": null,
+    "reason": "contract_invalid",
+    "raw": "{} {}"
+  },
+  {
+    "name": "unsafe-number",
+    "kind": "contract",
+    "contract": "userSchema",
+    "value": null,
+    "reason": "contract_invalid",
+    "raw": "{\"maximum\":9007199254740992}"
+  },
+  {
+    "name": "excess-json-depth",
+    "kind": "contract",
+    "contract": "userSchema",
+    "value": null,
+    "reason": "contract_invalid",
+    "raw": "{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{\"items\":{}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}"
+  },
+  {
+    "name": "run-status-queued",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "queued",
+    "reason": ""
+  },
+  {
+    "name": "run-status-running",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "running",
+    "reason": ""
+  },
+  {
+    "name": "run-status-waiting_input",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "waiting_input",
+    "reason": ""
+  },
+  {
+    "name": "run-status-waiting_approval",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "waiting_approval",
+    "reason": ""
+  },
+  {
+    "name": "run-status-paused",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "paused",
+    "reason": ""
+  },
+  {
+    "name": "run-status-succeeded",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "succeeded",
+    "reason": ""
+  },
+  {
+    "name": "run-status-failed",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "failed",
+    "reason": ""
+  },
+  {
+    "name": "run-status-cancelling",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "cancelling",
+    "reason": ""
+  },
+  {
+    "name": "run-status-cancelled",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "cancelled",
+    "reason": ""
+  },
+  {
+    "name": "unknown-run-status",
+    "kind": "contract",
+    "contract": "runStatus",
+    "value": "completed",
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "step-status-pending",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "pending",
+    "reason": ""
+  },
+  {
+    "name": "step-status-ready",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "ready",
+    "reason": ""
+  },
+  {
+    "name": "step-status-running",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "running",
+    "reason": ""
+  },
+  {
+    "name": "step-status-waiting_task",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "waiting_task",
+    "reason": ""
+  },
+  {
+    "name": "step-status-waiting_input",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "waiting_input",
+    "reason": ""
+  },
+  {
+    "name": "step-status-waiting_approval",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "waiting_approval",
+    "reason": ""
+  },
+  {
+    "name": "step-status-succeeded",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "succeeded",
+    "reason": ""
+  },
+  {
+    "name": "step-status-failed",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "failed",
+    "reason": ""
+  },
+  {
+    "name": "step-status-skipped",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "skipped",
+    "reason": ""
+  },
+  {
+    "name": "step-status-cancelled",
+    "kind": "contract",
+    "contract": "stepStatus",
+    "value": "cancelled",
+    "reason": ""
+  },
+  {
+    "name": "dependency-dag",
+    "kind": "graph",
+    "graph": {
+      "a": [
+        "b"
+      ],
+      "b": []
+    },
+    "reason": ""
+  },
+  {
+    "name": "dependency-cycle",
+    "kind": "graph",
+    "graph": {
+      "a": [
+        "b"
+      ],
+      "b": [
+        "a"
+      ]
+    },
+    "reason": "dependency_cycle"
+  },
+  {
+    "name": "dependency-missing",
+    "kind": "graph",
+    "graph": {
+      "a": [
+        "b"
+      ]
+    },
+    "reason": "plugin_dependency_missing"
+  },
+  {
+    "name": "pipeline-dag",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": ""
+  },
+  {
+    "name": "pipeline-cycle",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [
+            "confirm"
+          ],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "dependency_cycle"
+  },
+  {
+    "name": "pipeline-missing-step",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "absent"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "plugin_dependency_missing"
+  },
+  {
+    "name": "pipeline-duplicate-step",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        },
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          }
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "pipeline-undeclared-input",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "steps/confirm#/result"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "pipeline-item-without-foreach",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "item#/resourceId"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "pipeline-binding-both",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId",
+              "literal": "test"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "pipeline-script-condition",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          },
+          "when": {
+            "exists": "eval(1)"
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "contract_invalid"
+  },
+  {
+    "name": "pipeline-unknown-output",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/missing#/result"
+        }
+      }
+    },
+    "reason": "package_reference_invalid"
+  },
+  {
+    "name": "pipeline-foreach",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "item#/resourceId"
+            }
+          },
+          "foreach": {
+            "from": "input#/items",
+            "itemKey": "/id",
+            "maxConcurrency": 2
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": ""
+  },
+  {
+    "name": "pipeline-foreach-too-wide",
+    "kind": "contract",
+    "contract": "pipeline",
+    "value": {
+      "id": "inspect-flow",
+      "inputSchemaRef": "schemas/inspect-input.json",
+      "outputSchemaRef": "schemas/inspect-output.json",
+      "steps": [
+        {
+          "key": "inspect",
+          "type": "operation",
+          "operation": "resource-helper.inspect-video",
+          "dependsOn": [],
+          "inputs": {
+            "resourceId": {
+              "from": "input#/resourceId"
+            }
+          },
+          "foreach": {
+            "from": "input#/items",
+            "itemKey": "/id",
+            "maxConcurrency": 1000
+          }
+        },
+        {
+          "key": "confirm",
+          "type": "wait_input",
+          "dependsOn": [
+            "inspect"
+          ],
+          "formSchemaRef": "schemas/inspect-input.json"
+        }
+      ],
+      "outputs": {
+        "result": {
+          "from": "steps/inspect#/result"
+        }
+      }
+    },
+    "reason": "contract_invalid"
+  }
+]

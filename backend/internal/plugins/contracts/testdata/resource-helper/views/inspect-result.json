@@ -1,0 +1,19 @@
+{
+  "id": "inspect-result",
+  "component": "key-value/v1",
+  "schemaRef": "schemas/inspect-output.json",
+  "fields": [
+    {
+      "path": "/name",
+      "label": "名称"
+    },
+    {
+      "path": "/mimeType",
+      "label": "格式"
+    },
+    {
+      "path": "/durationMs",
+      "label": "时长（毫秒）"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "resource-helper",
+  "name": "视频资源检查助手",
+  "version": "1.0.0",
+  "description": "读取已上传视频的资源信息，可展示在 Agent 或画布中。",
+  "publisher": {
+    "id": "example-publisher",
+    "displayName": "示例作者"
+  },
+  "requires": {
+    "hostApi": "^3.0.0"
+  },
+  "permissions": [
+    "media.read",
+    "canvas.read",
+    "canvas.write"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "check-source",
+        "name": "check-source",
+        "description": "检查用户选中的已上传视频；不执行生成或转码。",
+        "entry": "skills/check-source/SKILL.md",
+        "activation": "auto",
+        "operations": [
+          "resource-helper.inspect-video"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "inspect-video",
+        "ref": "operations/inspect-video.json"
+      }
+    ],
+    "views": [
+      {
+        "id": "inspect-result",
+        "ref": "views/inspect-result.json"
+      }
+    ],
+    "canvasBlueprints": [
+      {
+        "id": "inspect-board",
+        "ref": "blueprints/inspect-board.json"
+      }
+    ]
+  }
+}

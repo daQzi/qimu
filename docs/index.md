@@ -8,6 +8,12 @@
 
 - [插件平台与市场演进调研](design/plugin-platform-and-marketplace-research.md)：插件机制代码审计、对外回应、外部 SDK 与隔离运行时、独立插件验收、受控目录到公开市场的分阶段方案（调研建议，未实施）。
 
+- [Qimu 应用插件 v3 需求与整体架构](design/qimu-plugin-platform-v3-design.md)：基于现有代码的能力审计、通用贡献、Agent 调用、权限费用、持久流程和生态边界（拟议设计，未实现）。
+- [Qimu 应用插件 v3 改造实施设计](plans/qimu-plugin-platform-v3-implementation.md)：文件级改造、数据与版本迁移、任务恢复、画布交互、一键出海阶段、测试和回退。
+- [Qimu 可组合工作台补充设计](design/qimu-composable-workbenches-design.md)：整合小云雀报告与插件 v3，明确动态输入栏、共享会话、技能启动、业务对象和工作台组合的采用范围与实施顺序。
+- [Qimu Agent 与插件平台分阶段实施手册](plans/qimu-agent-plugin-platform-execution-runbook.md)：后续执行的统一入口，P00–P14 逐阶段步骤、前置条件、交付、验收、回退及 Agent 实施指令；E01–E04 为可选后续扩展。
+- [P00 插件合同交付与验收](plans/qimu-plugin-p00-acceptance.md)：共享 Schema、离线校验与七文件样例、验证命令、版本限制和用户验收项目；代码完成待验收。
+
 - [站点及外观与皮肤主题设计合同](design/site-appearance-and-skins.mdx)：品牌一致性、登录页与邮件、SEO/备案、三层皮肤令牌、无闪屏启动顺序和验收边界。
 
 - [工作区外壳设计沉淀](design/workspace-shell-design.mdx)：侧栏（260px 可折叠导航 + 分组折叠）、主区卡片、顶部栏（账户/公告/主题）的设计决策与样式约束。
@@ -22,8 +28,12 @@
 
 - [LLM、Image、Video 主流请求协议全景与影策兼容性调查](design/model-request-protocol-landscape.md)：主流原生协议、聚合网关、图片/视频异步任务、参考素材 role、当前插件映射缺口与 MiniMax H3 专项审计。
 
+- [Qimu Agent Home 复刻产品与技术设计](design/xiaoyunque-agent-home-replica-design.md)：基于现有 qimu Agent、创作任务、Skills、Plugins 和画布能力，定义创作、短剧、营销、画布四类统一 Agent surface、底部工具栏、Skill 合同、业务资产、Artifact 和输出目标。
+
 - [编辑器预设插件化实施规格](plans/editor-preset-plugin-implementation.md)：参考 open-vetta 万物皆可插件，把编辑器做成预设插件的分阶段实施计划（SDK v2、命令状态机、8 个 editor 预设插件（含 AI 助手）、后端转写/导出任务、权限执行校验、AI 对话式剪辑），含产品视图、接口草案与文件规划。
 - [编辑器实施 Runbook](plans/editor-implementation-runbook.md)：分步执行计划——M0~M6 里程碑 + 原子步明细（每步改动文件/验证/完成标准）、依赖关系、验证命令速查、高风险步与回退。解决「一次性实施效果差」：每步可验证、可回退、看得见进度。
+
+- [Qimu Agent Home 复刻实施计划](plans/xiaoyunque-agent-home-replica-implementation-plan.md)：按 M0~M8 拆分统一 Agent 外层、底部工具栏、创作、短剧、营销、Skill 执行合同、Plugin Agent Bridge 和验收回滚。
 
 ## 决策记录（`docs/adr/`）
 
@@ -45,6 +55,7 @@
 功能、代码地图、待办、待测试分别维护在以下页面；尚未建立的专题会在对应任务中补齐：
 
 - [AI 审美批改画布插件](content/docs/plugins/ai-art-critique.mdx)
+- [应用插件 v3 开发与接入指南](content/docs/plugins/application-plugin-v3-integration.md)：目标包合同、完整最小示例、远程 API、流程、画布和开发验收（设计稿，SDK 尚未发布）。
 - [功能](content/docs/overview/features.mdx)
 - [本地开发](content/docs/backend/local-development.mdx)
 - [HTTP API 合同](content/docs/backend/http-api.mdx)

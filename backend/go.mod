@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/qiniu/go-sdk/v7 v7.27.0
 	github.com/redis/go-redis/v9 v9.22.0
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.75
 	github.com/volcengine/volc-sdk-golang v1.0.253
 	golang.org/x/crypto v0.54.0
