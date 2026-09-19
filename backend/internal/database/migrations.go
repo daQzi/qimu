@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const CurrentSchemaVersion int64 = 30
+const CurrentSchemaVersion int64 = 32
 
 const baselineSchemaChecksum = "sha256:open-ai-canvas-schema-v1-20260830"
 const schemaMigrationAppliedAtIndexChecksum = "sha256:schema-migrations-applied-at-index-v2-20260830"
@@ -93,11 +93,17 @@ var schemaMigrations = []migration{
 	{version: 25, name: "video_token_formula_snapshot", checksum: "sha256:video-token-formula-snapshot-v25", apply: migrateVideoTokenFormulaSnapshot},
 	{version: 26, name: "channel_model_description", checksum: "sha256:channel-model-description-v26", apply: migrateChannelModelDescription},
 	{version: 27, name: "channel_credit_cost", checksum: "sha256:channel-credit-cost-v27", apply: migrateChannelCreditCost},
-	{version: 28, name: "application_plugin_releases", checksum: "sha256:application-plugin-releases-v28", apply: migrateApplicationPlugins},
-	{version: 29, name: "application_plugin_invocations", checksum: "sha256:application-plugin-invocations-v29", apply: func(tx *gorm.DB) error {
+	{version: 28, name: "agent_execution_journal", checksum: "sha256:agent-execution-journal-v28", apply: func(tx *gorm.DB) error {
+		return tx.AutoMigrate(&model.CloudAgentExecution{}, &model.CloudAgentEventRecord{}, &model.CloudAgentMessageRecord{}, &model.Task{}, &model.BillingOrder{})
+	}},
+	{version: 29, name: "agent_resource_leases", checksum: "sha256:agent-resource-leases-v29-20260919", apply: func(tx *gorm.DB) error {
+		return tx.AutoMigrate(&model.CloudAgentResourceLease{})
+	}},
+	{version: 30, name: "application_plugin_releases", checksum: "sha256:application-plugin-releases-v28", apply: migrateApplicationPlugins},
+	{version: 31, name: "application_plugin_invocations", checksum: "sha256:application-plugin-invocations-v29", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.PluginRun{}, &model.PluginRunStep{}, &model.PluginRunEvent{})
 	}},
-	{version: 30, name: "application_plugin_projections", checksum: "sha256:application-plugin-projections-v30", apply: func(tx *gorm.DB) error {
+	{version: 32, name: "application_plugin_projections", checksum: "sha256:application-plugin-projections-v30", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.PluginRun{}, &model.PluginCanvasProjection{})
 	}},
 }
@@ -217,31 +223,49 @@ func migrationsForDatabase(db *gorm.DB) ([]migration, error) {
 	if err != nil {
 		return nil, err
 	}
-	var applied schemaMigration
-	err = db.First(&applied, "version = ?", 27).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return plan, nil
-	}
-	if err != nil {
+	var records []schemaMigration
+	if err = db.Where("version IN ?", []int64{27, 28}).Find(&records).Error; err != nil {
 		return nil, err
 	}
-	if applied.Name != "application_plugin_releases" {
-		return plan, nil
-	}
-	legacy := migration{version: 27, name: "application_plugin_releases", checksum: "sha256:application-plugin-releases-v27", apply: migrateApplicationPlugins}
-	if err = validateMigrationRecord(applied, legacy); err != nil {
-		return nil, err
-	}
-	plan = append([]migration(nil), plan...)
-	for i, item := range plan {
-		switch item.version {
-		case 27:
-			plan[i] = legacy
-		case 28:
-			plan[i] = migration{version: 28, name: "channel_credit_cost", checksum: "sha256:channel-credit-cost-v27", apply: migrateChannelCreditCost}
+	p01, p03 := false, false
+	for _, row := range records {
+		if row.Version == 27 && row.Name == "application_plugin_releases" {
+			if row.Checksum != "sha256:application-plugin-releases-v27" {
+				return nil, fmt.Errorf("unknown P01 migration checksum")
+			}
+			p01 = true
+		}
+		if row.Version == 28 && row.Name == "application_plugin_releases" {
+			if row.Checksum != "sha256:application-plugin-releases-v28" {
+				return nil, fmt.Errorf("unknown plugin migration checksum")
+			}
+			p03 = true
 		}
 	}
-	return plan, nil
+	if !p01 && !p03 {
+		return plan, nil
+	}
+	byName := map[string]migration{}
+	for _, item := range plan {
+		byName[item.name] = item
+	}
+	names := map[int64]string{27: "channel_credit_cost", 28: "application_plugin_releases", 29: "application_plugin_invocations", 30: "application_plugin_projections", 31: "agent_execution_journal", 32: "agent_resource_leases"}
+	if p01 {
+		names[27] = "application_plugin_releases"
+		names[28] = "channel_credit_cost"
+	}
+	result := append([]migration(nil), plan...)
+	for i, item := range result {
+		if name, ok := names[item.version]; ok {
+			mapped := byName[name]
+			mapped.version = item.version
+			if p01 && item.version == 27 {
+				mapped.checksum = "sha256:application-plugin-releases-v27"
+			}
+			result[i] = mapped
+		}
+	}
+	return result, nil
 }
 
 func folderMigrationsForDatabase(db *gorm.DB) ([]migration, error) {

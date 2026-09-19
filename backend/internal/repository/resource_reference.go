@@ -3,6 +3,7 @@ package repository
 import (
 	"slices"
 	"strings"
+	"time"
 
 	"infinite-canvas/backend/internal/model"
 
@@ -97,6 +98,13 @@ func (r *Repository) ResourceReferenceSnapshot(userID string, excludingAssetID s
 	}
 	for _, run := range pluginRuns {
 		snapshot.Direct = append(snapshot.Direct, ResourceDirectReference{Kind: "插件运行", ID: run.ID, Title: run.Operation, ResourceID: run.SourceResourceID})
+	}
+	var leases []model.CloudAgentResourceLease
+	if err := r.db.Where("user_id = ? AND resource_id IN ? AND expires_at > ?", userID, resourceIDs, time.Now()).Find(&leases).Error; err != nil {
+		return snapshot, err
+	}
+	for _, lease := range leases {
+		snapshot.Direct = append(snapshot.Direct, ResourceDirectReference{Kind: "Agent 待执行引用", ID: lease.OwnerID, Title: "已准备的生成输入", ResourceID: lease.ResourceID})
 	}
 
 	var assets []model.Asset
