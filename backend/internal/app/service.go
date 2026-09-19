@@ -26,6 +26,7 @@ type Service struct {
 	dataDir                  string
 	cancelMu                 sync.Mutex
 	registrationMu           sync.Mutex
+	applicationPluginMu      sync.Mutex
 	emailCodeMu              sync.Mutex
 	redeemBatchMu            sync.Mutex
 	storageMu                sync.Mutex

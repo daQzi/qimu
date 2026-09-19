@@ -337,7 +337,7 @@ function SkillCard({ skill, categories, loading, style, onOpen, onAdd, onLike, o
                 ? <div className="skill-card-action"><span className="skill-card-owner-flag">我创建的</span><span className="skill-card-added-count">{formatSkillCount(skill.addedCount)} 人已加入</span></div>
                 : (
                     <div className="skill-card-action">
-                        <Button loading={loading} aria-pressed={skill.isAdded} icon={skill.isAdded ? <Check /> : <Plus />} onClick={onAdd}>
+                        <Button loading={loading} disabled={skill.sourceType === "plugin"} title={skill.sourceType === "plugin" ? "请在插件中心管理版本与启用状态" : undefined} aria-pressed={skill.isAdded} icon={skill.isAdded ? <Check /> : <Plus />} onClick={onAdd}>
                             {skill.isAdded ? "已加入" : "加入技能库"}
                         </Button>
                         <Tooltip title={`${formatSkillCount(skill.addedCount)} 人已加入`}><span className="skill-card-added-count">{formatSkillCount(skill.addedCount)}</span></Tooltip>

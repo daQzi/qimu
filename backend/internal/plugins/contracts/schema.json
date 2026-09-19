@@ -121,7 +121,7 @@
         "description": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 2000
+          "maxLength": 500
         },
         "entry": {
           "$ref": "#/$defs/path"
@@ -204,7 +204,7 @@
             "displayName": {
               "type": "string",
               "minLength": 1,
-              "maxLength": 240
+              "maxLength": 120
             }
           },
           "required": [

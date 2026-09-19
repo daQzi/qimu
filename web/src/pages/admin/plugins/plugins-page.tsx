@@ -6,6 +6,7 @@ import { CloudUpload, PlugZap, RefreshCw, Search, Trash2, UsersRound } from "luc
 import { useEffect, useMemo, useState } from "react";
 
 import { PaginationBar } from "@/pages/admin/components/admin-ui";
+import { ApplicationPluginsPanel } from "@/components/plugins/application-plugins-panel";
 import "@/lib/plugins/builtin";
 import { EAGLE_PLUGIN_ID } from "@/lib/plugins/builtin/eagle";
 import { RUNNINGHUB_PLUGIN_ID } from "@/lib/plugins/builtin/workflows";
@@ -29,6 +30,7 @@ type AdminPluginItem = {
 export default function AdminPluginsPage() {
     const { message, modal } = App.useApp();
     const [plugins, setPlugins] = useState<BackendPlugin[]>([]);
+    const [applicationRefresh, setApplicationRefresh] = useState(0);
     const [states, setStates] = useState<Record<string, AdminPluginState>>({});
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState("");
@@ -92,6 +94,7 @@ export default function AdminPluginsPage() {
             await uploadPlugin(file);
             setUploadOpen(false);
             message.success("自定义插件已安装");
+            setApplicationRefresh(v => v + 1);
             await reload();
         } catch (error) {
             message.error(error instanceof Error ? error.message : "安装插件失败");
@@ -242,6 +245,7 @@ export default function AdminPluginsPage() {
                 </>
             }
         >
+            <ApplicationPluginsPanel admin refreshToken={applicationRefresh} />
             <div className="my-4 grid min-h-16 grid-cols-2 divide-x divide-border/70 overflow-hidden rounded-lg border border-border/70 bg-card sm:grid-cols-5">
                 <OverviewItem label="全部插件" value={items.length} />
                 <OverviewItem label="官方应用" value={applicationCount} />

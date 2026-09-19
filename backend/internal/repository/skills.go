@@ -28,6 +28,7 @@ type SkillMetrics struct {
 
 func (r *Repository) Skills(filter SkillListFilter) ([]model.Skill, int64, error) {
 	query := r.db.Model(&model.Skill{}).Where("skills.status = ?", 1)
+	query = query.Where("COALESCE(skills.source_type, '') <> ? OR skills.id IN (?)", "plugin", r.usablePluginSkillIDs(filter.UserID))
 	switch filter.Scope {
 	case "mine":
 		query = query.Joins("LEFT JOIN user_skill_states ON user_skill_states.skill_id = skills.id AND user_skill_states.user_id = ?", filter.UserID).
@@ -98,6 +99,13 @@ func (r *Repository) CreateSkill(skill *model.Skill, ownerState *model.UserSkill
 
 func (r *Repository) DeleteSkill(id string) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		var skill model.Skill
+		if err := tx.First(&skill, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if skill.SourceType == "plugin" {
+			return errors.New("plugin skill versions are retained by their release")
+		}
 		if err := tx.Delete(&model.UserSkillState{}, "skill_id = ?", id).Error; err != nil {
 			return err
 		}

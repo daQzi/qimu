@@ -109,7 +109,7 @@ export function SkillDetailModal({ skill, loading, mutating, categories, onClose
                             {skill.sourceType === "github" && skill.isOwner ? <Tooltip title={skill.syncError || "从 GitHub 检查并同步最新提交"}><Button loading={mutating} icon={<RefreshCw className="size-4" />} onClick={() => onSync(skill)}>同步</Button></Tooltip> : null}
                             {skill.isOwner ? <Button icon={<Pencil className="size-4" />} onClick={() => onEdit(skill)}>编辑</Button> : null}
                             <Button loading={mutating} icon={<Heart className={`size-4 ${skill.isLike ? "fill-current text-rose-500" : ""}`} />} onClick={() => onLike(skill)}>{skill.isLike ? "已收藏" : "收藏"}</Button>
-                            <Button type={skill.isAdded ? "default" : "primary"} loading={mutating} disabled={skill.isOwner} icon={skill.isAdded ? <Check className="size-4" /> : <Plus className="size-4" />} onClick={() => onAdd(skill)}>{skill.isOwner ? "我的技能" : skill.isAdded ? "已加入" : "加入技能"}</Button>
+                            <Button type={skill.isAdded ? "default" : "primary"} loading={mutating} disabled={skill.isOwner || skill.sourceType === "plugin"} title={skill.sourceType === "plugin" ? "请在插件中心管理版本与启用状态" : undefined} icon={skill.isAdded ? <Check className="size-4" /> : <Plus className="size-4" />} onClick={() => onAdd(skill)}>{skill.sourceType === "plugin" ? "随插件启用" : skill.isOwner ? "我的技能" : skill.isAdded ? "已加入" : "加入技能"}</Button>
                         </div>
                     </header>
 
@@ -266,6 +266,7 @@ function isExternalURL(value?: string) {
 }
 
 function sourceLabel(source: string) {
+    if (source === "plugin") return "应用插件技能";
     if (source === "github") return "GitHub";
     if (source === "zip") return "ZIP 技能包";
     if (source === "builtin") return "内置技能";

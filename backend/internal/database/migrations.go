@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const CurrentSchemaVersion int64 = 26
+const CurrentSchemaVersion int64 = 27
 
 const baselineSchemaChecksum = "sha256:open-ai-canvas-schema-v1-20260830"
 const schemaMigrationAppliedAtIndexChecksum = "sha256:schema-migrations-applied-at-index-v2-20260830"
@@ -92,6 +92,11 @@ var schemaMigrations = []migration{
 	{version: 24, name: "channel_model_label", checksum: "sha256:channel-model-label-v24", apply: migrateChannelModelLabel},
 	{version: 25, name: "video_token_formula_snapshot", checksum: "sha256:video-token-formula-snapshot-v25", apply: migrateVideoTokenFormulaSnapshot},
 	{version: 26, name: "channel_model_description", checksum: "sha256:channel-model-description-v26", apply: migrateChannelModelDescription},
+	{version: 27, name: "application_plugin_releases", checksum: "sha256:application-plugin-releases-v27", apply: migrateApplicationPlugins},
+}
+
+func migrateApplicationPlugins(tx *gorm.DB) error {
+	return tx.AutoMigrate(&model.PluginApplication{}, &model.PluginRelease{}, &model.PluginSkillBinding{}, &model.PluginReleaseDependency{}, &model.PluginCatalogLock{}, &model.PluginNamespace{}, &model.UserPluginState{})
 }
 
 func migrateChannelModelDescription(tx *gorm.DB) error {

@@ -31,6 +31,34 @@ type PluginPackage struct {
 // ParsePluginPackage validates the package container and returns its manifest
 // and files. Uploaded code is never executed by this function.
 func ParsePluginPackage(data []byte) (PluginPackage, error) {
+	pkg, err := readPluginPackage(data, validatePluginPackagePath)
+	if err != nil {
+		return PluginPackage{}, err
+	}
+	if err := json.Unmarshal(pkg.ManifestRaw, &pkg.Manifest); err != nil {
+		return PluginPackage{}, fmt.Errorf("decode plugin manifest: %w", err)
+	}
+	if err := ValidateManifest(pkg.Manifest); err != nil {
+		return PluginPackage{}, err
+	}
+	if err := validatePluginPackageRuntime(pkg.Manifest, pkg.Files); err != nil {
+		return PluginPackage{}, err
+	}
+	return pkg, nil
+}
+
+// ReadPluginPackageEnvelope shares bounded ZIP extraction across API versions.
+// Callers must still validate the selected manifest and every contribution.
+func ReadPluginPackageEnvelope(data []byte) (PluginPackage, error) {
+	return readPluginPackage(data, func(name string) (string, error) {
+		if name == "" || strings.TrimSpace(name) != name || strings.ContainsAny(name, "\\\\\x00") || strings.HasPrefix(name, "/") || path.Clean(name) != name || name == ".." || strings.HasPrefix(name, "../") {
+			return "", fmt.Errorf("invalid plugin package path")
+		}
+		return name, nil
+	})
+}
+
+func readPluginPackage(data []byte, validatePath func(string) (string, error)) (PluginPackage, error) {
 	if len(data) == 0 || len(data) > PluginPackageMaxBytes {
 		return PluginPackage{}, fmt.Errorf("plugin package must be between 1 and %d bytes", PluginPackageMaxBytes)
 	}
@@ -43,22 +71,36 @@ func ParsePluginPackage(data []byte) (PluginPackage, error) {
 	}
 	files := make(map[string][]byte, len(reader.File))
 	var manifestRaw []byte
+	var expanded uint64
+	seen := make(map[string]bool, len(reader.File))
 	for _, file := range reader.File {
-		name, err := validatePluginPackagePath(file.Name)
+		entryName := file.Name
+		if file.FileInfo().IsDir() {
+			entryName = strings.TrimSuffix(entryName, "/")
+		}
+		name, err := validatePath(entryName)
 		if err != nil {
 			return PluginPackage{}, err
 		}
-		if _, exists := files[name]; exists {
+		if seen[name] {
 			return PluginPackage{}, fmt.Errorf("duplicate plugin package file %q", name)
+		}
+		seen[name] = true
+		if file.Mode()&os.ModeSymlink != 0 {
+			return PluginPackage{}, fmt.Errorf("plugin package cannot contain symlink %q", name)
 		}
 		if file.FileInfo().IsDir() {
 			continue
 		}
-		if file.Mode()&os.ModeSymlink != 0 {
-			return PluginPackage{}, fmt.Errorf("plugin package cannot contain symlink %q", name)
+		if !file.Mode().IsRegular() {
+			return PluginPackage{}, fmt.Errorf("unsupported ZIP entry mode")
 		}
 		if file.UncompressedSize64 > pluginPackageMaxEntry {
 			return PluginPackage{}, fmt.Errorf("plugin package file %q exceeds %d bytes", name, pluginPackageMaxEntry)
+		}
+		expanded += file.UncompressedSize64
+		if expanded > 64<<20 {
+			return PluginPackage{}, fmt.Errorf("expanded plugin package exceeds 64 MiB")
 		}
 		stream, err := file.Open()
 		if err != nil {
@@ -86,17 +128,7 @@ func ParsePluginPackage(data []byte) (PluginPackage, error) {
 	if len(manifestRaw) > PluginManifestMaxBytes {
 		return PluginPackage{}, fmt.Errorf("manifest.json exceeds %d bytes", PluginManifestMaxBytes)
 	}
-	var manifest Manifest
-	if err := json.Unmarshal(manifestRaw, &manifest); err != nil {
-		return PluginPackage{}, fmt.Errorf("decode plugin manifest: %w", err)
-	}
-	if err := ValidateManifest(manifest); err != nil {
-		return PluginPackage{}, err
-	}
-	if err := validatePluginPackageRuntime(manifest, files); err != nil {
-		return PluginPackage{}, err
-	}
-	return PluginPackage{Manifest: manifest, ManifestRaw: manifestRaw, Files: files}, nil
+	return PluginPackage{ManifestRaw: manifestRaw, Files: files}, nil
 }
 
 func validatePluginPackagePath(name string) (string, error) {

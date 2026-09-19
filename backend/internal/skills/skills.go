@@ -235,6 +235,9 @@ func (s *Service) SetSkillAdded(userID string, id string, added bool) (*SkillIte
 	if err != nil {
 		return nil, err
 	}
+	if skill.SourceType == "plugin" {
+		return nil, kernel.Forbidden("插件技能随插件版本启用，请在插件中心管理")
+	}
 	if skill.OwnerID == userID {
 		if !added {
 			return nil, kernel.BadAuthRequest("自己创建的技能始终保留在我的技能中")
@@ -352,6 +355,15 @@ func (s *Service) visibleSkill(userID string, id string) (*model.Skill, error) {
 	if skill.IsPrivate && skill.OwnerID != userID {
 		return nil, kernel.Forbidden("该技能未公开")
 	}
+	if skill.SourceType == "plugin" {
+		allowed, err := s.repo.PluginSkillUsable(userID, skill.ID)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, kernel.Forbidden("插件技能未启用、版本不匹配或已撤权")
+		}
+	}
 	return skill, nil
 }
 
@@ -359,6 +371,9 @@ func (s *Service) ownedSkill(userID string, id string) (*model.Skill, error) {
 	skill, err := s.visibleSkill(userID, id)
 	if err != nil {
 		return nil, err
+	}
+	if skill.SourceType == "plugin" {
+		return nil, kernel.Forbidden("插件发布中的技能不可修改或删除")
 	}
 	if skill.OwnerID != userID {
 		return nil, kernel.Forbidden("只有作者可以修改或删除该技能")

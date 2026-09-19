@@ -1,7 +1,7 @@
 # Qimu 应用插件平台 v3：需求与整体架构设计
 
-> 状态：拟议设计，尚未实现。当前代码支持的 Manifest 为 `yingce.plugin/v1`、`yingce.plugin/v2`；本文的 v3 是本次目标合同，不是已发布版本。
-> 代码基线：qimu `4eaa28b8`。本轮只交付文档，没有实施接口、数据库迁移、插件运行时或模型调用。
+> 状态：按阶段实施的架构目标。P00 已验收；P01 已实现 v3 受控安装、固定版本、授权与技能目录，待页面验收。其余运行/流程/画布能力仍为目标设计，进度以实施手册为准。
+> 设计起始代码基线：qimu `4eaa28b8`。旧 v1/v2 保留；v3 目前只开放 P01 子集，未部署到实际业务环境。
 
 配套文档：[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)、[改造实施设计](../plans/qimu-plugin-platform-v3-implementation.md)。目标合同以本文件和接入指南为准，实施顺序以实施设计为准。
 

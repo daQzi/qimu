@@ -61,6 +61,7 @@ export function UploadPluginModal({ open, onClose, onUpload }: UploadPluginModal
                         <div>
                             <h2>安装插件包</h2>
                             <p>选择统一站点插件包，安装后会立即进入插件中心。</p>
+                            <p>应用插件需要在版本区域授权启用；当前开放包内技能，操作执行将在后续阶段提供。</p>
                         </div>
                     </div>
                     <div

@@ -12,7 +12,8 @@
 - [Qimu 应用插件 v3 改造实施设计](plans/qimu-plugin-platform-v3-implementation.md)：文件级改造、数据与版本迁移、任务恢复、画布交互、一键出海阶段、测试和回退。
 - [Qimu 可组合工作台补充设计](design/qimu-composable-workbenches-design.md)：整合小云雀报告与插件 v3，明确动态输入栏、共享会话、技能启动、业务对象和工作台组合的采用范围与实施顺序。
 - [Qimu Agent 与插件平台分阶段实施手册](plans/qimu-agent-plugin-platform-execution-runbook.md)：后续执行的统一入口，P00–P14 逐阶段步骤、前置条件、交付、验收、回退及 Agent 实施指令；E01–E04 为可选后续扩展。
-- [P00 插件合同交付与验收](plans/qimu-plugin-p00-acceptance.md)：共享 Schema、离线校验与七文件样例、验证命令、版本限制和用户验收项目；代码完成待验收。
+- [P00 插件合同交付与验收](plans/qimu-plugin-p00-acceptance.md)：共享 Schema、离线校验与七文件样例、验证命令、版本限制和用户验收项目；已由用户验收通过。
+- [P01 安装、版本、技能与目录验收](plans/qimu-plugin-p01-acceptance.md)：管理员安装、用户版本/授权、技能隔离、升级与卸载保留、schema v27、样例包及页面验收；P00 已通过，P01 待用户验收。
 
 - [站点及外观与皮肤主题设计合同](design/site-appearance-and-skins.mdx)：品牌一致性、登录页与邮件、SEO/备案、三层皮肤令牌、无闪屏启动顺序和验收边界。
 

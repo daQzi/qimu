@@ -47,7 +47,7 @@ export async function fetchPluginRuntimeState() {
 export async function uploadPlugin(file: File) {
     const body = new FormData();
     body.append("file", file);
-    const result = await http.post<{ plugin: BackendPlugin }>("/plugins", body);
+    const result = await http.post<{ plugin: BackendPlugin | { id: string; apiVersion: "yingce.plugin/v3"; kind: "application" } }>("/plugins", body);
     return result.plugin;
 }
 

@@ -14,6 +14,7 @@ import (
 )
 
 func RegisterPluginRoutes(r *gin.RouterGroup, svc *service.Service) {
+	registerApplicationPluginRoutes(r, svc)
 	statusRoutes := r.Group("/plugins")
 	statusRoutes.GET("/status", func(c *gin.Context) {
 		user, err := currentUser(c, svc)
@@ -127,7 +128,7 @@ func RegisterPluginRoutes(r *gin.RouterGroup, svc *service.Service) {
 			fail(c, http.StatusBadRequest, err)
 			return
 		}
-		plugin, err := svc.InstallPluginForAdmin(user, data, fileName)
+		plugin, err := svc.InstallManagedPluginForAdmin(user, data, fileName)
 		if err != nil {
 			failService(c, err)
 			return

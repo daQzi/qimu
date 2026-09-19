@@ -1,4 +1,5 @@
 import { CollectionToolbar } from "@/components/layout/collection-toolbar";
+import { ApplicationPluginsPanel } from "@/components/plugins/application-plugins-panel";
 import { App, Button, Input, Modal, Select, Typography } from "antd";
 import { Switch } from "@/components/ui/base/switch";
 import { AudioLines, CalendarDays, CheckCircle2, Clock3, CreditCard, ExternalLink, Film, FolderOpen, Image as ImageIcon, MessageSquareText, PlugZap, RefreshCw, Search, Settings2, ShieldCheck, SlidersHorizontal } from "lucide-react";
@@ -279,6 +280,7 @@ export default function PluginsPage() {
                         </nav>
                     </aside>
                     <div className="plugins-page-content">
+                        <ApplicationPluginsPanel />
                         <CollectionToolbar label="插件筛选" trailing={<div className="plugins-toolbar-actions">
                                 <Button icon={<RefreshCw className="size-4" />} loading={backendPluginsLoading} onClick={() => void reloadBackendPlugins()}>
                                     刷新插件

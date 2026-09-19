@@ -9,7 +9,17 @@ description: 信封、错误码与 OpenAPI
 
 机器可读规范：运行中的 `GET /api/openapi.yaml`，源文件 `backend/internal/handler/openapi.yaml`。前端 TypeScript 仍走 `web/src/services/api` 的 `http`，不从 OpenAPI 生成客户端。
 
-## 站点皮肤主按钮
+## 应用插件 P01
+
+`POST /plugins` 保持管理员上传入口，按 apiVersion 分流。v1/v2 返回原 plugin 视图；v3 返回 `data.plugin = {id, apiVersion: "yingce.plugin/v3", kind: "application"}` 收据。详细数据从 `GET /plugins/applications` 获取，包含发布清单、固定依赖、技能版本、不可执行的操作描述及当前用户状态；响应不缓存。
+
+`PUT /plugins/applications/:id/activation` 接收 releaseId、enabled、grantedPermissions、revision，身份只来自登录态。超出包申请的授权拒绝；revision 不匹配返回 409。依赖版本/授权变动会使依赖应用需要重新启用。`PUT /admin/plugins/applications/:id` 接收 action（availability/uninstall/revoke）、revision 和所需的 available/releaseId；服务层再次验证管理员。
+
+卸载和撤回不物理删除发布/技能。管理员可用 `POST /admin/plugins/applications/orphans/preview` 预览超过 24 小时且无发布引用的归档，`POST .../orphans/prune` 执行不可恢复的物理清理；被历史发布引用的文件不会删除。该清理接口不处理旧协议目录或用户媒体。
+
+P01 不提供 `/plugin-invocations` 或运行接口；目录中的操作 available 始终为 false。安装、启用和已有 Skill 的正文读取不代表获得模型/网络/画布执行权限。
+
+## 站点皮肤主按钮（外观合同）
 
 `GET /public/appearance` 返回当前 `activeSkin`；管理员通过 `GET/PUT /admin/settings/appearance` 读取、保存完整主题库。外观合同版本 8 新增 `tokens.buttons.light/dark`，字段为 `mode`（`solid|gradient`）、整数 `angle`（0–360）、HEX 色值 `start/end`、`hoverStart/hoverEnd`、`activeStart/activeEnd`、`foreground`。纯色模式使用既有主操作颜色，渐变仅用于主按钮。非法模式、角度、色值或修改锁定经典主题均拒绝保存；整块缺失的旧配置按主题身份补齐。此变更不增加数据表迁移。
 

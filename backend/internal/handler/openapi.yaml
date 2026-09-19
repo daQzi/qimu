@@ -26,6 +26,105 @@ tags:
   - name: agent
   - name: admin
 paths:
+  /plugins:
+    post:
+      tags: [admin]
+      summary: 管理员安装插件包，按 apiVersion 分流
+      description: v1/v2 保持旧协议注册表；v3 登记不可变发布与包内技能。相同 ID/version 不同内容返回 409。P01 不开放操作执行。
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugins/applications:
+    get:
+      tags: [agent]
+      summary: 当前用户的应用插件版本、技能和操作目录
+      description: data.applications 包含发布快照与当前用户启用/授权状态；操作 available 在 P01 始终为 false。管理员还可查看已卸载的历史登记。
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "401":
+          $ref: "#/components/responses/Error"
+  /plugins/applications/{id}/activation:
+    put:
+      tags: [agent]
+      summary: 按修订号选择发布版本与权限并启用或停用
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releaseId, enabled, grantedPermissions, revision]
+              properties:
+                releaseId: {type: string}
+                enabled: {type: boolean}
+                grantedPermissions: {type: array, items: {type: string}}
+                revision: {type: integer, minimum: 0}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /admin/plugins/applications/{id}:
+    put:
+      tags: [admin]
+      summary: 管理员开放、停用、撤回版本或卸载应用
+      description: 卸载保留历史；revoke 不可恢复，需发布新版本；availability=true 要求先安装。revision 使用应用平台修订号。
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, revision]
+              properties:
+                action: {type: string, enum: [availability, uninstall, revoke]}
+                available: {type: boolean}
+                releaseId: {type: string}
+                revision: {type: integer, minimum: 1}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /admin/plugins/applications/orphans/preview:
+    post:
+      tags: [admin]
+      summary: 预览超过 24 小时且未被发布引用的应用归档
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+  /admin/plugins/applications/orphans/prune:
+    post:
+      tags: [admin]
+      summary: 清理超过 24 小时且未被发布引用的应用归档
+      description: 不删除被历史或已卸载版本引用的文件；物理删除不可恢复，建议先调用 preview。
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
   /model-catalog:
     get:
       tags: [models]

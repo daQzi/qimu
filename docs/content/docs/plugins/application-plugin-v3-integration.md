@@ -5,10 +5,10 @@ description: 启幕 Agent 应用插件的包合同、操作、技能、远程 AP
 
 # 应用插件 v3 开发与接入指南
 
-> 状态：目标 SDK 接入规范，未发布、不能直接安装运行。当前 qimu `4eaa28b8` 只支持原有 v1/v2 合同。本文新接口、目录、操作及节点名称均需按实施设计实现后才能使用。
+> 状态：目标 SDK 接入规范，按阶段实施。P01 已支持受控 v3 包安装、发布版本、用户授权和技能目录；Operation 执行、Pipeline、HTTP Connector 与画布节点仍未开放。正式页面验收见 P01 记录。
 > 本文示例不包含真实服务或密钥。带 `example.invalid` 的地址只说明协议结构；真实模型选择和质量验证属于应用接入工作。
 
-P00 已实现离线合同校验与样例，见[阶段验收说明](../../../plans/qimu-plugin-p00-acceptance.md)。当前离线 profile 比本文目标规范更窄：仅精确三段正式版本，包贡献限技能/操作/基础视图/结果蓝图，样例 Adapter 只认可 resource.inspect；HTTP/Pipeline 仅有独立合同、不允许安装执行。现有线上安装器仍拒绝 v3。
+P00 已实现离线合同校验；P01 在现有上传入口按版本分流，允许该受控子集登记与技能启用，见[P01 验收说明](../../../plans/qimu-plugin-p01-acceptance.md)。当前 profile 比本文目标规范更窄：仅精确三段正式版本，包贡献限技能/操作/基础视图/结果蓝图，样例 Adapter 只认可 resource.inspect；HTTP/Pipeline 仅有独立合同、不允许安装执行。旧协议解析器仍不直接接收 v3，应用包由独立领域服务处理。
 
 配套：[需求与架构](../../../design/qimu-plugin-platform-v3-design.md)、[实施设计](../../../plans/qimu-plugin-platform-v3-implementation.md)。现有协议插件用法见 [当前开发指南](../../../../web/src/pages/plugins/plugin-development-guide.md)。
 
@@ -432,7 +432,7 @@ SSE 使用单 run 单调 sequence 作为事件 ID；支持 Last-Event-ID/after�
 
 1. 查宿主操作及视图目录，选择已支持能力与最低 hostApi 范围。
 2. 编写 Manifest、输入输出 Schema、操作与技能；需要时加入流程和视图。
-3. 当前可在 backend 运行 `go run ./cmd/plugin-contract -dir <已展开插件目录>`，检查 P00 离线 profile；它不安装、不执行、不校验真实账号所有权。完整安装校验/打包工具按后续阶段提供。
+3. 当前可在 backend 运行 `go run ./cmd/plugin-contract -dir <已展开插件目录>` 校验；加 `-out <新文件.yingce-plugin>` 打包，加 `-version <正式版本>` 可仅覆盖产物版本。生成器拒绝覆盖已有文件。离线工具不安装、不执行、不校验真实账号所有权；服务端安装执行额外的归属/依赖/技能存储校验。
 4. 管理员在开发实例导入包；配置用户连接与权限。使用 Mock 验证协议机制，再用真实服务完成验收。
 5. 通过 Agent 和界面两种入口执行同一操作，检查状态、结果与权限一致。
 6. 验证重启、重复提交、取消、版本升级、用户切换和缺资源。
