@@ -45,7 +45,7 @@ func p05Fixture(t *testing.T, driver string, handler http.HandlerFunc, variant .
 	t.Cleanup(func() { s.Close() })
 	root := "../plugins/contracts/testdata/pipeline-helper-p05"
 	pluginID := "pipeline-helper"
-	if len(variant) > 0 {
+	if len(variant) > 0 && variant[0] != "prefill" {
 		root = "../plugins/contracts/testdata/batch-helper-p06"
 		pluginID = "batch-helper"
 	}
@@ -58,6 +58,26 @@ func p05Fixture(t *testing.T, driver string, handler http.HandlerFunc, variant .
 		raw, err := os.ReadFile(path)
 		if err != nil {
 			return err
+		}
+		if len(variant) > 0 && variant[0] == "prefill" {
+			if filepath.Base(path) == "manifest.json" {
+				var manifest map[string]any
+				if err := json.Unmarshal(raw, &manifest); err != nil {
+					return err
+				}
+				manifest["requires"].(map[string]any)["hostApi"] = "^3.3.0"
+				raw, err = json.Marshal(manifest)
+			} else if path == root+"/pipelines/process.json" {
+				var p contracts.Pipeline
+				if err := json.Unmarshal(raw, &p); err != nil {
+					return err
+				}
+				p.Steps[1].Inputs = map[string]contracts.Binding{"prompt": {From: "input#/resourceId"}}
+				raw, err = json.Marshal(p)
+			}
+			if err != nil {
+				return err
+			}
 		}
 		entry, err := w.Create(strings.TrimPrefix(filepath.ToSlash(path), root+"/"))
 		if err != nil {
@@ -199,6 +219,34 @@ func TestP05RestartInputAndRemoteLifecycle(t *testing.T) {
 			history, err := restarted.ListPluginRuns("user", 0)
 			if err != nil || len(history) != 1 {
 				t.Fatal("child exposed as root", err)
+			}
+		})
+	}
+}
+
+func TestP11PrefillPersistsWithoutSubmittingOrOverwritingEdits(t *testing.T) {
+	for _, driver := range []string{"sqlite", "postgres"} {
+		t.Run(driver, func(t *testing.T) {
+			s, db, release, calls := p05Fixture(t, driver, nil, "prefill")
+			view := p05Start(t, s, release)
+			input := view.Pipeline.Inputs[0]
+			if string(input.Draft) != `{"prompt":"video-one"}` || input.Status != "pending" || calls.Load() != 0 {
+				t.Fatalf("prefill bypassed input: %+v", input)
+			}
+			if _, err := s.UpdatePluginInput("user", view.ID, input.ID, "", PluginInputUpdate{Revision: input.Revision, Mode: "draft", Value: json.RawMessage(`{"prompt":"edited"}`)}); err != nil {
+				t.Fatal(err)
+			}
+			restarted := New(repository.New(db), s.dataDir)
+			defer restarted.Close()
+			if err := restarted.applicationPlugins().AdvancePipeline("user", view.ID); err != nil {
+				t.Fatal(err)
+			}
+			restored, err := restarted.PluginRun("user", view.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if restored.Status != "waiting_input" || string(restored.Pipeline.Inputs[0].Draft) != `{"prompt":"edited"}` || restored.Pipeline.Inputs[0].Revision != 2 || calls.Load() != 0 {
+				t.Fatalf("restart changed draft or submitted: %+v", restored)
 			}
 		})
 	}

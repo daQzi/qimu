@@ -26,6 +26,38 @@ func TestP05SequentialContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	original := append([]byte{}, files["pipelines/process.json"]...)
+	for _, scenario := range []string{"valid", "old-host", "unknown-field", "wrong-type", "missing-dependency"} {
+		t.Run("prefill-"+scenario, func(t *testing.T) {
+			copyFiles := PackageFiles{}
+			for k, v := range files {
+				copyFiles[k] = v
+			}
+			var manifest map[string]any
+			json.Unmarshal(copyFiles["manifest.json"], &manifest)
+			host := "^3.3.0"
+			if scenario == "old-host" {
+				host = "^3.2.0"
+			}
+			manifest["requires"].(map[string]any)["hostApi"] = host
+			copyFiles["manifest.json"], _ = json.Marshal(manifest)
+			var p Pipeline
+			json.Unmarshal(original, &p)
+			p.Steps[1].Inputs = map[string]Binding{"prompt": {From: "steps/inspect#/name"}}
+			switch scenario {
+			case "unknown-field":
+				p.Steps[1].Inputs = map[string]Binding{"unknown": {Literal: json.RawMessage(`"text"`)}}
+			case "wrong-type":
+				p.Steps[1].Inputs = map[string]Binding{"prompt": {Literal: json.RawMessage(`false`)}}
+			case "missing-dependency":
+				p.Steps[1].DependsOn = []string{}
+			}
+			copyFiles["pipelines/process.json"], _ = json.Marshal(p)
+			err := ValidatePackage(copyFiles, Policy{})
+			if (err == nil) != (scenario == "valid") {
+				t.Fatalf("unexpected admission: %v", err)
+			}
+		})
+	}
 	for _, mutate := range []func(*Pipeline){
 		func(p *Pipeline) { p.Steps[2].DependsOn = []string{} },
 		func(p *Pipeline) { p.Steps[2].Operation = "pipeline-helper.process" },

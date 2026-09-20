@@ -22,6 +22,12 @@ type resolvedOperation struct {
 }
 
 func (s *Service) adapterFor(op contracts.Operation) (ShortHostAdapter, error) {
+	if op.Execution.Kind == "model" && op.Execution.Mode == "task" && s.models != nil {
+		if len(op.Effects) != 1 || op.Effects[0] != "generation" || !contains(op.RequiredPermissions, "generation.run") || (len(op.Execution.Resources) > 0 && !contains(op.RequiredPermissions, "media.read")) {
+			return ShortHostAdapter{}, issue(403, "scope_forbidden", "系统模型操作缺少权限或效果声明")
+		}
+		return ShortHostAdapter{Permissions: op.RequiredPermissions, Effects: op.Effects}, nil
+	}
 	if op.Execution.Kind == "pipeline" && op.Execution.Mode == "task" && contains(op.Effects, "draft_write") {
 		return ShortHostAdapter{Permissions: op.RequiredPermissions, Effects: op.Effects}, nil
 	}

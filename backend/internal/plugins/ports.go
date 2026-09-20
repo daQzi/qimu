@@ -45,6 +45,20 @@ type InvocationPolicy struct {
 	AgentRevision  int64
 }
 
+func (s *Service) WithInputValidator(validate func(*repository.Repository, string, string, string, contracts.Invocation, json.RawMessage) error) *Service {
+	s.inputValidator = validate
+	return s
+}
+func (s *Service) validateInput(repo *repository.Repository, user, runID string, step contracts.PipelineStep, invocation contracts.Invocation, value json.RawMessage) error {
+	if step.InputValidator == "" {
+		return nil
+	}
+	if s.inputValidator == nil {
+		return issue(409, "operation_unavailable", "宿主尚未提供输入校验能力")
+	}
+	return s.inputValidator(repo, user, runID, step.InputValidator, invocation, value)
+}
+
 // Remote admission creates no network traffic. Task creation and reservation
 // run in the same transaction as the approved PluginRun transition.
 type PreparedRemoteOperation struct {
@@ -65,6 +79,19 @@ type RemoteResumeRequest struct {
 }
 
 func (s *Service) WithRemoteHost(host RemoteHost) *Service { s.remote = host; return s }
+func (s *Service) WithModelHost(host RemoteHost) *Service  { s.models = host; return s }
+func (s *Service) taskHost(kind string) RemoteHost {
+	if kind == "model" {
+		return s.models
+	}
+	return s.remote
+}
+func (s *Service) runTaskHost(run *model.PluginRun) RemoteHost {
+	if run.ConnectionVersionID == "" {
+		return s.models
+	}
+	return s.remote
+}
 func (s *Service) WithRunAccess(check func(*repository.Repository, string) error) *Service {
 	s.runAccess = check
 	return s

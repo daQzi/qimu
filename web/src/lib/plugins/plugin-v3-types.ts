@@ -26,12 +26,25 @@ export type PluginManifestV3 = {
     version: string;
     description: string;
     publisher: { id: string; displayName: string };
-    requires: { hostApi: "^3.0.0" | "^3.1.0" | "^3.2.0" };
+    requires: { hostApi: "^3.0.0" | "^3.1.0" | "^3.2.0" | "^3.3.0" };
     permissions: PluginV3Permission[];
     dependencies: Array<{ id: string; version: string; optional: boolean }>;
-    contributes: { skills?: PluginV3Skill[]; operations?: PluginContributionRef[]; views?: PluginContributionRef[]; canvasBlueprints?: PluginContributionRef[]; connectors?: PluginContributionRef[]; pipelines?: PluginContributionRef[]; workbenches?: PluginContributionRef[]; recipes?: PluginContributionRef[] };
+    contributes: {
+        skills?: PluginV3Skill[];
+        operations?: PluginContributionRef[];
+        views?: PluginContributionRef[];
+        canvasBlueprints?: PluginContributionRef[];
+        connectors?: PluginContributionRef[];
+        pipelines?: PluginContributionRef[];
+        workbenches?: PluginContributionRef[];
+        recipes?: PluginContributionRef[];
+    };
 };
-export type PluginExecution = { kind: "host"; adapter: string; mode: "inline" | "task" } | { kind: "http"; connector: string; action: string; mode: "task" } | { kind: "pipeline"; pipeline: string; mode: "task" };
+export type PluginExecution =
+    | { kind: "host"; adapter: string; mode: "inline" | "task" }
+    | { kind: "http"; connector: string; action: string; mode: "task" }
+    | { kind: "pipeline"; pipeline: string; mode: "task" }
+    | { kind: "model"; mode: "task"; instruction: string; resources: Record<string, "image" | "video">; outputProfile: "json" | "video-report/v1" };
 export type PluginOperation = {
     id: string;
     description: string;
@@ -52,6 +65,6 @@ export type PluginRunRecord = { id: string; userId: string; entryOperation: stri
 export type PluginBinding = { literal: unknown; from?: never } | { from: string; literal?: never };
 export type PluginPipelineStep = { key: string; dependsOn: string[] } & (
     | { type: "operation"; operation: string; inputs: Record<string, PluginBinding>; when?: { exists: string } | { equals: [PluginBinding, PluginBinding] }; foreach?: { from: string; itemKey: string; maxConcurrency: number } }
-    | { type: "wait_input"; formSchemaRef: string; view?: string }
+    | { type: "wait_input"; formSchemaRef: string; view?: string; inputs?: Record<string, PluginBinding>; inputValidator?: "video-report/v1" | "video-plan/v1" }
 );
 export type PluginPipeline = { id: string; inputSchemaRef: string; outputSchemaRef: string; steps: PluginPipelineStep[]; outputs: Record<string, PluginBinding> };

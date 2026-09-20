@@ -82,7 +82,7 @@ export function PluginBatchControls({ run, onUpdated, onDerived }: { run: Plugin
                     </Button>
                 </div>
             )}
-            {quote?.items.length === 0 && <p>当前没有可批量批准的远程任务；画布和草稿操作仍需分别确认。</p>}
+            {quote?.items.length === 0 && <p>当前没有可批量批准的远程任务；系统模型、画布和草稿操作仍需分别确认。</p>}
             {["succeeded", "failed", "cancelled"].includes(run.status) && (
                 <>
                     <Button

@@ -1,0 +1,15 @@
+{
+  "id": "confirm",
+  "component": "key-value/v1",
+  "schemaRef": "schemas/confirm.json",
+  "fields": [
+    {
+      "path": "/plan",
+      "label": "替换映射与素材 ID"
+    },
+    {
+      "path": "/confirmed",
+      "label": "确认方案（不生成视频）"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "resourceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "title": "原视频资源 ID"
+    },
+    "model": {
+      "$ref": "schemas/model.json"
+    },
+    "country": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "title": "目标国家"
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "title": "目标语言"
+    },
+    "style": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "title": "本地化风格"
+    }
+  },
+  "required": [
+    "resourceId",
+    "model",
+    "country",
+    "language",
+    "style"
+  ],
+  "additionalProperties": false
+}

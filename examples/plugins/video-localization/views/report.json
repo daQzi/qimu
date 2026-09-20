@@ -1,0 +1,20 @@
+{
+  "id": "report",
+  "component": "entity-cards/v1",
+  "schemaRef": "schemas/report.json",
+  "collectionPath": "/entities",
+  "fields": [
+    {
+      "path": "/name",
+      "label": "名称"
+    },
+    {
+      "path": "/kind",
+      "label": "类别"
+    },
+    {
+      "path": "/description",
+      "label": "分析"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "logicalModelId": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 80
+    },
+    "channelId": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 80
+    },
+    "model": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 120
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

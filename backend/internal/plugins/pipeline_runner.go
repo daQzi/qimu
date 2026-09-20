@@ -209,7 +209,12 @@ func (s *Service) advancePipelineStep(repo *repository.Repository, run *model.Pl
 			}
 		}
 		schema := resolved.Files[step.FormSchemaRef]
+		draft, err := pipelineInputDraft(resolved.Files, step, request.Input, outputs)
+		if err != nil {
+			return false, err
+		}
 		row := model.PluginInputRequest{ID: kernel.NewID(), RunID: run.ID, StepKey: step.Key, Revision: 1, Status: "pending", SchemaJSON: string(schema)}
+		row.DraftJSON = draft
 		if err = repo.CreatePluginInput(&row); err != nil {
 			return false, err
 		}

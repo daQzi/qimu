@@ -102,6 +102,9 @@ func (s *Service) SearchPluginOperations(userID, query string, offset int, ctx c
 	return s.applicationPlugins().Search(userID, query, offset, ctx, plugins.InvocationPolicy{PermissionMode: "request_approval"})
 }
 func (s *Service) PluginRun(userID, id string, viewID ...string) (plugins.RunView, error) {
+	if err := s.syncPluginModelRun(userID, id); err != nil {
+		return plugins.RunView{}, err
+	}
 	return s.applicationPlugins().GetRun(userID, id, viewID...)
 }
 func (s *Service) DecidePluginRun(userID, id, approvalID, decision string, revision int64) (plugins.RunView, error) {

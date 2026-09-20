@@ -223,7 +223,8 @@
               "enum": [
                 "^3.0.0",
                 "^3.1.0",
-                "^3.2.0"
+                "^3.2.0",
+                "^3.3.0"
               ]
             }
           },
@@ -349,6 +350,18 @@
     },
     "execution": {
       "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {"const": "model"},
+            "mode": {"const": "task"},
+            "instruction": {"type": "string", "minLength": 1, "maxLength": 12000},
+            "resources": {"type": "object", "maxProperties": 4, "propertyNames": {"pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,79}$"}, "additionalProperties": {"enum": ["image", "video"]}},
+            "outputProfile": {"enum": ["json", "video-report/v1"]}
+          },
+          "required": ["kind", "mode", "instruction", "resources", "outputProfile"],
+          "additionalProperties": false
+        },
         {
           "type": "object",
           "properties": {
@@ -1306,6 +1319,12 @@
             },
             "formSchemaRef": {
               "$ref": "#/$defs/path"
+            },
+            "inputValidator": {"enum": ["video-report/v1", "video-plan/v1"]},
+            "inputs": {
+              "type": "object",
+              "additionalProperties": {"$ref": "#/$defs/binding"},
+              "maxProperties": 32
             },
             "view": {
               "$ref": "#/$defs/id"

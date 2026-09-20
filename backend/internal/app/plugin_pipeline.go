@@ -39,6 +39,18 @@ func (s *Service) PluginRunEvents(user, id string, after int64) ([]model.PluginR
 	return s.repo.PluginRunEvents(user, id, after)
 }
 func (s *Service) advancePluginPipelines() {
+	models, modelErr := s.repo.PendingPluginModelRuns()
+	if modelErr != nil {
+		log.Printf("plugin model scan failed: %v", modelErr)
+	}
+	for _, run := range models {
+		if s.IsDraining() {
+			return
+		}
+		if err := s.syncPluginModelRun(run.UserID, run.ID); err != nil {
+			log.Printf("plugin model reconcile failed: run=%s error=%v", run.ID, err)
+		}
+	}
 	rows, err := s.repo.PendingPluginPipelines()
 	if err != nil {
 		log.Printf("plugin pipeline scan failed: %v", err)

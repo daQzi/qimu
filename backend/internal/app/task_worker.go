@@ -205,6 +205,11 @@ func (w *taskWorkerCoordinator) processClaimedTask(task *model.Task, globalSlot 
 	if task.Type == model.TaskTypePluginOperation {
 		return w.processPluginOperation(task, ctx)
 	}
+	if task.PluginRunID != nil {
+		if err := s.validatePluginModelDispatch(*task); err != nil {
+			return terminal.markPreparationFailure(task, "插件模型执行条件已变化", err, false, "插件模型执行前校验失败，未调用上游")
+		}
+	}
 
 	s.markAgentMemoryCompactRunning(*task)
 	task.Stage = "调用生成模型"

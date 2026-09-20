@@ -324,6 +324,24 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 			return invalid("package_reference_invalid", view)
 		}
 		execution := op["execution"].(map[string]any)
+		if execution["kind"] == "model" {
+			if manifest["requires"].(map[string]any)["hostApi"] != "^3.3.0" {
+				return invalid("contract_invalid", "model operation requires hostApi ^3.3.0")
+			}
+			permissions := map[string]bool{}
+			for _, p := range asArray(op["requiredPermissions"]) {
+				permissions[p.(string)] = true
+			}
+			resources, _ := execution["resources"].(map[string]any)
+			effects := asArray(op["effects"])
+			if !permissions["generation.run"] || (len(resources) > 0 && !permissions["media.read"]) || len(effects) != 1 || effects[0] != "generation" {
+				return invalid("scope_forbidden", "model operation minimum contract")
+			}
+			if execution["outputProfile"] == "video-report/v1" && (len(resources) != 1 || resources["resourceId"] != "video") {
+				return invalid("contract_invalid", "video report requires resourceId video")
+			}
+			continue
+		}
 		if execution["kind"] == "pipeline" {
 			if err := validateSequentialPackage(files, op); err != nil {
 				return err
@@ -362,7 +380,8 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 		// invented by a package. Execution repeats the host minimum checks.
 		adapter, _ := execution["adapter"].(string)
 		if permission, ok := map[string]string{"object.read": "asset.read", "object.search": "asset.search", "object.save": "asset.import"}[adapter]; ok {
-			if execution["kind"] != "host" || execution["mode"] != "inline" || manifest["requires"].(map[string]any)["hostApi"] != "^3.2.0" {
+			hostAPI := manifest["requires"].(map[string]any)["hostApi"]
+			if execution["kind"] != "host" || execution["mode"] != "inline" || (hostAPI != "^3.2.0" && hostAPI != "^3.3.0") {
 				return invalid("operation_unavailable", "object host contract")
 			}
 			found := false

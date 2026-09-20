@@ -1228,6 +1228,11 @@ func (s *Service) switchTaskToNextRoute(task *model.Task, attempts []model.Route
 }
 
 func (s *Service) nextRouteAttemptAfterFailure(task *model.Task, attempt *model.RouteAttempt, taskErr error) (*model.RouteAttempt, error) {
+	// Plugin quotes pin the selected model/configuration. A different attempt
+	// requires another approval rather than silently switching a paid operation.
+	if task != nil && task.PluginRunID != nil {
+		return nil, nil
+	}
 	if task == nil || task.LogicalModelID == "" || attempt == nil || attempt.DispatchState != "rejected_no_job" {
 		return nil, nil
 	}

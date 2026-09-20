@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "properties": {
+    "canvasId": {
+      "type": "string"
+    },
+    "sourceRunId": {
+      "type": "string"
+    },
+    "blueprintId": {
+      "type": "string"
+    },
+    "projectionId": {
+      "type": "string"
+    },
+    "bindings": {
+      "type": "object",
+      "properties": {
+        "main": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "main"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "canvasId",
+    "sourceRunId",
+    "blueprintId",
+    "projectionId",
+    "bindings"
+  ],
+  "additionalProperties": false
+}

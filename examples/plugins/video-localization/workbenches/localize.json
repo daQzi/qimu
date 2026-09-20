@@ -1,0 +1,18 @@
+{
+  "id": "localize",
+  "name": "一键出海",
+  "description": "复用启幕系统视频理解模型，生成可人工确认的替换方案。",
+  "hostSurfaces": [
+    "agent-home",
+    "canvas"
+  ],
+  "contextSchemaRef": "schemas/input.json",
+  "operation": "video-localization.process",
+  "skill": "localize",
+  "recipes": [],
+  "defaults": {
+    "style": "保持原剧情与镜头顺序，调整语言和文化表达"
+  },
+  "output": "canvas_optional",
+  "prompt": "先核对原视频、目标国家语言和可用视频理解模型，执行分析与方案流程。引导用户确认，不自动调用配音、替换或成片服务。"
+}

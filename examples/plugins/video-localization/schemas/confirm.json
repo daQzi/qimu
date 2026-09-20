@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "report": {
+      "$ref": "schemas/report.json"
+    },
+    "country": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "style": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "plan": {
+      "$ref": "schemas/plan.json"
+    },
+    "confirmed": {
+      "type": "boolean",
+      "const": true
+    }
+  },
+  "required": [
+    "report",
+    "country",
+    "language",
+    "style",
+    "plan",
+    "confirmed"
+  ],
+  "additionalProperties": false
+}

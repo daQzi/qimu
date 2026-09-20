@@ -65,3 +65,21 @@ test("P05 input presentation uses server draft, explicit submit, no guessed cont
     expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("<script>alert");
 });
+
+test("P11 input prefill requires a declared dependency and typed object field on host 3.3", () => {
+    for (const scenario of ["valid", "old-host", "unknown-field", "wrong-type", "missing-dependency"]) {
+        const files = fixture();
+        const manifest = JSON.parse(files["manifest.json"]);
+        manifest.requires.hostApi = scenario === "old-host" ? "^3.2.0" : "^3.3.0";
+        files["manifest.json"] = JSON.stringify(manifest);
+        const pipeline = JSON.parse(files["pipelines/process.json"]);
+        pipeline.steps[1].inputs = { prompt: { from: "steps/inspect#/name" } };
+        if (scenario === "unknown-field") pipeline.steps[1].inputs = { unknown: { literal: "text" } };
+        if (scenario === "wrong-type") pipeline.steps[1].inputs = { prompt: { literal: false } };
+        if (scenario === "missing-dependency") pipeline.steps[1].dependsOn = [];
+        files["pipelines/process.json"] = JSON.stringify(pipeline);
+        const validate = () => validatePluginTextPackage(files);
+        if (scenario === "valid") expect(validate).not.toThrow();
+        else expect(validate).toThrow();
+    }
+});

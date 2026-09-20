@@ -103,7 +103,7 @@ func ValidateWorkbenches(files PackageFiles) error {
 			}
 		}
 	}
-	if extended && manifest.Requires.HostAPI != "^3.1.0" && manifest.Requires.HostAPI != "^3.2.0" {
+	if extended && manifest.Requires.HostAPI != "^3.1.0" && manifest.Requires.HostAPI != "^3.2.0" && manifest.Requires.HostAPI != "^3.3.0" {
 		return invalid("contract_invalid", "workbench requires hostApi ^3.1.0")
 	}
 	for _, board := range boards {
@@ -143,7 +143,7 @@ func ValidateWorkbenches(files PackageFiles) error {
 		}
 		properties, _ := schema["properties"].(map[string]any)
 		if len(board.ObjectInputs) > 0 {
-			if manifest.Requires.HostAPI != "^3.2.0" {
+			if manifest.Requires.HostAPI != "^3.2.0" && manifest.Requires.HostAPI != "^3.3.0" {
 				return invalid("contract_invalid", "object inputs require hostApi ^3.2.0")
 			}
 			allowed := false

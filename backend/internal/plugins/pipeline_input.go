@@ -162,6 +162,9 @@ func (s *Service) UpdateInput(user, runID, id, key string, req InputUpdate) (Run
 			for _, step := range p.Steps {
 				if step.Key == row.StepKey && step.Type == "wait_input" {
 					schema = step.FormSchemaRef
+					if err = s.validateInput(repo, user, runID, step, invocation, canonical); err != nil {
+						return err
+					}
 				}
 			}
 			if err = contracts.ValidateData(resolved.Files, schema, canonical); err != nil {

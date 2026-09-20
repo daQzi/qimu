@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "properties": {
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entityId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "kind": {
+            "enum": [
+              "character",
+              "scene",
+              "prop",
+              "voice",
+              "subtitle"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "materialId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 80
+          },
+          "executable": {
+            "type": "boolean",
+            "const": false
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "entityId",
+          "kind",
+          "source",
+          "target",
+          "prompt",
+          "materialId",
+          "executable",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 200
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      },
+      "maxItems": 20,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "mappings",
+    "limitations"
+  ],
+  "additionalProperties": false
+}

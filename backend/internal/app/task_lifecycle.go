@@ -39,7 +39,7 @@ func (w *taskLifecycleCoordinator) retryTask(userID string, id string) (*model.T
 	if err != nil {
 		return nil, err
 	}
-	if task.Type == model.TaskTypePluginOperation {
+	if task.Type == model.TaskTypePluginOperation || task.PluginRunID != nil {
 		return nil, BadAuthRequest("请从插件运行恢复原任务；新生成需要重新报价与确认")
 	}
 	if task.CreationSubmissionID != nil {

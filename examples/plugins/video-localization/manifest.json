@@ -1,0 +1,112 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "video-localization",
+  "name": "一键出海：分析与替换方案",
+  "version": "1.0.0",
+  "description": "分析原视频的人物、场景、道具和可见字幕，人工修正后生成本地化替换方案。本阶段不配音、不生成或合成成片。",
+  "publisher": {
+    "id": "qimu-examples",
+    "displayName": "启幕示例"
+  },
+  "requires": {
+    "hostApi": "^3.3.0"
+  },
+  "permissions": [
+    "media.read",
+    "generation.run",
+    "canvas.read",
+    "canvas.write"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "localize",
+        "name": "localize",
+        "description": "引导原视频拉片、用户修正和出海替换方案确认；报价批准后才调用系统模型。",
+        "entry": "skills/localize/SKILL.md",
+        "activation": "explicit",
+        "operations": [
+          "video-localization.process",
+          "video-localization.place-result",
+          "video-localization.place-input"
+        ],
+        "launchOperation": "video-localization.process"
+      }
+    ],
+    "operations": [
+      {
+        "id": "process",
+        "ref": "operations/process.json"
+      },
+      {
+        "id": "analyze",
+        "ref": "operations/analyze.json"
+      },
+      {
+        "id": "suggest",
+        "ref": "operations/suggest.json"
+      },
+      {
+        "id": "place-result",
+        "ref": "operations/place-result.json"
+      },
+      {
+        "id": "place-input",
+        "ref": "operations/place-input.json"
+      }
+    ],
+    "pipelines": [
+      {
+        "id": "localize",
+        "ref": "pipelines/localize.json"
+      }
+    ],
+    "views": [
+      {
+        "id": "report",
+        "ref": "views/report.json"
+      },
+      {
+        "id": "plan",
+        "ref": "views/plan.json"
+      },
+      {
+        "id": "review",
+        "ref": "views/review.json"
+      },
+      {
+        "id": "confirm",
+        "ref": "views/confirm.json"
+      },
+      {
+        "id": "summary",
+        "ref": "views/summary.json"
+      }
+    ],
+    "canvasBlueprints": [
+      {
+        "id": "report-board",
+        "ref": "blueprints/report-board.json"
+      },
+      {
+        "id": "plan-board",
+        "ref": "blueprints/plan-board.json"
+      },
+      {
+        "id": "review-board",
+        "ref": "blueprints/review-board.json"
+      },
+      {
+        "id": "confirm-board",
+        "ref": "blueprints/confirm-board.json"
+      }
+    ],
+    "workbenches": [
+      {
+        "id": "localize",
+        "ref": "workbenches/localize.json"
+      }
+    ]
+  }
+}

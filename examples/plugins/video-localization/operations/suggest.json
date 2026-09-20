@@ -1,0 +1,24 @@
+{
+  "id": "suggest",
+  "description": "依据用户确认的分析报告、国家与语言推荐替换内容和提示词；只形成方案，所有项不可执行。",
+  "inputSchemaRef": "schemas/suggest-input.json",
+  "outputSchemaRef": "schemas/plan.json",
+  "requiredPermissions": [
+    "generation.run"
+  ],
+  "effects": [
+    "generation"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "model",
+    "mode": "task",
+    "instruction": "基于已确认报告与目标国家、语言、风格制定本地化方案。每项保留报告实体/字幕 ID，kind 与实体一致（人物可增加 voice 建议）。source 写原内容，target 写替换建议，prompt 给可编辑中文提示词；推荐应保持叙事连贯，避免把国籍等同于单一外貌或刻板文化。没有用户提供的素材 ID 时 materialId 必须为空字符串。不要创造实体 ID。executable 必须 false，reason 明确指出 P11 尚未接入对应替换/配音/渲染服务；不得承诺只靠深度图还原动作或生成完成。仅输出 plan Schema。",
+    "resources": {},
+    "outputProfile": "json"
+  },
+  "resultView": "plan"
+}

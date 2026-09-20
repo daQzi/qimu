@@ -1,0 +1,21 @@
+{
+  "id": "confirm-board",
+  "nodes": [
+    {
+      "key": "main",
+      "nodeType": "plugin-input",
+      "title": "确认替换方案",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "binding": "input",
+      "view": "confirm",
+      "actions": [
+        "editor.focus",
+        "input.submit"
+      ]
+    }
+  ],
+  "connections": []
+}

@@ -1,0 +1,24 @@
+{
+  "id": "process",
+  "description": "原片分析→人工修正→替换建议→确认方案；每次模型任务分别报价，确认方案不生成视频。",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/confirm.json",
+  "requiredPermissions": [
+    "media.read",
+    "generation.run"
+  ],
+  "effects": [
+    "draft_write",
+    "generation"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "pipeline",
+    "mode": "task",
+    "pipeline": "localize"
+  },
+  "resultView": "summary"
+}

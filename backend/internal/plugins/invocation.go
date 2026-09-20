@@ -120,8 +120,8 @@ func (s *Service) Invoke(userID, key string, request contracts.Invocation, polic
 		}
 		var plan PreparedOperation
 		var remote PreparedRemoteOperation
-		if resolved.Definition.Execution.Kind == "http" {
-			remote, err = s.remote.Prepare(repo, userID, normalized, hostContext, policy)
+		if resolved.Definition.Execution.Kind == "http" || resolved.Definition.Execution.Kind == "model" {
+			remote, err = s.taskHost(resolved.Definition.Execution.Kind).Prepare(repo, userID, normalized, hostContext, policy)
 			plan = PreparedOperation{Result: remote.Preview, SourceDigest: remote.SourceDigest}
 		} else {
 			plan, err = resolved.Adapter.Prepare(repo, userID, normalized.Input, hostContext)
@@ -132,7 +132,7 @@ func (s *Service) Invoke(userID, key string, request contracts.Invocation, polic
 		if len(plan.Result) > 64<<10 {
 			return issue(400, "upstream_output_invalid", "操作结果超过短操作上限")
 		}
-		if resolved.Definition.Execution.Kind != "http" {
+		if resolved.Definition.Execution.Kind != "http" && resolved.Definition.Execution.Kind != "model" {
 			if err = contracts.ValidateData(resolved.Files, resolved.Definition.OutputSchemaRef, plan.Result); err != nil {
 				return issue(400, "upstream_output_invalid", "操作输出不符合 Schema")
 			}
@@ -209,7 +209,7 @@ func (s *Service) GetRun(userID, id string, viewID ...string) (RunView, error) {
 		view.Result = json.RawMessage(run.ResultJSON)
 		view.ResultRef = &contracts.ResultRef{RunID: run.ID, StepKey: "invoke", Attempt: max(1, run.Attempt), OutputKey: "result", SchemaID: run.Operation + "/result", SchemaVersion: run.ReleaseVersion, Digest: hashBytes([]byte(run.ResultJSON))}
 	}
-	if run.TaskID != nil {
+	if run.TaskID != nil && run.ConnectionVersionID != "" {
 		remote, err := s.repo.PluginRemoteForRun(userID, id)
 		if err != nil {
 			return RunView{}, err
@@ -277,8 +277,8 @@ func (s *Service) Decide(userID, id, approvalID, decision string, revision int64
 			if err = s.validateWorkbenchInvocation(repo, userID, request, ctx); err != nil {
 				return err
 			}
-			if resolved.Definition.Execution.Kind == "http" {
-				prepared, err := s.remote.Prepare(repo, userID, request, HostOperationContext{InvocationContext: ctx, ReleaseID: resolved.Release.ID, Files: resolved.Files}, InvocationPolicy{PermissionMode: "request_approval", AgentRunID: run.AgentRunID})
+			if resolved.Definition.Execution.Kind == "http" || resolved.Definition.Execution.Kind == "model" {
+				prepared, err := s.taskHost(resolved.Definition.Execution.Kind).Prepare(repo, userID, request, HostOperationContext{InvocationContext: ctx, ReleaseID: resolved.Release.ID, Files: resolved.Files}, InvocationPolicy{PermissionMode: "request_approval", AgentRunID: run.AgentRunID})
 				if err != nil {
 					return err
 				}
@@ -312,10 +312,8 @@ func (s *Service) Decide(userID, id, approvalID, decision string, revision int64
 		} else {
 			run.Status = "cancelled"
 			run.SourceResourceID = ""
-			if run.ConnectionVersionID != "" {
-				if err = repo.ReleasePluginInputResources(userID, id); err != nil {
-					return err
-				}
+			if err = repo.ReleasePluginInputResources(userID, id); err != nil {
+				return err
 			}
 		}
 		run.ApprovalDecision = decision
@@ -362,10 +360,10 @@ func (s *Service) Cancel(userID, id string, revision int64) (RunView, error) {
 			return s.cancelPipeline(repo, run, revision)
 		}
 		if run.TaskID != nil {
-			if s.remote == nil || run.Revision != revision || (run.Status != "running" && run.Status != "paused") {
+			if s.runTaskHost(run) == nil || run.Revision != revision || (run.Status != "running" && run.Status != "paused") {
 				return issue(409, "run_revision_conflict", "运行状态已变化")
 			}
-			if err = s.remote.Cancel(repo, run); err != nil {
+			if err = s.runTaskHost(run).Cancel(repo, run); err != nil {
 				return err
 			}
 			return SaveRunTransition(repo, run, "cancellation.requested")
@@ -375,10 +373,8 @@ func (s *Service) Cancel(userID, id string, revision int64) (RunView, error) {
 		}
 		run.Status = "cancelled"
 		run.SourceResourceID = ""
-		if run.ConnectionVersionID != "" {
-			if err = repo.ReleasePluginInputResources(userID, id); err != nil {
-				return err
-			}
+		if err = repo.ReleasePluginInputResources(userID, id); err != nil {
+			return err
 		}
 		run.Revision++
 		if err = appendRunEvent(repo, run, "run.cancelled"); err != nil {
@@ -409,10 +405,10 @@ func (s *Service) Resume(userID, id string, revision int64, action, providerJobI
 			run.FailureMessage = ""
 			return SaveRunTransition(repo, run, "run.resumed")
 		}
-		if run.Revision != revision || run.Status != "paused" || run.TaskID == nil || s.remote == nil {
+		if run.Revision != revision || run.Status != "paused" || run.TaskID == nil || s.runTaskHost(run) == nil {
 			return issue(409, "run_revision_conflict", "运行当前不可恢复")
 		}
-		if err = s.remote.Resume(repo, run, RemoteResumeRequest{Action: action, ProviderJobID: providerJobID}); err != nil {
+		if err = s.runTaskHost(run).Resume(repo, run, RemoteResumeRequest{Action: action, ProviderJobID: providerJobID}); err != nil {
 			return err
 		}
 		return SaveRunTransition(repo, run, "run.resumed")

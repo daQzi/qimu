@@ -1,0 +1,21 @@
+{
+  "id": "report-board",
+  "nodes": [
+    {
+      "key": "main",
+      "nodeType": "plugin-result",
+      "title": "视频拉片分析",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "binding": "result",
+      "view": "report",
+      "actions": [
+        "editor.focus",
+        "result.continue"
+      ]
+    }
+  ],
+  "connections": []
+}

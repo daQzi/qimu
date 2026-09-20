@@ -5,7 +5,9 @@ description: 当前项目已实现的核心工作台能力与使用入口
 
 # 功能清单
 
-P10（待用户验收）：品牌资料管理、固定对象版本、归档保留与显式派生；hostApi 3.2 的 object.read/search/save 复用原权限和审批。工作台 objectInputs 使用通用选择器，服务端解析品牌事实并冻结到 Agent，两个独立插件复用同版资料。仅文本品牌，未开放 objectTypes 或媒体绑定，见 `docs/plans/qimu-workstudio-p10-acceptance.md`。
+P11（本轮待用户验收）：hostApi 3.3 系统模型结构化操作、逐项报价审批与原 Task/钱包、人工输入预填与领域校验、历史派生复用；提供 video-localization 插件的原生视频分析、出海替换方案和画布蓝图。音轨未认证、无字节级探测/抽帧或成片，复杂内容使用 JSON 编辑，见 `docs/plans/qimu-workstudio-p11-acceptance.md`。
+
+P10（已验收）：品牌资料管理、固定对象版本、归档保留与显式派生；hostApi 3.2 的 object.read/search/save 复用原权限和审批。工作台 objectInputs 使用通用选择器，服务端解析品牌事实并冻结到 Agent，两个独立插件复用同版资料。仅文本品牌，未开放 objectTypes 或媒体绑定，见 `docs/plans/qimu-workstudio-p10-acceptance.md`。
 
 工作台 P09（已验收）：hostApi 3.1 的 Workbench/Recipe 贡献、统一路由、Schema 动态表单、确定性配方冲突、按账号/版本/画布保存本机草稿、固定输入交给 Agent 或既有插件操作。提供素材检查、品牌文案、会议简报三个独立配置示例。没有新数据库迁移或执行器，见 `docs/plans/qimu-workstudio-p09-acceptance.md`。后续工作台开发集成到 `codex-workstudio`；原插件收尾的“工作台后置”安排已被用户最新授权替代。
 

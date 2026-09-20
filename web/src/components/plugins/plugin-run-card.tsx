@@ -5,6 +5,7 @@ import { cancelPluginRun, decidePluginRun, getPluginRun, type PluginRunView } fr
 import { PluginResultValues } from "./plugin-result-values";
 import { PluginCanvasSave } from "./plugin-canvas-save";
 import { PluginRemoteStatus } from "./plugin-remote-status";
+import { PluginModelPreview } from "./plugin-model-preview";
 import { PluginInputForm } from "./plugin-input-form";
 import { requestPluginEditorAction } from "@/lib/plugins/plugin-editor-actions";
 import { PluginBatchControls } from "./plugin-batch-controls";
@@ -98,7 +99,16 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId, inputRe
                     <p className="break-all">
                         {run.operation} · {run.releaseVersion}
                     </p>
-                    {run.workbench ? <details><summary>查看本次工作台输入</summary><p className="break-all">{run.workbench.id} · {run.workbench.releaseId}</p><p>配方：{run.workbench.recipeIds.join("、") || "无"}</p><PluginResultValues value={run.workbench.input} /></details> : null}
+                    {run.workbench ? (
+                        <details>
+                            <summary>查看本次工作台输入</summary>
+                            <p className="break-all">
+                                {run.workbench.id} · {run.workbench.releaseId}
+                            </p>
+                            <p>配方：{run.workbench.recipeIds.join("、") || "无"}</p>
+                            <PluginResultValues value={run.workbench.input} />
+                        </details>
+                    ) : null}
                     {run.failureMessage && (
                         <p role="alert" className="text-destructive">
                             {run.failureMessage}
@@ -107,10 +117,20 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId, inputRe
                     {run.pipeline && (
                         <>
                             {inputRequestId && run.pipeline.inputs.find((input) => input.id === inputRequestId)?.status === "submitted" && <p role="status">此节点的输入已提交，后台流程将继续；无需重复填写。</p>}
-                            {canvasId && !inputRequestId && run.pipeline.inputs.some((input) => input.status === "pending") && <Button size="small" onClick={() => {
-                                try { requestPluginEditorAction({ command: "editor.focus", canvasId, runId, inputRequestId: run.pipeline!.inputs.find((input) => input.status === "pending")!.id }); }
-                                catch (cause) { setError(cause instanceof Error ? cause.message : "定位失败"); }
-                            }}>定位下一个待填写节点</Button>}
+                            {canvasId && !inputRequestId && run.pipeline.inputs.some((input) => input.status === "pending") && (
+                                <Button
+                                    size="small"
+                                    onClick={() => {
+                                        try {
+                                            requestPluginEditorAction({ command: "editor.focus", canvasId, runId, inputRequestId: run.pipeline!.inputs.find((input) => input.status === "pending")!.id });
+                                        } catch (cause) {
+                                            setError(cause instanceof Error ? cause.message : "定位失败");
+                                        }
+                                    }}
+                                >
+                                    定位下一个待填写节点
+                                </Button>
+                            )}
                             <PluginBatchControls
                                 key={scope}
                                 run={run}
@@ -178,9 +198,12 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId, inputRe
                             }}
                         />
                     )}
-                    {((run.executionAdapter !== "http" && !run.pipeline) || run.status === "succeeded") && <PluginResultValues value={run.result ?? run.preview} view={run.view} />}
+                    {run.executionAdapter === "model" && run.status === "waiting_approval" && <PluginModelPreview value={run.preview} />}
+                    {((!["http", "model"].includes(run.executionAdapter || "") && !run.pipeline) || run.status === "succeeded") && <PluginResultValues value={run.result ?? run.preview} view={run.view} />}
                     {canvasId &&
-                        run.canvasActions?.map((action) => <PluginCanvasSave key={`${scope}:${action.operation}:${action.blueprintId}:${action.inputRequestId || ""}`} run={run} canvasId={canvasId} action={action} onCreated={(id) => setProjection({ scope, id })} />)}
+                        run.canvasActions?.map((action) => (
+                            <PluginCanvasSave key={`${scope}:${action.operation}:${action.blueprintId}:${action.inputRequestId || ""}`} run={run} canvasId={canvasId} action={action} onCreated={(id) => setProjection({ scope, id })} />
+                        ))}
                     {canvasId && run.executionAdapter === "canvas.blueprint.instantiate" && run.status === "succeeded" && (
                         <Button size="small" onClick={() => void refreshCanvasAfterAgent(canvasId).catch((cause) => setError(cause instanceof Error ? cause.message : "画布同步失败"))}>
                             同步画布结果
@@ -191,7 +214,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId, inputRe
             {run?.status === "waiting_approval" && !run.pipeline && (
                 <div className="flex flex-wrap gap-2">
                     <Button size="small" type="primary" loading={busy} onClick={() => void act("approve")}>
-                        {run.executionAdapter === "http" ? "确认发送并执行" : run.executionAdapter === "canvas.blueprint.instantiate" ? "确认保存到画布" : "确认保存快照"}
+                        {run.executionAdapter === "model" ? "确认调用模型" : run.executionAdapter === "http" ? "确认发送并执行" : run.executionAdapter === "canvas.blueprint.instantiate" ? "确认保存到画布" : "确认保存快照"}
                     </Button>
                     <Button size="small" disabled={busy} onClick={() => void act("reject")}>
                         拒绝
@@ -202,7 +225,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId, inputRe
                 </div>
             )}
             {projection?.scope === scope && <PluginRunCard key={projection.id} runId={projection.id} canvasId={canvasId} />}
-            {run?.remote && ["running", "paused"].includes(run.status) && (
+            {(run?.remote || run?.executionAdapter === "model") && run && ["running", "paused"].includes(run.status) && (
                 <Button size="small" loading={busy} onClick={() => void act("cancel")}>
                     停止此任务
                 </Button>

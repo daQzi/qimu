@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 36
+    },
+    "inputRequestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 36
+    },
+    "blueprintId": {
+      "enum": [
+        "review-board",
+        "confirm-board"
+      ]
+    },
+    "snapshotHash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "instanceKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    }
+  },
+  "required": [
+    "runId",
+    "inputRequestId",
+    "blueprintId",
+    "snapshotHash",
+    "instanceKey"
+  ],
+  "additionalProperties": false
+}

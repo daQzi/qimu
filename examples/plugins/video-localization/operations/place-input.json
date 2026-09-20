@@ -1,0 +1,22 @@
+{
+  "id": "place-input",
+  "description": "把当前运行的真实输入/结果投影到画布。读取最新画布 snapshotHash 后调用；重复操作使用相同 instanceKey，冲突保留原结果并提示刷新。",
+  "inputSchemaRef": "schemas/input-projection.json",
+  "outputSchemaRef": "schemas/projection-output.json",
+  "requiredPermissions": [
+    "canvas.read",
+    "canvas.write"
+  ],
+  "effects": [
+    "draft_write"
+  ],
+  "context": {
+    "requiresCanvas": true,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "host",
+    "adapter": "canvas.blueprint.instantiate",
+    "mode": "inline"
+  }
+}

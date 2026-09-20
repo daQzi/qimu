@@ -1,0 +1,263 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "digest": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "resourceId",
+        "digest",
+        "durationMs"
+      ],
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "startMs": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "endMs": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "startMs",
+        "endMs"
+      ],
+      "additionalProperties": false
+    },
+    "audioAnalyzed": {
+      "type": "boolean",
+      "const": false
+    },
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "startMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "endMs": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "camera": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "uncertainties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "id",
+          "startMs",
+          "endMs",
+          "description",
+          "camera",
+          "uncertainties"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 200,
+      "minItems": 1
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "kind": {
+            "enum": [
+              "character",
+              "scene",
+              "prop"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "shotId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "atMs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "shotId",
+                "atMs",
+                "description"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 20,
+            "minItems": 1
+          },
+          "uncertainties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "description",
+          "evidence",
+          "uncertainties"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 100
+    },
+    "dialogue": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "startMs": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "endMs": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "speakerId": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 80
+          },
+          "evidenceKind": {
+            "enum": [
+              "subtitle"
+            ]
+          },
+          "uncertainties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "id",
+          "startMs",
+          "endMs",
+          "text",
+          "speakerId",
+          "evidenceKind",
+          "uncertainties"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 300
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      },
+      "maxItems": 20,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "source",
+    "coverage",
+    "audioAnalyzed",
+    "shots",
+    "entities",
+    "dialogue",
+    "limitations"
+  ],
+  "additionalProperties": false
+}

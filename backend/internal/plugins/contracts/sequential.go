@@ -59,6 +59,35 @@ func validateSequentialPackage(files PackageFiles, doc map[string]any) error {
 	required := map[string]bool{}
 	for _, step := range p.Steps {
 		if step.Type == "wait_input" {
+			if step.InputValidator != "" {
+				if m.Requires.HostAPI != "^3.3.0" {
+					return invalid("contract_invalid", "input validator requires hostApi ^3.3.0")
+				}
+				required["media.read"] = true
+			}
+			if len(step.Inputs) > 0 {
+				if m.Requires.HostAPI != "^3.3.0" {
+					return invalid("contract_invalid", "input prefill requires hostApi ^3.3.0")
+				}
+				var schema map[string]any
+				if err := json.Unmarshal(files[step.FormSchemaRef], &schema); err != nil {
+					return invalid("package_reference_invalid", "input schema")
+				}
+				properties, _ := schema["properties"].(map[string]any)
+				if schema["type"] != "object" || schema["$ref"] != nil {
+					return invalid("contract_invalid", "prefill requires explicit object schema")
+				}
+				for field, binding := range step.Inputs {
+					if !composerFieldName.MatchString(field) || properties[field] == nil {
+						return invalid("contract_invalid", "unknown prefill field")
+					}
+					if len(binding.Literal) > 0 {
+						if err := ValidateData(files, step.FormSchemaRef+"#/properties/"+field, binding.Literal); err != nil {
+							return invalid("contract_invalid", "invalid prefill literal")
+						}
+					}
+				}
+			}
 			if step.View != "" {
 				if err := ValidateInputView(files, step.View, step.FormSchemaRef); err != nil {
 					return err

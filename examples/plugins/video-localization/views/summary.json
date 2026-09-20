@@ -1,0 +1,19 @@
+{
+  "id": "summary",
+  "component": "key-value/v1",
+  "schemaRef": "schemas/confirm.json",
+  "fields": [
+    {
+      "path": "/country",
+      "label": "国家"
+    },
+    {
+      "path": "/language",
+      "label": "语言"
+    },
+    {
+      "path": "/plan",
+      "label": "已确认替换方案"
+    }
+  ]
+}

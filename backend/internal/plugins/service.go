@@ -22,12 +22,14 @@ import (
 )
 
 type Service struct {
-	runAccess func(*repository.Repository, string) error
-	remote    RemoteHost
-	adapters  map[string]ShortHostAdapter
-	repo      *repository.Repository
-	dataDir   string
-	enabled   bool
+	runAccess      func(*repository.Repository, string) error
+	remote         RemoteHost
+	models         RemoteHost
+	inputValidator func(*repository.Repository, string, string, string, contracts.Invocation, json.RawMessage) error
+	adapters       map[string]ShortHostAdapter
+	repo           *repository.Repository
+	dataDir        string
+	enabled        bool
 }
 
 func New(repo *repository.Repository, dataDir string, enabled bool) *Service {

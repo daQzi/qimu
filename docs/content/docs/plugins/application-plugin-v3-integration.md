@@ -120,6 +120,7 @@ P07 支持 key-value、表格、实体卡片、媒体对比、输入/映射编�
 从 `pipeline-helper-p05`、`batch-helper-p06` 和 `canvas-helper-p07` 示例逐步增加贡献：
 
 - Pipeline 持久执行本包操作，支持 wait_input；草稿保存与正式提交是不同动作，提交带 revision 和幂等键。
+- P11 本轮 `hostApi: ^3.3.0` 支持系统模型 Operation、`wait_input.inputs` 初始草稿与受控提交校验器；草稿不等于确认，刷新不覆盖编辑。接入字段、费用与执行边界见[模型操作与人工校验](model-operations-v3-integration.md)。本轮原生视频分析不包含字节级探测/抽帧、完整音轨识别或成片，真实样片待用户验收。
 - P06 支持受控 DAG、when/foreach、稳定 itemKey、有序结果、批次精确批准、并发与预算限制。
 - 派生会创建新 Run，显式复用有效的成功结果；用户更改输入不能重写历史运行。
 - P07 把待输入和结果展示到画布；删除节点不等于取消后台 Run，操作仍须经过运行权限校验。

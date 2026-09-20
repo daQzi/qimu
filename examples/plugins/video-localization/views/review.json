@@ -1,0 +1,23 @@
+{
+  "id": "review",
+  "component": "key-value/v1",
+  "schemaRef": "schemas/review.json",
+  "fields": [
+    {
+      "path": "/report",
+      "label": "分析报告（合并人物时同步修改关联 ID）"
+    },
+    {
+      "path": "/country",
+      "label": "国家"
+    },
+    {
+      "path": "/language",
+      "label": "语言"
+    },
+    {
+      "path": "/style",
+      "label": "风格"
+    }
+  ]
+}

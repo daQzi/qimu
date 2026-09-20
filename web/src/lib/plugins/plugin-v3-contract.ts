@@ -212,6 +212,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
     const requireSchema = (name: string) => {
         if (!docs[name] || !name.startsWith("schemas/")) fail("package_reference_invalid", name);
     };
+    const compiler = validateUserSchemas(files, docs);
     for (const entry of contributions.operations ?? []) {
         const op = docs[entry.ref];
         requireSchema(op.inputSchemaRef);
@@ -233,6 +234,10 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
             const permissions = new Set<string>();
             p.steps.forEach((step: ObjectValue) => {
                 if (step.type === "wait_input") {
+                    if (step.inputValidator) {
+                        if (manifest.requires.hostApi !== "^3.3.0") fail("contract_invalid", "input validator requires hostApi ^3.3.0");
+                        permissions.add("media.read");
+                    }
                     if (step.view) {
                         const entry = contributions.views?.find((r: ObjectValue) => r.id === step.view);
                         const view = entry && docs[entry.ref];
@@ -240,6 +245,18 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                         if (view.schemaRef !== step.formSchemaRef || !["key-value/v1", "mapping-editor/v1"].includes(view.component)) fail("contract_invalid", "input view schema/component");
                     }
                     requireSchema(step.formSchemaRef);
+                    if (Object.keys(step.inputs || {}).length) {
+                        if (manifest.requires.hostApi !== "^3.3.0") fail("contract_invalid", "input prefill requires hostApi ^3.3.0");
+                        const schema = docs[step.formSchemaRef];
+                        if (schema.type !== "object" || schema.$ref) fail("contract_invalid", "prefill requires explicit object schema");
+                        for (const [field, binding] of Object.entries(step.inputs) as [string, ObjectValue][]) {
+                            if (!/^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(field) || !Object.hasOwn(schema.properties || {}, field)) fail("contract_invalid", "unknown prefill field");
+                            if (Object.hasOwn(binding, "literal")) {
+                                const validate = compiler.getSchema(`https://qimu.invalid/package/${step.formSchemaRef}#/properties/${field}`);
+                                if (!validate || !validate(binding.literal)) fail("contract_invalid", "invalid prefill literal");
+                            }
+                        }
+                    }
                     return;
                 }
                 const entry = contributions.operations?.find((r: ObjectValue) => pluginID + "." + r.id === step.operation);
@@ -250,6 +267,13 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                 if ((child.context.requiresCanvas && !op.context.requiresCanvas) || (child.context.requiresProject && !op.context.requiresProject)) fail("scope_forbidden", "pipeline context weaker than step");
             });
             if ([...effects].some((e) => !op.effects.includes(e)) || [...permissions].some((r) => !op.requiredPermissions.includes(r))) fail("scope_forbidden", "pipeline must declare aggregate effects and permissions");
+            continue;
+        }
+        if (op.execution.kind === "model") {
+            if (manifest.requires.hostApi !== "^3.3.0") fail("contract_invalid", "model operation requires hostApi ^3.3.0");
+            if (!op.requiredPermissions.includes("generation.run") || (Object.keys(op.execution.resources).length > 0 && !op.requiredPermissions.includes("media.read")) || op.effects.length !== 1 || op.effects[0] !== "generation")
+                fail("scope_forbidden", "model operation minimum contract");
+            if (op.execution.outputProfile === "video-report/v1" && (Object.keys(op.execution.resources).length !== 1 || op.execution.resources.resourceId !== "video")) fail("contract_invalid", "video report requires resourceId video");
             continue;
         }
         if (op.execution.kind === "http") {
@@ -271,7 +295,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         const objectPermissions: Record<string, string> = { "object.read": "asset.read", "object.search": "asset.search", "object.save": "asset.import" };
         const objectPermission = Object.hasOwn(objectPermissions, op.execution.adapter) ? objectPermissions[op.execution.adapter] : undefined;
         if (objectPermission) {
-            if (op.execution.kind !== "host" || op.execution.mode !== "inline" || manifest.requires.hostApi !== "^3.2.0") fail("operation_unavailable", "object host contract");
+            if (op.execution.kind !== "host" || op.execution.mode !== "inline" || !["^3.2.0", "^3.3.0"].includes(manifest.requires.hostApi)) fail("operation_unavailable", "object host contract");
             if (!op.requiredPermissions.includes(objectPermission) || op.effects.length !== 1 || op.effects[0] !== (op.execution.adapter === "object.save" ? "draft_write" : "read")) fail("scope_forbidden", "object minimum contract");
             continue;
         }
@@ -312,11 +336,10 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
             edges.add(key);
         }
     }
-    const compiler = validateUserSchemas(files, docs);
     const skills = contributions.skills || [];
     const boards = contributions.workbenches || [];
     const recipes = contributions.recipes || [];
-    if ((boards.length || recipes.length || skills.some((s: ObjectValue) => s.launchOperation)) && !["^3.1.0", "^3.2.0"].includes(manifest.requires.hostApi)) fail("contract_invalid", "workbench requires hostApi ^3.1.0");
+    if ((boards.length || recipes.length || skills.some((s: ObjectValue) => s.launchOperation)) && !["^3.1.0", "^3.2.0", "^3.3.0"].includes(manifest.requires.hostApi)) fail("contract_invalid", "workbench requires hostApi ^3.1.0");
     const operation = (address: string) => {
         const ref = (contributions.operations || []).find((r: ObjectValue) => address === pluginID + "." + r.id);
         return ref ? docs[ref.ref] : undefined;
@@ -332,7 +355,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         const schema = docs[board.contextSchemaRef];
         if (schema.type !== "object" || schema.$ref) fail("contract_invalid", "workbench requires object schema");
         if (Object.keys(board.objectInputs || {}).length) {
-            if (manifest.requires.hostApi !== "^3.2.0") fail("contract_invalid", "object inputs require hostApi ^3.2.0");
+            if (!["^3.2.0", "^3.3.0"].includes(manifest.requires.hostApi)) fail("contract_invalid", "object inputs require hostApi ^3.2.0");
             if (!manifest.permissions.includes("asset.read")) fail("scope_forbidden", "object inputs require asset.read");
             for (const key of Object.keys(board.objectInputs)) {
                 if (!Object.hasOwn(schema.properties || {}, key)) fail("package_reference_invalid", "object input field");

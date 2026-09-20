@@ -71,7 +71,7 @@ func (s *Service) Derive(user, id, key string, req DeriveRequest) (RunView, erro
 			if !contains([]string{"succeeded", "failed", "cancelled"}, child.Status) {
 				return issue(409, "run_revision_conflict", "仍有未完成子任务")
 			}
-			if child.TaskID != nil {
+			if child.TaskID != nil && child.ConnectionVersionID != "" {
 				remote, e := repo.PluginRemoteForRun(user, child.ID)
 				if e != nil {
 					return e
@@ -176,6 +176,9 @@ func (s *Service) Derive(user, id, key string, req DeriveRequest) (RunView, erro
 			if len(value) == 0 {
 				continue
 			}
+			if err = s.validateInput(repo, user, out.RunID, step, original, value); err != nil {
+				return err
+			}
 			row := model.PluginInputRequest{ID: kernel.NewID(), RunID: out.RunID, StepKey: step.Key, Revision: 1, Status: "submitted", SchemaJSON: string(resolved.Files[step.FormSchemaRef]), SubmittedJSON: string(value)}
 			if err = repo.CreatePluginInput(&row); err != nil {
 				return err
@@ -251,10 +254,10 @@ func (s *Service) reuseBatchItem(repo *repository.Repository, run *model.PluginR
 	if err != nil {
 		return false, err
 	}
-	if resolved.ContractHash != child.ContractHash || resolved.Definition.Execution.Kind != "http" {
+	if resolved.ContractHash != child.ContractHash || (resolved.Definition.Execution.Kind != "http" && resolved.Definition.Execution.Kind != "model") {
 		return false, nil
 	}
-	prepared, err := s.remote.Prepare(repo, run.UserID, contracts.Invocation{Operation: step.Operation, ReleaseID: run.ReleaseID, Input: item.Input, Context: ctx}, HostOperationContext{InvocationContext: context, ReleaseID: run.ReleaseID, Files: resolved.Files}, InvocationPolicy{PermissionMode: "request_approval"})
+	prepared, err := s.taskHost(resolved.Definition.Execution.Kind).Prepare(repo, run.UserID, contracts.Invocation{Operation: step.Operation, ReleaseID: run.ReleaseID, Input: item.Input, Context: ctx}, HostOperationContext{InvocationContext: context, ReleaseID: run.ReleaseID, Files: resolved.Files}, InvocationPolicy{PermissionMode: "request_approval"})
 	if err != nil {
 		return false, err
 	}

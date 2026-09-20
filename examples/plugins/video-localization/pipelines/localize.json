@@ -1,0 +1,127 @@
+{
+  "id": "localize",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/confirm.json",
+  "steps": [
+    {
+      "key": "analyze",
+      "type": "operation",
+      "operation": "video-localization.analyze",
+      "dependsOn": [],
+      "inputs": {
+        "resourceId": {
+          "from": "input#/resourceId"
+        },
+        "model": {
+          "from": "input#/model"
+        },
+        "country": {
+          "from": "input#/country"
+        },
+        "language": {
+          "from": "input#/language"
+        },
+        "style": {
+          "from": "input#/style"
+        }
+      }
+    },
+    {
+      "key": "review",
+      "type": "wait_input",
+      "dependsOn": [
+        "analyze"
+      ],
+      "formSchemaRef": "schemas/review.json",
+      "view": "review",
+      "inputValidator": "video-report/v1",
+      "inputs": {
+        "report": {
+          "from": "steps/analyze#"
+        },
+        "country": {
+          "from": "input#/country"
+        },
+        "language": {
+          "from": "input#/language"
+        },
+        "style": {
+          "from": "input#/style"
+        }
+      }
+    },
+    {
+      "key": "suggest",
+      "type": "operation",
+      "operation": "video-localization.suggest",
+      "dependsOn": [
+        "review"
+      ],
+      "inputs": {
+        "model": {
+          "from": "input#/model"
+        },
+        "report": {
+          "from": "steps/review#/report"
+        },
+        "country": {
+          "from": "steps/review#/country"
+        },
+        "language": {
+          "from": "steps/review#/language"
+        },
+        "style": {
+          "from": "steps/review#/style"
+        }
+      }
+    },
+    {
+      "key": "confirm",
+      "type": "wait_input",
+      "dependsOn": [
+        "review",
+        "suggest"
+      ],
+      "formSchemaRef": "schemas/confirm.json",
+      "view": "confirm",
+      "inputValidator": "video-plan/v1",
+      "inputs": {
+        "plan": {
+          "from": "steps/suggest#"
+        },
+        "report": {
+          "from": "steps/review#/report"
+        },
+        "country": {
+          "from": "steps/review#/country"
+        },
+        "language": {
+          "from": "steps/review#/language"
+        },
+        "style": {
+          "from": "steps/review#/style"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "report": {
+      "from": "steps/confirm#/report"
+    },
+    "country": {
+      "from": "steps/confirm#/country"
+    },
+    "language": {
+      "from": "steps/confirm#/language"
+    },
+    "style": {
+      "from": "steps/confirm#/style"
+    },
+    "plan": {
+      "from": "steps/confirm#/plan"
+    },
+    "confirmed": {
+      "from": "steps/confirm#/confirmed"
+    }
+  }
+}

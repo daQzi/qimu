@@ -1,0 +1,20 @@
+{
+  "id": "plan",
+  "component": "mapping-editor/v1",
+  "schemaRef": "schemas/plan.json",
+  "collectionPath": "/mappings",
+  "fields": [
+    {
+      "path": "/source",
+      "label": "原内容"
+    },
+    {
+      "path": "/target",
+      "label": "替换建议"
+    },
+    {
+      "path": "/prompt",
+      "label": "推荐提示词"
+    }
+  ]
+}

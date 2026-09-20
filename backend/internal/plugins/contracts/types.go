@@ -50,12 +50,15 @@ type Manifest struct {
 	} `json:"contributes"`
 }
 type Execution struct {
-	Kind      string `json:"kind"`
-	Mode      string `json:"mode"`
-	Adapter   string `json:"adapter,omitempty"`
-	Connector string `json:"connector,omitempty"`
-	Action    string `json:"action,omitempty"`
-	Pipeline  string `json:"pipeline,omitempty"`
+	Instruction   string            `json:"instruction,omitempty"`
+	Resources     map[string]string `json:"resources,omitempty"`
+	OutputProfile string            `json:"outputProfile,omitempty"`
+	Kind          string            `json:"kind"`
+	Mode          string            `json:"mode"`
+	Adapter       string            `json:"adapter,omitempty"`
+	Connector     string            `json:"connector,omitempty"`
+	Action        string            `json:"action,omitempty"`
+	Pipeline      string            `json:"pipeline,omitempty"`
 }
 type Operation struct {
 	ID                  string   `json:"id"`
@@ -151,15 +154,16 @@ type Binding struct {
 	From    string          `json:"from,omitempty"`
 }
 type PipelineStep struct {
-	Key           string             `json:"key"`
-	Type          string             `json:"type"`
-	Operation     string             `json:"operation,omitempty"`
-	DependsOn     []string           `json:"dependsOn"`
-	Inputs        map[string]Binding `json:"inputs,omitempty"`
-	FormSchemaRef string             `json:"formSchemaRef,omitempty"`
-	View          string             `json:"view,omitempty"`
-	When          json.RawMessage    `json:"when,omitempty"`
-	Foreach       json.RawMessage    `json:"foreach,omitempty"`
+	InputValidator string             `json:"inputValidator,omitempty"`
+	Key            string             `json:"key"`
+	Type           string             `json:"type"`
+	Operation      string             `json:"operation,omitempty"`
+	DependsOn      []string           `json:"dependsOn"`
+	Inputs         map[string]Binding `json:"inputs,omitempty"`
+	FormSchemaRef  string             `json:"formSchemaRef,omitempty"`
+	View           string             `json:"view,omitempty"`
+	When           json.RawMessage    `json:"when,omitempty"`
+	Foreach        json.RawMessage    `json:"foreach,omitempty"`
 }
 type Pipeline struct {
 	ID              string             `json:"id"`

@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "properties": {
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 36
+    },
+    "resultDigest": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "blueprintId": {
+      "enum": [
+        "report-board",
+        "plan-board"
+      ]
+    },
+    "snapshotHash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "instanceKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "x": {
+      "type": "number",
+      "minimum": -100000,
+      "maximum": 100000
+    },
+    "y": {
+      "type": "number",
+      "minimum": -100000,
+      "maximum": 100000
+    }
+  },
+  "required": [
+    "runId",
+    "resultDigest",
+    "blueprintId",
+    "snapshotHash",
+    "instanceKey"
+  ],
+  "additionalProperties": false
+}
