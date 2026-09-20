@@ -1,13 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
 # 构建 Vite 前端产物。
-FROM oven/bun:1.3.13 AS web-build
+FROM --platform=$BUILDPLATFORM oven/bun:1.3.9 AS web-build
 
 WORKDIR /app/web
-ARG VITE_TLDRAW_LICENSE_KEY
-ARG BUILD_VERSION
-ENV VITE_TLDRAW_LICENSE_KEY=${VITE_TLDRAW_LICENSE_KEY}
-ENV CANVAS_BUILD_VERSION=${BUILD_VERSION}
 COPY web/package.json web/bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache bun install --frozen-lockfile --cache-dir=/root/.bun/install/cache
 COPY VERSION /app/VERSION
@@ -16,6 +12,10 @@ COPY README.md /app/README.md
 COPY assets /app/assets
 COPY web ./
 COPY backend/internal/plugins/contracts/schema.json backend/internal/plugins/contracts/profile.json /app/backend/internal/plugins/contracts/
+ARG VITE_TLDRAW_LICENSE_KEY
+ARG BUILD_VERSION
+ENV VITE_TLDRAW_LICENSE_KEY=${VITE_TLDRAW_LICENSE_KEY}
+ENV CANVAS_BUILD_VERSION=${BUILD_VERSION}
 # 生产镜像只构建云端工作台前端；Agent Runtime 在后端 Worker 中运行。
 RUN bun --bun ./node_modules/vite/bin/vite.js build
 
