@@ -1,0 +1,22 @@
+{
+  "id": "compose",
+  "name": "品牌文案助手",
+  "description": "根据品牌、受众、语气和渠道编写三个可比较的文案方案，标明主张与行动建议；不得编造商品功效、价格或事实。",
+  "hostSurfaces": [
+    "agent-home",
+    "canvas"
+  ],
+  "contextSchemaRef": "schemas/context.json",
+  "skill": "assist",
+  "recipes": [
+    "social",
+    "formal",
+    "product"
+  ],
+  "defaults": {
+    "tone": "友好",
+    "channel": "社交媒体"
+  },
+  "output": "result",
+  "prompt": "根据品牌、受众、语气和渠道编写三个可比较的文案方案，标明主张与行动建议；不得编造商品功效、价格或事实。"
+}

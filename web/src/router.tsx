@@ -46,6 +46,7 @@ const CreatePage = lazy(loadCreatePage);
 const NotFound = lazy(() => import("@/pages/not-found"));
 const SkillsPage = lazy(() => import("@/pages/skills"));
 const PluginsPage = lazy(() => import("@/pages/plugins"));
+const WorkbenchesPage = lazy(() => import("@/pages/workbenches"));
 const EagleLibraryPage = lazy(() => import("@/pages/plugins/eagle"));
 const TasksPage = lazy(() => import("@/pages/tasks"));
 const ProjectsPage = lazy(loadProjectsPage);
@@ -115,6 +116,7 @@ export const router = createBrowserRouter([
             },
             { path: "/assets", element: <RequireAuth>{deferred(<AssetsPage />)}</RequireAuth> },
             { path: "/skills", element: <RequireAuth>{deferred(<SkillsPage />)}</RequireAuth> },
+            { path: "/workbenches/:id?", element: <RequireFeature feature="pluginCenterEnabled">{deferred(<WorkbenchesPage />)}</RequireFeature> },
             {
                 path: "/plugins",
                 element: (

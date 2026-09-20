@@ -98,6 +98,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId, inputRe
                     <p className="break-all">
                         {run.operation} · {run.releaseVersion}
                     </p>
+                    {run.workbench ? <details><summary>查看本次工作台输入</summary><p className="break-all">{run.workbench.id} · {run.workbench.releaseId}</p><p>配方：{run.workbench.recipeIds.join("、") || "无"}</p><PluginResultValues value={run.workbench.input} /></details> : null}
                     {run.failureMessage && (
                         <p role="alert" className="text-destructive">
                             {run.failureMessage}

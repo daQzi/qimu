@@ -7,6 +7,7 @@ export type PluginResultView = { id: string; component: "key-value/v1" | "table/
 export type PluginCanvasAction = { operation: string; releaseId: string; blueprintId: string; inputRequestId?: string };
 export type PluginInputRequest = { id: string; runId: string; stepKey: string; revision: number; status: string; schema: Record<string, unknown>; view?: PluginResultView; draft?: unknown; submitted?: unknown };
 export type PluginRunView = {
+    workbench?: import("@/lib/plugins/plugin-v3-types").WorkbenchSelection;
     id: string;
     operation: string;
     releaseId: string;

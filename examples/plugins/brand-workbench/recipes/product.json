@@ -1,0 +1,8 @@
+{
+  "id": "product",
+  "name": "商品详情页",
+  "defaults": {},
+  "requirements": {
+    "channel": "商品详情"
+  }
+}

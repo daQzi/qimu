@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "notes": {
+      "type": "string",
+      "title": "会议记录",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "format": {
+      "type": "string",
+      "title": "输出形式",
+      "enum": [
+        "简报",
+        "行动清单"
+      ]
+    },
+    "includeRisks": {
+      "type": "boolean",
+      "title": "列出待确认风险"
+    }
+  },
+  "required": [
+    "notes",
+    "format",
+    "includeRisks"
+  ],
+  "additionalProperties": false
+}

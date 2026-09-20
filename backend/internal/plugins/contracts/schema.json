@@ -14,7 +14,7 @@
     },
     "path": {
       "type": "string",
-      "pattern": "^(skills|operations|pipelines|schemas|views|connectors|blueprints)/[A-Za-z0-9_./-]+$",
+      "pattern": "^(skills|operations|pipelines|schemas|views|connectors|blueprints|workbenches|recipes)/[A-Za-z0-9_./-]+$",
       "maxLength": 240
     },
     "version": {
@@ -141,6 +141,9 @@
           "minItems": 0,
           "maxItems": 32,
           "uniqueItems": true
+        },
+        "launchOperation": {
+          "$ref": "#/$defs/address"
         }
       },
       "required": [
@@ -217,7 +220,10 @@
           "type": "object",
           "properties": {
             "hostApi": {
-              "const": "^3.0.0"
+              "enum": [
+                "^3.0.0",
+                "^3.1.0"
+              ]
             }
           },
           "required": [
@@ -265,7 +271,9 @@
             },
             "pipelines": {
               "type": "array",
-              "items": { "$ref": "#/$defs/contribution" },
+              "items": {
+                "$ref": "#/$defs/contribution"
+              },
               "minItems": 1,
               "maxItems": 16
             },
@@ -284,6 +292,22 @@
               },
               "minItems": 1,
               "maxItems": 32
+            },
+            "workbenches": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contribution"
+              },
+              "minItems": 1,
+              "maxItems": 16
+            },
+            "recipes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/contribution"
+              },
+              "minItems": 1,
+              "maxItems": 16
             }
           },
           "required": [],
@@ -456,13 +480,21 @@
         "component": {
           "type": "string",
           "enum": [
-            "key-value/v1", "table/v1", "entity-cards/v1", "mapping-editor/v1", "media-compare/v1"
+            "key-value/v1",
+            "table/v1",
+            "entity-cards/v1",
+            "mapping-editor/v1",
+            "media-compare/v1"
           ]
         },
         "schemaRef": {
           "$ref": "#/$defs/path"
         },
-        "collectionPath": { "type": "string", "pattern": "^/", "maxLength": 240 },
+        "collectionPath": {
+          "type": "string",
+          "pattern": "^/",
+          "maxLength": 240
+        },
         "fields": {
           "type": "array",
           "items": {
@@ -511,7 +543,10 @@
                 "$ref": "#/$defs/id"
               },
               "nodeType": {
-                "enum": ["plugin-result", "plugin-input"]
+                "enum": [
+                  "plugin-result",
+                  "plugin-input"
+                ]
               },
               "title": {
                 "type": "string",
@@ -539,14 +574,25 @@
                 "additionalProperties": false
               },
               "binding": {
-                "enum": ["result", "input"]
+                "enum": [
+                  "result",
+                  "input"
+                ]
               },
               "view": {
                 "$ref": "#/$defs/id"
               },
               "actions": {
-                "type": "array", "maxItems": 3, "uniqueItems": true,
-                "items": { "enum": ["editor.focus", "input.submit", "result.continue"] }
+                "type": "array",
+                "maxItems": 3,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "editor.focus",
+                    "input.submit",
+                    "result.continue"
+                  ]
+                }
               }
             },
             "required": [
@@ -566,8 +612,20 @@
           "type": "array",
           "maxItems": 19,
           "items": {
-            "type": "object", "required": ["from", "to"], "additionalProperties": false,
-            "properties": { "from": { "$ref": "#/$defs/id" }, "to": { "$ref": "#/$defs/id" } }
+            "type": "object",
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "$ref": "#/$defs/id"
+              },
+              "to": {
+                "$ref": "#/$defs/id"
+              }
+            }
           }
         }
       },
@@ -925,6 +983,9 @@
           },
           "required": [],
           "additionalProperties": false
+        },
+        "workbench": {
+          "$ref": "#/$defs/workbenchSelection"
         }
       },
       "required": [
@@ -1331,6 +1392,10 @@
           "type": "string",
           "maxLength": 4000
         },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
         "$defs": {
           "type": "object",
           "additionalProperties": {
@@ -1458,6 +1523,172 @@
           "additionalProperties": false
         }
       ]
+    },
+    "workbench": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "hostSurfaces": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "agent-home",
+              "canvas"
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true
+        },
+        "contextSchemaRef": {
+          "$ref": "#/$defs/path"
+        },
+        "operation": {
+          "$ref": "#/$defs/address"
+        },
+        "skill": {
+          "$ref": "#/$defs/id"
+        },
+        "recipes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "defaults": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,79}$"
+          }
+        },
+        "output": {
+          "enum": [
+            "result",
+            "canvas_optional"
+          ]
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "hostSurfaces",
+        "contextSchemaRef",
+        "recipes",
+        "defaults",
+        "output"
+      ],
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "required": [
+            "operation"
+          ]
+        },
+        {
+          "required": [
+            "skill"
+          ]
+        }
+      ]
+    },
+    "recipe": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "defaults": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,79}$"
+          }
+        },
+        "requirements": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,79}$"
+          }
+        },
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "defaults",
+        "requirements"
+      ],
+      "additionalProperties": false
+    },
+    "workbenchSelection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/address"
+        },
+        "releaseId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "recipeIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "maxItems": 16,
+          "uniqueItems": true
+        },
+        "input": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,79}$"
+          }
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        }
+      },
+      "required": [
+        "id",
+        "releaseId",
+        "recipeIds",
+        "input",
+        "digest"
+      ],
+      "additionalProperties": false
     }
   }
 }

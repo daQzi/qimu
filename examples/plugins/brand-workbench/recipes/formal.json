@@ -1,0 +1,8 @@
+{
+  "id": "formal",
+  "name": "专业表达",
+  "defaults": {
+    "tone": "专业"
+  },
+  "requirements": {}
+}

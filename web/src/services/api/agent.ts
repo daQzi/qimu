@@ -104,6 +104,7 @@ export class AgentStreamError extends Error {
 }
 
 export type CreateAgentRunInput = {
+    workbench?: import("@/lib/plugins/plugin-v3-types").WorkbenchSelection;
     hostSurface?: "canvas" | "agent-home";
     reasoningMode?: AgentReasoningMode;
     profileRevision?: string;

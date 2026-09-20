@@ -1,0 +1,7 @@
+{
+  "id": "place-result", "description": "把成功结果绑定为画布节点。先读取 ResultRef 和 canvas_get_state 的 snapshotHash；使用固定 instanceKey（首次为 default）防止重复节点。冲突时保留结果，读取最新画布重试；只有用户要求另建时才换 instanceKey。不会重新检查视频或生成媒体。",
+  "inputSchemaRef": "schemas/projection-input.json", "outputSchemaRef": "schemas/projection-output.json",
+  "requiredPermissions": ["canvas.read", "canvas.write"], "effects": ["draft_write"],
+  "context": { "requiresCanvas": true, "requiresProject": false },
+  "execution": { "kind": "host", "adapter": "canvas.blueprint.instantiate", "mode": "inline" }
+}

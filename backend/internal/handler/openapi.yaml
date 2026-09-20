@@ -26,6 +26,59 @@ tags:
   - name: agent
   - name: admin
 paths:
+  /plugin-workbenches:
+    get:
+      tags: [agent]
+      summary: 当前账号已启用插件贡献的工作台目录
+      description: 返回 id、releaseId、version、definition；目录可见不等于当前入口已获准执行。private/no-store。
+      responses:
+        "200": {$ref: "#/components/responses/Envelope"}
+        "403": {$ref: "#/components/responses/Error"}
+  /plugin-workbenches/{id}:
+    get:
+      tags: [agent]
+      summary: 读取指定版本工作台、配方和输入 Schema
+      description: 校验用户启用版本、插件状态、操作授权、hostSurface 和画布归属。返回 definition、recipes、schema、schemas、可选 skillId。
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}, description: "pluginId.workbenchId"}
+        - {name: releaseId, in: query, schema: {type: string}}
+        - {name: hostSurface, in: query, required: true, schema: {type: string, enum: [agent-home, canvas]}}
+        - {name: canvasId, in: query, schema: {type: string}}
+      responses:
+        "200": {$ref: "#/components/responses/Envelope"}
+        "400": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /plugin-workbench-previews:
+    post:
+      tags: [agent]
+      summary: 合并工作台和配方，预览最终输入
+      description: 最多 64 KiB。返回 input、prompts、conflicts、valid、selection 和可选 validationMessage。业务冲突或字段缺失时 valid=false；只有有效预览可交给插件操作或 Agent。预览不执行操作、不选择模型、不授权、不收费。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [id, releaseId, recipeIds, input, context]
+              properties:
+                id: {type: string}
+                releaseId: {type: string}
+                recipeIds: {type: array, maxItems: 16, uniqueItems: true, items: {type: string}}
+                input: {type: object, maxProperties: 32}
+                context:
+                  type: object
+                  additionalProperties: false
+                  required: [hostSurface]
+                  properties:
+                    hostSurface: {type: string, enum: [agent-home, canvas]}
+                    canvasId: {type: string}
+      responses:
+        "200": {$ref: "#/components/responses/Envelope"}
+        "400": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
   /plugins:
     post:
       tags: [admin]
@@ -281,6 +334,7 @@ paths:
                 operation: {type: string}
                 releaseId: {type: string}
                 input: {type: object}
+                workbench: {$ref: "#/components/schemas/WorkbenchSelection"}
                 context:
                   type: object
                   additionalProperties: false
@@ -1658,11 +1712,24 @@ components:
           type: integer
           minimum: 0
           description: 待更新层的数字 revision；首次创建为 0
+    WorkbenchSelection:
+      type: object
+      additionalProperties: false
+      required: [id, releaseId, recipeIds, input, digest]
+      description: 有效工作台预览返回的不可变选择；提交时重验当前发布和授权。digest 绑定入口与画布，不是授权凭证。顶层字段名必须为字母开头的字母/数字/下划线，最长 80。
+      properties:
+        id: {type: string, description: "pluginId.workbenchId"}
+        releaseId: {type: string}
+        recipeIds: {type: array, maxItems: 16, uniqueItems: true, items: {type: string}}
+        input: {type: object, maxProperties: 32}
+        digest: {type: string, pattern: '^[a-f0-9]{64}$'}
     CloudAgentRequest:
       type: object
       additionalProperties: false
       required: [prompt, permissionMode, contextScope, budget, idempotencyKey]
       properties:
+        workbench:
+          $ref: "#/components/schemas/WorkbenchSelection"
         hostSurface:
           type: string
           enum: [canvas, agent-home]

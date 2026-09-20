@@ -2,6 +2,10 @@ package service
 
 import "infinite-canvas/backend/internal/app"
 
+type PluginWorkbenchComposeRequest = app.PluginWorkbenchComposeRequest
+type PluginWorkbenchPreview = app.PluginWorkbenchPreview
+type PluginWorkbenchView = app.PluginWorkbenchView
+
 type PluginOperationInvocation = app.PluginOperationInvocation
 type PluginOperationContext = app.PluginOperationContext
 type PluginOperationDescription = app.PluginOperationDescription

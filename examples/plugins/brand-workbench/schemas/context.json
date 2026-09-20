@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "brand": {
+      "type": "string",
+      "title": "品牌",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "audience": {
+      "type": "string",
+      "title": "目标人群",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "tone": {
+      "type": "string",
+      "title": "文案语气",
+      "enum": [
+        "友好",
+        "专业"
+      ]
+    },
+    "channel": {
+      "type": "string",
+      "title": "投放渠道",
+      "enum": [
+        "社交媒体",
+        "商品详情"
+      ]
+    }
+  },
+  "required": [
+    "brand",
+    "audience",
+    "tone",
+    "channel"
+  ],
+  "additionalProperties": false
+}

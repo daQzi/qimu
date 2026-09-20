@@ -1,0 +1,1 @@
+{ "type": "object", "properties": { "resourceId": { "type": "string", "minLength": 1, "maxLength": 80 }, "expectedDigest": { "type": "string", "minLength": 64, "maxLength": 64 } }, "required": ["resourceId", "expectedDigest"], "additionalProperties": false }

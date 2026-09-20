@@ -186,7 +186,7 @@ func validPath(name string) bool {
 	if path.Clean(name) != name || strings.ContainsAny(name, "\\%:#\x00") || strings.HasPrefix(name, "/") {
 		return false
 	}
-	roots := []string{"skills/", "operations/", "pipelines/", "schemas/", "views/", "connectors/", "blueprints/"}
+	roots := []string{"skills/", "operations/", "pipelines/", "schemas/", "views/", "connectors/", "blueprints/", "workbenches/", "recipes/"}
 	for _, root := range roots {
 		if strings.HasPrefix(name, root) {
 			for _, c := range name {
@@ -257,7 +257,7 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 	}
 	contributes := manifest["contributes"].(map[string]any)
 	registry := map[string]map[string]bool{}
-	for _, kind := range []string{"skills", "operations", "views", "canvasBlueprints", "connectors", "pipelines"} {
+	for _, kind := range []string{"skills", "operations", "views", "canvasBlueprints", "connectors", "pipelines", "workbenches", "recipes"} {
 		registry[kind] = map[string]bool{}
 		entries, _ := contributes[kind].([]any)
 		for _, v := range entries {
@@ -289,7 +289,7 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 				}
 				continue
 			}
-			typ := map[string]string{"operations": "operation", "views": "view", "canvasBlueprints": "blueprint", "connectors": "httpConnector", "pipelines": "pipeline"}[kind]
+			typ := map[string]string{"operations": "operation", "views": "view", "canvasBlueprints": "blueprint", "connectors": "httpConnector", "pipelines": "pipeline", "workbenches": "workbench", "recipes": "recipe"}[kind]
 			if err := Validate(typ, raw); err != nil {
 				return err
 			}
@@ -429,7 +429,10 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 			}
 		}
 	}
-	return validateUserSchemas(files, docs)
+	if err := validateUserSchemas(files, docs); err != nil {
+		return err
+	}
+	return ValidateWorkbenches(files)
 }
 
 func asArray(v any) []any { result, _ := v.([]any); return result }

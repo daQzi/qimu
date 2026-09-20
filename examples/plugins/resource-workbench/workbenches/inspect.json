@@ -1,0 +1,16 @@
+{
+  "id": "inspect",
+  "name": "素材检查",
+  "description": "读取视频真实元数据，交给 Agent 判断素材是否适合交付。",
+  "hostSurfaces": [
+    "agent-home",
+    "canvas"
+  ],
+  "contextSchemaRef": "schemas/inspect-input.json",
+  "operation": "resource-workbench.inspect-video",
+  "skill": "check-source",
+  "recipes": [],
+  "defaults": {},
+  "output": "canvas_optional",
+  "prompt": "先读取真实视频元数据；如需保存记录或放到画布，使用已有操作并等待用户授权。"
+}

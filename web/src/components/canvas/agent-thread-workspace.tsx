@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Select } from "antd";
-import { useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { CanvasCloudAgentPanel, type CloudAgentPanelProps } from "./canvas-cloud-agent-panel";
 import { appendAgentThreadReference, bindAgentThread, createAgentThread, getAgentThread, listAgentThreads, type AgentThread } from "@/services/api/agent-threads";
 import { createCanvasProjectWithRemoteSync, saveRemoteUserDataNow } from "@/services/user-data-sync";
@@ -110,6 +110,7 @@ function OwnedThreadWorkspace({ userId, ...props }: Props & { userId: string }) 
             <span>{thread?.title || (threadId ? "读取会话…" : props.embedded ? "Agent 对话" : "本机画布对话")}</span>
             <Button size="small" loading={busy} onClick={() => void start()}>新建云端会话</Button>
             <Button size="small" disabled={busy} onClick={() => void loadHistory()}>云端历史</Button>
+            <Link to={props.canvasId || thread?.canvasId ? `/workbenches?canvasId=${encodeURIComponent(props.canvasId || thread?.canvasId || "")}` : "/workbenches"}>插件工作台</Link>
             {threadId ? <Button size="small" disabled={busy} onClick={() => setEpoch((value) => value + 1)}>重新读取</Button> : null}
             {threadId && props.embedded ? <Button size="small" disabled={busy || !thread} onClick={() => void openCanvas()}>打开画布</Button> : null}
             {threadId && !props.embedded ? <><Button size="small" onClick={() => navigate(`/create?agent=1&thread=${encodeURIComponent(threadId)}`)}>首页继续</Button><Button size="small" onClick={() => selectThread("")}>本机旧对话</Button></> : null}

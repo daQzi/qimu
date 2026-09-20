@@ -1,0 +1,10 @@
+{
+  "id": "actions",
+  "name": "执行跟进",
+  "defaults": {
+    "includeRisks": true
+  },
+  "requirements": {
+    "format": "行动清单"
+  }
+}

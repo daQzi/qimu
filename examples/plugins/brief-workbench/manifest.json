@@ -1,0 +1,40 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "brief-workbench",
+  "name": "会议简报助手",
+  "version": "1.0.0",
+  "description": "只基于用户输入的会议记录，梳理结论、待办和未确定事项。负责人、日期缺失时写待确认，不自行补造。",
+  "publisher": {
+    "id": "sample-studio",
+    "displayName": "工作台示例"
+  },
+  "requires": {
+    "hostApi": "^3.1.0"
+  },
+  "permissions": [],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "assist",
+        "name": "assist",
+        "description": "只基于用户输入的会议记录，梳理结论、待办和未确定事项。负责人、日期缺失时写待确认，不自行补造。",
+        "entry": "skills/assist/SKILL.md",
+        "activation": "explicit",
+        "operations": []
+      }
+    ],
+    "workbenches": [
+      {
+        "id": "compose",
+        "ref": "workbenches/compose.json"
+      }
+    ],
+    "recipes": [
+      {
+        "id": "actions",
+        "ref": "recipes/actions.json"
+      }
+    ]
+  }
+}

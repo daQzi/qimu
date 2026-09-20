@@ -1,0 +1,70 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "resource-workbench",
+  "name": "素材交付检查",
+  "version": "1.0.0",
+  "description": "检查真实视频元数据，确认保存后将结果绑定到画布。",
+  "publisher": {
+    "id": "sample-studio",
+    "displayName": "示例作者"
+  },
+  "requires": {
+    "hostApi": "^3.1.0"
+  },
+  "permissions": [
+    "media.read",
+    "resource.create",
+    "canvas.read",
+    "canvas.write"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "check-source",
+        "name": "check-source",
+        "description": "检查视频信息，按用户要求保存结果或放到画布。",
+        "entry": "skills/check-source/SKILL.md",
+        "activation": "explicit",
+        "operations": [
+          "resource-workbench.inspect-video",
+          "resource-workbench.snapshot-video",
+          "resource-workbench.place-result"
+        ],
+        "launchOperation": "resource-workbench.inspect-video"
+      }
+    ],
+    "operations": [
+      {
+        "id": "inspect-video",
+        "ref": "operations/inspect-video.json"
+      },
+      {
+        "id": "snapshot-video",
+        "ref": "operations/snapshot-video.json"
+      },
+      {
+        "id": "place-result",
+        "ref": "operations/place-result.json"
+      }
+    ],
+    "views": [
+      {
+        "id": "inspect-result",
+        "ref": "views/inspect-result.json"
+      }
+    ],
+    "canvasBlueprints": [
+      {
+        "id": "inspect-board",
+        "ref": "blueprints/inspect-board.json"
+      }
+    ],
+    "workbenches": [
+      {
+        "id": "inspect",
+        "ref": "workbenches/inspect.json"
+      }
+    ]
+  }
+}

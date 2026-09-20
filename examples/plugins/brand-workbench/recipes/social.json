@@ -1,0 +1,9 @@
+{
+  "id": "social",
+  "name": "社交种草",
+  "defaults": {
+    "tone": "友好",
+    "channel": "社交媒体"
+  },
+  "requirements": {}
+}

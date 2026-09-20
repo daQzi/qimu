@@ -10,12 +10,13 @@ type Contribution struct {
 	Ref string `json:"ref"`
 }
 type Skill struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Entry       string   `json:"entry"`
-	Activation  string   `json:"activation"`
-	Operations  []string `json:"operations"`
+	LaunchOperation string   `json:"launchOperation,omitempty"`
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Description     string   `json:"description"`
+	Entry           string   `json:"entry"`
+	Activation      string   `json:"activation"`
+	Operations      []string `json:"operations"`
 }
 type Dependency struct {
 	ID       string `json:"id"`
@@ -38,6 +39,8 @@ type Manifest struct {
 	Permissions  []string     `json:"permissions"`
 	Dependencies []Dependency `json:"dependencies"`
 	Contributes  struct {
+		Workbenches      []Contribution `json:"workbenches,omitempty"`
+		Recipes          []Contribution `json:"recipes,omitempty"`
 		Skills           []Skill        `json:"skills,omitempty"`
 		Operations       []Contribution `json:"operations,omitempty"`
 		Views            []Contribution `json:"views,omitempty"`
@@ -76,6 +79,7 @@ type InvocationContext struct {
 	WorkbenchID string `json:"workbenchId,omitempty"`
 }
 type Invocation struct {
+	Workbench *WorkbenchSelection        `json:"workbench,omitempty"`
 	Operation string                     `json:"operation"`
 	ReleaseID string                     `json:"releaseId"`
 	Input     map[string]json.RawMessage `json:"input"`

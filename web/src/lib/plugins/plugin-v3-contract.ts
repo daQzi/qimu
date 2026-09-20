@@ -157,7 +157,7 @@ export function validatePluginContract(kind: string, raw: string): unknown {
 
 function validPath(name: string): boolean {
     if (name === "manifest.json") return true;
-    if (!/^(skills|operations|pipelines|schemas|views|connectors|blueprints)\/[A-Za-z0-9_./-]+$/.test(name)) return false;
+    if (!/^(skills|operations|pipelines|schemas|views|connectors|blueprints|workbenches|recipes)\/[A-Za-z0-9_./-]+$/.test(name)) return false;
     if (name.split("/").some((s) => !s || s === "." || s === "..")) return false;
     return name.endsWith(".json") || (name.startsWith("skills/") && name.endsWith(".md"));
 }
@@ -189,7 +189,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
     }
     const contributions = manifest.contributes;
     const registry: Record<string, Set<string>> = Object.create(null);
-    for (const kind of ["skills", "operations", "views", "canvasBlueprints", "connectors", "pipelines"]) {
+    for (const kind of ["skills", "operations", "views", "canvasBlueprints", "connectors", "pipelines", "workbenches", "recipes"]) {
         registry[kind] = new Set();
         for (const entry of contributions[kind] ?? []) {
             if (registry[kind].has(entry.id)) fail("contract_invalid", "duplicate contribution");
@@ -201,7 +201,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                 if (!target.endsWith("/SKILL.md") || !files[target]) fail("contract_invalid", "skill entry");
                 continue;
             }
-            validatePluginContract(({ operations: "operation", views: "view", canvasBlueprints: "blueprint", connectors: "httpConnector", pipelines: "pipeline" } as Record<string, string>)[kind], files[target]);
+            validatePluginContract(({ operations: "operation", views: "view", canvasBlueprints: "blueprint", connectors: "httpConnector", pipelines: "pipeline", workbenches: "workbench", recipes: "recipe" } as Record<string, string>)[kind], files[target]);
             if (kind === "connectors") validateHTTPConnector(docs[target]);
             if (docs[target].id !== entry.id) fail("contract_invalid", "contribution id mismatch");
         }
@@ -302,7 +302,43 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
             edges.add(key);
         }
     }
-    validateUserSchemas(files, docs);
+    const compiler = validateUserSchemas(files, docs);
+    const skills = contributions.skills || [];
+    const boards = contributions.workbenches || [];
+    const recipes = contributions.recipes || [];
+    if ((boards.length || recipes.length || skills.some((s: ObjectValue) => s.launchOperation)) && manifest.requires.hostApi !== "^3.1.0") fail("contract_invalid", "workbench requires hostApi ^3.1.0");
+    const operation = (address: string) => {
+        const ref = (contributions.operations || []).find((r: ObjectValue) => address === pluginID + "." + r.id);
+        return ref ? docs[ref.ref] : undefined;
+    };
+    for (const skill of skills) if (skill.launchOperation) {
+        if (!operation(skill.launchOperation)) fail("package_reference_invalid", "skill launch operation");
+        if (!skill.operations.includes(skill.launchOperation)) fail("scope_forbidden", "skill launch must be declared");
+    }
+    for (const ref of boards) {
+        const board = docs[ref.ref];
+        requireSchema(board.contextSchemaRef);
+        const schema = docs[board.contextSchemaRef];
+        if (schema.type !== "object" || schema.$ref) fail("contract_invalid", "workbench requires object schema");
+        if (Object.keys(schema.properties || {}).length > 32 || Object.keys(schema.properties || {}).some(key => !/^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(key))) fail("contract_invalid", "workbench fields");
+        if (board.operation && operation(board.operation)?.inputSchemaRef !== board.contextSchemaRef) fail("package_reference_invalid", "workbench input schema");
+        if (board.skill) {
+            const skill = skills.find((s: ObjectValue) => s.id === board.skill);
+            if (!skill) fail("package_reference_invalid", "workbench skill");
+            if (skill.launchOperation && skill.launchOperation !== board.operation) fail("contract_invalid", "workbench skill launch mismatch");
+        }
+        const suggestions = [board.defaults];
+        for (const id of board.recipes) {
+            const recipe = recipes.find((r: ObjectValue) => r.id === id);
+            if (!recipe) fail("package_reference_invalid", "workbench recipe");
+            suggestions.push(docs[recipe.ref].defaults, docs[recipe.ref].requirements);
+        }
+        for (const values of suggestions) for (const [key,value] of Object.entries(values)) {
+            if (!Object.hasOwn(schema.properties || {},key)) fail("contract_invalid", "unknown recipe field");
+            const validate = compiler.getSchema(`https://qimu.invalid/package/${board.contextSchemaRef}#/properties/${key}`);
+            if (!validate || !validate(value)) fail("contract_invalid","recipe field: "+key);
+        }
+    }
 }
 
 function validateUserSchemas(files: PluginTextPackage, docs: Record<string, ObjectValue>) {
@@ -358,6 +394,7 @@ function validateUserSchemas(files: PluginTextPackage, docs: Record<string, Obje
     } catch {
         fail("contract_invalid", "user schema");
     }
+    return compiler;
 }
 
 export function validateDependencyGraph(graph: Record<string, string[]>): void {

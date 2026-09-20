@@ -1,0 +1,48 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "brand-workbench",
+  "name": "品牌文案助手",
+  "version": "1.0.0",
+  "description": "根据品牌、受众、语气和渠道编写三个可比较的文案方案，标明主张与行动建议；不得编造商品功效、价格或事实。",
+  "publisher": {
+    "id": "sample-studio",
+    "displayName": "工作台示例"
+  },
+  "requires": {
+    "hostApi": "^3.1.0"
+  },
+  "permissions": [],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "assist",
+        "name": "assist",
+        "description": "根据品牌、受众、语气和渠道编写三个可比较的文案方案，标明主张与行动建议；不得编造商品功效、价格或事实。",
+        "entry": "skills/assist/SKILL.md",
+        "activation": "explicit",
+        "operations": []
+      }
+    ],
+    "workbenches": [
+      {
+        "id": "compose",
+        "ref": "workbenches/compose.json"
+      }
+    ],
+    "recipes": [
+      {
+        "id": "social",
+        "ref": "recipes/social.json"
+      },
+      {
+        "id": "formal",
+        "ref": "recipes/formal.json"
+      },
+      {
+        "id": "product",
+        "ref": "recipes/product.json"
+      }
+    ]
+  }
+}

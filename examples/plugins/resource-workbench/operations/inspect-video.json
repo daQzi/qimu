@@ -1,0 +1,8 @@
+{
+  "id": "inspect-video", "description": "读取已上传视频的信息，返回真实数据和 digest；不会保存记录。",
+  "inputSchemaRef": "schemas/inspect-input.json", "outputSchemaRef": "schemas/inspect-output.json",
+  "requiredPermissions": ["media.read"], "effects": ["read"],
+  "context": { "requiresCanvas": false, "requiresProject": false },
+  "execution": { "kind": "host", "adapter": "resource.inspect", "mode": "inline" },
+  "resultView": "inspect-result"
+}

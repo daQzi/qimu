@@ -18,7 +18,7 @@ export type PluginV3Effect = "read" | "draft_write" | "generation" | "external_w
 export type PluginRunStatus = "queued" | "running" | "waiting_input" | "waiting_approval" | "paused" | "succeeded" | "failed" | "cancelling" | "cancelled";
 export type PluginStepStatus = "pending" | "ready" | "running" | "waiting_task" | "waiting_input" | "waiting_approval" | "succeeded" | "failed" | "skipped" | "cancelled";
 export type PluginContributionRef = { id: string; ref: string };
-export type PluginV3Skill = { id: string; name: string; description: string; entry: string; activation: "auto" | "explicit"; operations: string[] };
+export type PluginV3Skill = { id: string; name: string; description: string; entry: string; activation: "auto" | "explicit"; operations: string[]; launchOperation?: string };
 export type PluginManifestV3 = {
     apiVersion: "yingce.plugin/v3";
     id: string;
@@ -26,10 +26,10 @@ export type PluginManifestV3 = {
     version: string;
     description: string;
     publisher: { id: string; displayName: string };
-    requires: { hostApi: "^3.0.0" };
+    requires: { hostApi: "^3.0.0" | "^3.1.0" };
     permissions: PluginV3Permission[];
     dependencies: Array<{ id: string; version: string; optional: boolean }>;
-    contributes: { skills?: PluginV3Skill[]; operations?: PluginContributionRef[]; views?: PluginContributionRef[]; canvasBlueprints?: PluginContributionRef[]; connectors?: PluginContributionRef[]; pipelines?: PluginContributionRef[] };
+    contributes: { skills?: PluginV3Skill[]; operations?: PluginContributionRef[]; views?: PluginContributionRef[]; canvasBlueprints?: PluginContributionRef[]; connectors?: PluginContributionRef[]; pipelines?: PluginContributionRef[]; workbenches?: PluginContributionRef[]; recipes?: PluginContributionRef[] };
 };
 export type PluginExecution = { kind: "host"; adapter: string; mode: "inline" | "task" } | { kind: "http"; connector: string; action: string; mode: "task" } | { kind: "pipeline"; pipeline: string; mode: "task" };
 export type PluginOperation = {
@@ -44,7 +44,8 @@ export type PluginOperation = {
     resultView?: string;
 };
 export type PluginInvocationContext = { hostSurface?: "agent-home" | "canvas" | "editor"; canvasId?: string; projectId?: string; threadId?: string; workbenchId?: string };
-export type PluginInvocation = { operation: string; releaseId: string; input: Record<string, unknown>; context?: PluginInvocationContext };
+export type WorkbenchSelection = { id: string; releaseId: string; recipeIds: string[]; input: Record<string, unknown>; digest: string };
+export type PluginInvocation = { operation: string; releaseId: string; input: Record<string, unknown>; context?: PluginInvocationContext; workbench?: WorkbenchSelection };
 export type PluginResultRef = { runId: string; stepKey: string; itemKey: string; attempt: number; outputKey: string; schemaId: string; schemaVersion: string; digest: string; resourceId?: string };
 export type PluginSkillBinding = { releaseId: string; localSkillId: string; skillVersionId: string; entryDigest: string };
 export type PluginRunRecord = { id: string; userId: string; entryOperation: string; releaseId: string; idempotencyKey: string; requestDigest: string; status: PluginRunStatus; revision: number; context: PluginInvocationContext; parentRunId?: string };

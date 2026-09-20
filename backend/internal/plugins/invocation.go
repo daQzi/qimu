@@ -24,6 +24,7 @@ type InvocationOutput struct {
 	ApprovalID string          `json:"approvalId,omitempty"`
 }
 type RunView struct {
+	Workbench *contracts.WorkbenchSelection `json:"workbench,omitempty"`
 	model.PluginRun
 	Preview          json.RawMessage              `json:"preview,omitempty"`
 	Result           json.RawMessage              `json:"result,omitempty"`
@@ -83,6 +84,9 @@ func (s *Service) Invoke(userID, key string, request contracts.Invocation, polic
 		}
 		resolved, err := s.resolve(repo, userID, request.Operation, request.ReleaseID, ctx, policy)
 		if err != nil {
+			return err
+		}
+		if err := s.validateWorkbenchInvocation(repo, userID, normalized, ctx); err != nil {
 			return err
 		}
 		input, err := json.Marshal(normalized.Input)
@@ -197,6 +201,10 @@ func (s *Service) GetRun(userID, id string, viewID ...string) (RunView, error) {
 		return RunView{}, err
 	}
 	view := RunView{PluginRun: *run, Preview: json.RawMessage(run.PlanJSON)}
+	view.Workbench, err = WorkbenchHistory(*run)
+	if err != nil {
+		return RunView{}, err
+	}
 	if run.Status == "succeeded" {
 		view.Result = json.RawMessage(run.ResultJSON)
 		view.ResultRef = &contracts.ResultRef{RunID: run.ID, StepKey: "invoke", Attempt: max(1, run.Attempt), OutputKey: "result", SchemaID: run.Operation + "/result", SchemaVersion: run.ReleaseVersion, Digest: hashBytes([]byte(run.ResultJSON))}

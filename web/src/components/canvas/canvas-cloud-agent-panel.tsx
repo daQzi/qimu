@@ -41,10 +41,11 @@ import { useAgentLauncherPosition } from "./use-agent-launcher-position";
 import { AgentWelcome } from "./canvas-agent-welcome";
 import "./canvas-cloud-agent.css";
 
-export type CloudAgentPanelProps = { canvasId: string; domainProjectId?: string; nodeCount: number; references: CanvasResourceReference[]; open: boolean; prefillPrompt?: string; onOpen: () => void; onCollapse: () => void; onFocusNode?: (nodeId: string) => void; threadId?: string; embedded?: boolean; onNewThread?: () => void; onThreadHistory?: () => void; toolbar?: ReactNode };
+export type CloudAgentPanelProps = { canvasId: string; domainProjectId?: string; nodeCount: number; references: CanvasResourceReference[]; open: boolean; prefillPrompt?: string; workbench?: import("@/lib/plugins/plugin-v3-types").WorkbenchSelection; onOpen: () => void; onCollapse: () => void; onFocusNode?: (nodeId: string) => void; threadId?: string; embedded?: boolean; onNewThread?: () => void; onThreadHistory?: () => void; toolbar?: ReactNode };
 type AgentPanelView = "chat" | "history" | "settings";
 
-export function CanvasCloudAgentPanel({ canvasId, domainProjectId, nodeCount, references, open, prefillPrompt, onOpen, onCollapse, onFocusNode, threadId, embedded, onNewThread, onThreadHistory, toolbar }: CloudAgentPanelProps) {
+export function CanvasCloudAgentPanel({ canvasId, domainProjectId, nodeCount, references, open, prefillPrompt, workbench, onOpen, onCollapse, onFocusNode, threadId, embedded, onNewThread, onThreadHistory, toolbar }: CloudAgentPanelProps) {
+    const restoredWorkbench = useRef<CloudAgentPanelProps["workbench"]>(undefined);
     const userId = useUserStore((state) => state.user?.id) || "";
     const [thread, setThread] = useState<AgentThread | null>(null);
     const [threadEntries, setThreadEntries] = useState<AgentThreadEntry[]>([]);
@@ -258,6 +259,7 @@ export function CanvasCloudAgentPanel({ canvasId, domainProjectId, nodeCount, re
         setHistoryHydrated(false);
         setPendingHydrated(false);
         pendingSubmission.current = null;
+        restoredWorkbench.current = undefined;
         setBusy(false);
         setConversations([]);
         setRun(null);
@@ -278,6 +280,7 @@ export function CanvasCloudAgentPanel({ canvasId, domainProjectId, nodeCount, re
                 setThread(document.thread); setThreadEntries(document.entries); setNextBefore(document.nextBefore);
                 setMessages(replayThreadMessages(document.entries)); setRun(latest);
                 const settings = document.entries.findLast((entry) => entry.kind === "agent")?.context;
+                restoredWorkbench.current = settings?.workbench;
                 if (settings) { setPermissionMode(settings.permissionMode || "request_approval"); setSelectedSkillIds(settings.skillIds || []); }
                 setContextScope(canvasId ? ["canvas"] : []);
                 pendingSubmission.current = pending;
@@ -448,7 +451,17 @@ export function CanvasCloudAgentPanel({ canvasId, domainProjectId, nodeCount, re
                 const agentConfig = { ...config, model: selectedModel };
                 const requestConfig = resolveModelRequestConfig(agentConfig, selectedModel);
                 const logicalModelId = logicalModelIDForConfig(agentConfig);
+                const selectedWorkbench = workbench || restoredWorkbench.current;
+                let frozenWorkbench = selectedWorkbench;
+                if (selectedWorkbench) {
+                    const { previewWorkbench } = await import("@/services/api/plugin-workbenches");
+                    const preview = await previewWorkbench(selectedWorkbench.id, selectedWorkbench.releaseId, selectedWorkbench.recipeIds, selectedWorkbench.input, { hostSurface: canvasId ? "canvas" : "agent-home", ...(canvasId ? { canvasId } : {}) });
+                    if (!preview.valid) throw new Error(preview.validationMessage || "工作台输入已失效，请重新预览");
+                    if (currentScope.current !== scope) return;
+                    frozenWorkbench = preview.selection;
+                }
                 const input = {
+                    ...(frozenWorkbench ? { workbench: frozenWorkbench } : {}),
                     canvasId, hostSurface: canvasId ? "canvas" as const : "agent-home" as const, prompt: value, reasoningMode: reasoningSupported ? reasoningMode : "off", profileRevision: profileView.revision,
                     model: modelOptionName(selectedModel) || undefined,
                     ...(logicalModelId ? { logicalModelId } : requestConfig.channelId ? { channelId: requestConfig.channelId, channelModelKey: modelOptionName(selectedModel) || undefined } : {}),

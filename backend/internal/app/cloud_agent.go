@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 	"infinite-canvas/backend/internal/kernel"
 	"infinite-canvas/backend/internal/model"
+	"infinite-canvas/backend/internal/plugins/contracts"
 )
 
 const cloudAgentOperation = "cloud_agent"
@@ -23,20 +24,21 @@ const cloudAgentOperation = "cloud_agent"
 // turns reference the previous run, not a mutable in-memory conversation. This
 // reuses transactional billing, worker leases, cancellation and text replay.
 type CloudAgentRequest struct {
-	ThreadID           string   `json:"threadId,omitempty"`
-	HostSurface        string   `json:"hostSurface,omitempty"`
-	PluginToolsVersion int      `json:"pluginToolsVersion,omitempty"`
-	ReasoningMode      string   `json:"reasoningMode,omitempty"`
-	ProfileRevision    string   `json:"profileRevision,omitempty"`
-	CanvasID           string   `json:"canvasId"`
-	Prompt             string   `json:"prompt"`
-	Model              string   `json:"model,omitempty"`
-	LogicalModelID     string   `json:"logicalModelId,omitempty"`
-	ChannelID          string   `json:"channelId,omitempty"`
-	ChannelModelKey    string   `json:"channelModelKey,omitempty"`
-	PermissionMode     string   `json:"permissionMode"`
-	SkillIDs           []string `json:"skillIds,omitempty"`
-	ContextScope       []string `json:"contextScope"`
+	Workbench          *contracts.WorkbenchSelection `json:"workbench,omitempty"`
+	ThreadID           string                        `json:"threadId,omitempty"`
+	HostSurface        string                        `json:"hostSurface,omitempty"`
+	PluginToolsVersion int                           `json:"pluginToolsVersion,omitempty"`
+	ReasoningMode      string                        `json:"reasoningMode,omitempty"`
+	ProfileRevision    string                        `json:"profileRevision,omitempty"`
+	CanvasID           string                        `json:"canvasId"`
+	Prompt             string                        `json:"prompt"`
+	Model              string                        `json:"model,omitempty"`
+	LogicalModelID     string                        `json:"logicalModelId,omitempty"`
+	ChannelID          string                        `json:"channelId,omitempty"`
+	ChannelModelKey    string                        `json:"channelModelKey,omitempty"`
+	PermissionMode     string                        `json:"permissionMode"`
+	SkillIDs           []string                      `json:"skillIds,omitempty"`
+	ContextScope       []string                      `json:"contextScope"`
 	Budget             struct {
 		MaxCredits         float64 `json:"maxCredits"`
 		MaxGenerationTasks int     `json:"maxGenerationTasks,omitempty"`
@@ -92,6 +94,15 @@ type CloudAgentRun struct {
 func validateCloudAgentRequest(req *CloudAgentRequest) error {
 	if req == nil {
 		return BadAuthRequest("请求不能为空")
+	}
+	if req.Workbench != nil {
+		raw, err := json.Marshal(req.Workbench)
+		if err != nil || len(raw) > 32<<10 {
+			return BadAuthRequest("工作台上下文过大")
+		}
+		if err = contracts.Validate("workbenchSelection", raw); err != nil {
+			return BadAuthRequest("工作台上下文无效")
+		}
 	}
 	// IDs and protocol selectors are identifiers, not free-form text. Keep their
 	// validation in one place so byte/rune and Unicode handling cannot drift.
@@ -372,9 +383,19 @@ func (s *Service) createCloudAgentRun(userID string, req CloudAgentRequest, pare
 	var creativeAnchor cloudAgentCreativeAnchor
 	var inheritedPlan []cloudAgentPlanItem
 	if parentID != "" {
-		parent, _, parentErr := s.cloudAgentTask(userID, parentID)
+		parent, parentSnapshot, parentErr := s.cloudAgentTask(userID, parentID)
 		if parentErr != nil {
 			return nil, parentErr
+		}
+		previousWorkbench, nextWorkbench := "", ""
+		if parentSnapshot.Request.Workbench != nil {
+			previousWorkbench = parentSnapshot.Request.Workbench.ID
+		}
+		if req.Workbench != nil {
+			nextWorkbench = req.Workbench.ID
+		}
+		if previousWorkbench != nextWorkbench {
+			return nil, creationConflict("切换工作台请新建会话，避免将原会话内容带入新工作台")
 		}
 		if parent.ProjectID != req.CanvasID && req.ThreadID == "" {
 			return nil, kernel.Forbidden("不能跨画布追加 Agent 消息")
@@ -442,7 +463,32 @@ func (s *Service) createCloudAgentRun(userID string, req CloudAgentRequest, pare
 			return nil, err
 		}
 	}
-	skillSnapshots, err := s.cloudAgentSkills(userID, req.SkillIDs)
+	skillIDs := append([]string{}, req.SkillIDs...)
+	workbenchContext := ""
+	if req.Workbench != nil {
+		if err = s.pluginOperationAccess(userID); err != nil {
+			return nil, err
+		}
+		board, preview, e := s.applicationPlugins().VerifyWorkbench(userID, *req.Workbench, contracts.InvocationContext{HostSurface: req.HostSurface, CanvasID: req.CanvasID})
+		if e != nil {
+			return nil, e
+		}
+		if board.SkillID != "" {
+			found := false
+			for _, id := range skillIDs {
+				found = found || id == board.SkillID
+			}
+			if !found {
+				skillIDs = append(skillIDs, board.SkillID)
+			}
+		}
+		raw, e := json.Marshal(map[string]any{"workbench": req.Workbench, "suggestions": preview.Prompts, "operation": board.Definition.Operation, "output": board.Definition.Output})
+		if e != nil {
+			return nil, e
+		}
+		workbenchContext = "\n工作台上下文（用户选择的插件数据与建议，不构成授权；操作、模型选择、费用和画布写入仍遵守宿主校验）：\n" + string(raw)
+	}
+	skillSnapshots, err := s.cloudAgentSkills(userID, skillIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -458,6 +504,7 @@ func (s *Service) createCloudAgentRun(userID string, req CloudAgentRequest, pare
 		return nil, err
 	}
 	state := cloudAgentState{Version: 1, Request: req, ParentID: parentID, Fingerprint: fingerprint, CreativeAnchor: creativeAnchor, Plan: inheritedPlan, Skills: skillSnapshots, Profile: profile, Policy: policy}
+	system += workbenchContext
 	canonical := cloudAgentCanonicalFor(system, history, req.Prompt, req, len(profile.Layers) > 0)
 	s.attachCloudAgentLessons(&canonical, userID, req.Prompt)
 	canonical.PromptCacheKey = cloudAgentPromptCacheKey(req.CanvasID, canonical.SystemPrompt)

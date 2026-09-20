@@ -95,7 +95,7 @@ Agent 决定如何完成目标；技能提供方法；插件提供可调用的�
 
 ## 5. 可组合工作台的目标合同
 
-以下是下一步合同设计要求，不是当前 v3 已支持字段。未来可以新增 `contributes.workbenches/recipes/objectTypes`，但须先确定完整 Schema、权限和渲染支持，并通过 hostApi/能力版本校验开放。未支持的宿主继续拒绝这些贡献，不能静默加载。
+P09 已实现 `contributes.workbenches/recipes` 的最小通用合同，要求 hostApi `^3.1.0`，具体接入以[工作台接入文档](../content/docs/plugins/workbench-v3-integration.md)为准。下文保留更完整的目标设计；`objectTypes`、跨包配方、条件布局、任意命名视图编排等仍后置，不能把目标字段直接写进当前包。未支持的宿主继续拒绝新贡献，不能静默加载。
 
 ### 5.1 WorkbenchDefinition
 

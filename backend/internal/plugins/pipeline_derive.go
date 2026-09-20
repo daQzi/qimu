@@ -113,6 +113,9 @@ func (s *Service) Derive(user, id, key string, req DeriveRequest) (RunView, erro
 			}
 		}
 		if req.Input != nil {
+			if original.Workbench != nil && encode(req.Input) != encode(original.Input) {
+				return issue(409, "run_revision_conflict", "工作台顶层输入已固定；修改后请回到工作台重新预览并创建运行")
+			}
 			original.Input = req.Input
 		}
 		local := *s

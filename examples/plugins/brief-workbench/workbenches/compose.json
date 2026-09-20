@@ -1,0 +1,20 @@
+{
+  "id": "compose",
+  "name": "会议简报助手",
+  "description": "只基于用户输入的会议记录，梳理结论、待办和未确定事项。负责人、日期缺失时写待确认，不自行补造。",
+  "hostSurfaces": [
+    "agent-home",
+    "canvas"
+  ],
+  "contextSchemaRef": "schemas/context.json",
+  "skill": "assist",
+  "recipes": [
+    "actions"
+  ],
+  "defaults": {
+    "format": "简报",
+    "includeRisks": false
+  },
+  "output": "result",
+  "prompt": "只基于用户输入的会议记录，梳理结论、待办和未确定事项。负责人、日期缺失时写待确认，不自行补造。"
+}

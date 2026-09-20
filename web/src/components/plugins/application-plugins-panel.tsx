@@ -1,4 +1,5 @@
 import { App, Button, Checkbox, Select } from "antd";
+import { Link } from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUserStore } from "@/stores/use-user-store";
 import { PluginOperationTester } from "./plugin-operation-tester";
@@ -87,6 +88,7 @@ export function ApplicationPluginsPanel({ admin = false, refreshToken = 0 }: { a
         <section aria-label="应用插件版本目录" className="my-4 space-y-3 rounded-lg border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-3">
                 <h2 className="font-medium">应用插件 · 版本与技能</h2>
+                <Link to="/workbenches">打开插件工作台</Link>
                 <Button loading={loading} onClick={reload}>
                     刷新应用
                 </Button>
