@@ -1,5 +1,7 @@
 # Qimu 应用插件 v3：能力提升改造实施设计
 
+当前调整：提前交付 [P14A 插件收尾](qimu-plugin-closeout-acceptance.md)，工作台与出海后置。作者工具与实际接入合同见最新指南；本文件后文保留整体设计，不代表所有目标已开放。
+
 > 状态：起始基线 qimu `4eaa28b8`。P00–P07 已验收。P08 增加持久 Thread、首页原地对话和跨画布继续，追加 schema 36，复用原 Agent/PluginRun/CreationRun 及账务。当前边界与验收见 [P08 接入与验收](qimu-plugin-p08-acceptance.md)。只合入插件集成分支，不合入 main；未部署或迁移业务环境。
 > 配套：[需求与整体架构](../design/qimu-plugin-platform-v3-design.md)、[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)。本文回答改哪里、如何迁移、如何验证、什么条件才算完成。
 

@@ -1,0 +1,7 @@
+{
+  "id": "inspect-result", "component": "key-value/v1", "schemaRef": "schemas/inspect-output.json",
+  "fields": [
+    { "path": "/resourceId", "label": "来源资源" }, { "path": "/mimeType", "label": "格式" },
+    { "path": "/width", "label": "宽度" }, { "path": "/height", "label": "高度" }, { "path": "/durationMs", "label": "时长（毫秒）" }
+  ]
+}

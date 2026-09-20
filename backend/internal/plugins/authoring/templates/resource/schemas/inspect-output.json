@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "properties": {
+    "resourceId": { "type": "string" }, "kind": { "const": "video" }, "name": { "type": "string" }, "mimeType": { "type": "string" },
+    "width": { "type": "integer", "minimum": 1 }, "height": { "type": "integer", "minimum": 1 }, "durationMs": { "type": "integer", "minimum": 1 }
+  }, "required": ["resourceId", "kind", "name", "mimeType"], "additionalProperties": false
+}

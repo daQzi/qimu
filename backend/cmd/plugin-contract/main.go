@@ -1,121 +1,98 @@
-// plugin-contract validates extracted P00 fixtures offline. It never installs
-// or executes a plugin and does not access databases or remote services.
+// plugin-contract creates, validates and packages application plugins offline.
 package main
 
 import (
-	"archive/zip"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/fs"
+	"io"
 	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 
+	"infinite-canvas/backend/internal/plugins/authoring"
 	"infinite-canvas/backend/internal/plugins/contracts"
 )
 
 func main() {
-	dir := flag.String("dir", "", "extracted UTF-8 plugin directory (not a ZIP)")
-	reserved := flag.String("reserved-ids", "", "comma-separated IDs reserved by the trusted catalog")
-	output := flag.String("out", "", "optional .yingce-plugin output; never overwrites an existing file")
-	version := flag.String("version", "", "optional release version override in the generated package; source files remain unchanged")
-	flag.Parse()
-	if *dir == "" {
-		fmt.Fprintln(os.Stderr, "usage: plugin-contract -dir <directory>")
-		os.Exit(2)
-	}
-	files := contracts.PackageFiles{}
-	total := int64(0)
-	err := filepath.WalkDir(*dir, func(name string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.Type()&os.ModeSymlink != 0 {
-			return fmt.Errorf("symlinks are not allowed")
-		}
-		if entry.IsDir() {
-			return nil
-		}
-		info, err := entry.Info()
-		if err != nil {
-			return err
-		}
-		if !info.Mode().IsRegular() {
-			return fmt.Errorf("only regular files are allowed")
-		}
-		total += info.Size()
-		if info.Size() > 16<<20 || total > 64<<20 || len(files) >= 256 {
-			return fmt.Errorf("package limits exceeded")
-		}
-		relative, err := filepath.Rel(*dir, name)
-		if err != nil {
-			return err
-		}
-		raw, err := os.ReadFile(name)
-		if err != nil {
-			return err
-		}
-		files[filepath.ToSlash(relative)] = raw
-		return nil
-	})
-	if err == nil {
-		if *version != "" {
-			var value any
-			value, err = contracts.Decode(files["manifest.json"])
-			if err == nil {
-				manifest, ok := value.(map[string]any)
-				if !ok {
-					err = fmt.Errorf("manifest must be an object")
-				} else {
-					manifest["version"] = *version
-					files["manifest.json"], err = json.MarshalIndent(manifest, "", "  ")
-				}
-			}
-		}
-	}
-	if err == nil {
-		err = contracts.ValidatePackage(files, contracts.Policy{ReservedIDs: strings.Split(*reserved, ",")})
-	}
-	if err != nil {
+	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	if *output != "" {
-		file, err := os.OpenFile(*output, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
-		writer := zip.NewWriter(file)
-		names := make([]string, 0, len(files))
-		for name := range files {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			entry, e := writer.Create(name)
-			if e != nil {
-				err = e
-				break
-			}
-			if _, e = entry.Write(files[name]); e != nil {
-				err = e
-				break
-			}
-		}
-		if e := writer.Close(); err == nil {
-			err = e
-		}
-		if e := file.Close(); err == nil {
-			err = e
-		}
-		if err != nil {
-			os.Remove(*output)
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+}
+
+func run(args []string, stdout, stderr io.Writer) error {
+	flags := flag.NewFlagSet("plugin-contract", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	dir := flags.String("dir", "", "validate an extracted UTF-8 plugin directory")
+	archive := flags.String("package", "", "validate a finished .yingce-plugin archive")
+	initDir := flags.String("init", "", "create a template in a new directory (parent must exist)")
+	template := flags.String("template", "skill", "template: skill or resource")
+	id := flags.String("id", "", "new plugin ID, required with -init")
+	publisher := flags.String("publisher", "", "publisher ID, required with -init")
+	reserved := flags.String("reserved-ids", "", "comma-separated IDs reserved by the trusted catalog")
+	output := flags.String("out", "", "optional archive output with -dir; never overwrites")
+	version := flags.String("version", "", "package version override with -dir; source unchanged")
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
+	modes := 0
+	for _, value := range []string{*dir, *archive, *initDir} {
+		if value != "" {
+			modes++
 		}
 	}
-	_ = json.NewEncoder(os.Stdout).Encode(map[string]any{"valid": true, "profile": "p00-contract/1", "runtimeEnabled": false, "fileCount": len(files), "packageDigest": contracts.PackageDigest(files)})
+	if modes != 1 || flags.NArg() != 0 {
+		return fmt.Errorf("choose exactly one of -dir, -package or -init")
+	}
+	if *dir == "" && (*output != "" || *version != "") {
+		return fmt.Errorf("-out and -version require -dir")
+	}
+	if *version != "" && *output == "" {
+		return fmt.Errorf("-version requires -out")
+	}
+	if *initDir == "" {
+		invalid := false
+		flags.Visit(func(f *flag.Flag) {
+			if f.Name == "template" || f.Name == "id" || f.Name == "publisher" {
+				invalid = true
+			}
+		})
+		if invalid {
+			return fmt.Errorf("-template, -id and -publisher require -init")
+		}
+	}
+	policy := contracts.Policy{ReservedIDs: strings.Split(*reserved, ",")}
+	var files contracts.PackageFiles
+	var err error
+	switch {
+	case *initDir != "":
+		files, err = authoring.Template(*template, *id, *publisher, policy)
+		if err == nil {
+			err = authoring.Init(*initDir, files)
+		}
+	case *archive != "":
+		files, err = authoring.ReadPackage(*archive, policy)
+	default:
+		files, err = authoring.ReadDirectory(*dir)
+		if err == nil && *version != "" {
+			files, err = authoring.WithVersion(files, *version)
+		}
+		if err == nil {
+			err = contracts.ValidatePackage(files, policy)
+		}
+		if err == nil && *output != "" {
+			var raw []byte
+			raw, err = authoring.Pack(files, policy)
+			if err == nil {
+				err = authoring.WriteNewPackage(*output, raw)
+			}
+		}
+	}
+	if err != nil {
+		return err
+	}
+	return json.NewEncoder(stdout).Encode(map[string]any{
+		"valid": true, "apiVersion": "yingce.plugin/v3", "profile": "p00-contract/1",
+		"runtimeVerified": false, "fileCount": len(files), "packageDigest": contracts.PackageDigest(files),
+	})
 }

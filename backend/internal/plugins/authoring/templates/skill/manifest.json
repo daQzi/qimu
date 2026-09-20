@@ -1,0 +1,21 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "__PLUGIN_ID__",
+  "name": "目标澄清助手",
+  "version": "1.0.0",
+  "description": "纯技能插件：帮助梳理目标、素材、交付格式与验收条件。",
+  "publisher": { "id": "__PUBLISHER_ID__", "displayName": "示例作者" },
+  "requires": { "hostApi": "^3.0.0" },
+  "permissions": [],
+  "dependencies": [],
+  "contributes": {
+    "skills": [{
+      "id": "clarify-objective",
+      "name": "clarify-objective",
+      "description": "整理目标、现有素材、交付格式和验收条件，不运行媒体生成。",
+      "entry": "skills/clarify-objective/SKILL.md",
+      "activation": "explicit",
+      "operations": []
+    }]
+  }
+}

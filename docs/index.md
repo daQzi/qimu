@@ -61,7 +61,8 @@
 功能、代码地图、待办、待测试分别维护在以下页面；尚未建立的专题会在对应任务中补齐：
 
 - [AI 审美批改画布插件](content/docs/plugins/ai-art-critique.mdx)
-- [应用插件 v3 开发与接入指南](content/docs/plugins/application-plugin-v3-integration.md)：目标包合同、完整最小示例、远程 API、流程、画布和开发验收（设计稿，SDK 尚未发布）。
+- [应用插件 v3 开发与接入指南](content/docs/plugins/application-plugin-v3-integration.md)：当前可用模板、目录/成品包校验、真实 API、流程与画布；不含未开放的工作台/公开市场。
+- [插件体系收尾 P14A](plans/qimu-plugin-closeout-acceptance.md)：开发交付、真实宿主案例、升级停用恢复、验收与后置范围。
 - [功能](content/docs/overview/features.mdx)
 - [本地开发](content/docs/backend/local-development.mdx)
 - [HTTP API 合同](content/docs/backend/http-api.mdx)

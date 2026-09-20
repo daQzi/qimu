@@ -5,6 +5,8 @@ description: 从产品功能快速定位主要代码入口
 
 # 代码功能地图
 
+插件作者交付：`backend/cmd/plugin-contract` 处理 CLI 参数；`internal/plugins/authoring` 提供受限读取、模板与打包，复用 `contracts` 和 `protocol.ReadPluginPackageEnvelope`。真实宿主验证在 `internal/app/plugin_authoring_test.go`，指南在 `docs/content/docs/plugins/application-plugin-v3-integration.md`。不新增 HTTP、数据库或 Agent 执行分支。
+
 P08：`model/agent_thread.go`、`repository/agent_thread.go` 保存 Thread、不可变运行引用与画布绑定；`app/agent_thread.go` 完成归属、CAS、幂等和原子 Agent 准入，`handler/agent_thread.go` 提供接口。前端 `AgentThreadWorkspace` 共用首页/画布宿主，既有 `CanvasCloudAgentPanel` 使用 `agent-event-consumer.ts` 消费真实事件，`agent-thread-pending.ts` 在账号/Thread 范围保存重试身份。没有新增模型或插件执行器。
 
 插件 P07：`plugins/contracts/presentation.go` 校验命名组件、输入视图与蓝图；`plugins/canvas_actions.go` 提供匹配 Run 当前状态的投影入口。`app/plugin_canvas_projection.go` 在既有画布事务中写输入/结果节点、流程关系线及投影来源。`plugin-input-node-content.tsx` 与运行卡片共用 `PluginInputForm`；`PluginMappingEditor`、`PluginResultValues`、`PluginMediaValue` 渲染标准组件。`plugin-editor-actions.ts` 只承载在线定位/继续对话，画布页面执行选择和预填，不是后台 Adapter。样例与验收见 `docs/plans/qimu-plugin-p07-acceptance.md`。

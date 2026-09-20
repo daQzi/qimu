@@ -1,4 +1,6 @@
-# 应用插件 P01–P06 验收包
+# 应用插件验收包与作者模板
+
+新插件从 [当前开发指南](../../docs/content/docs/plugins/application-plugin-v3-integration.md) 的 `-init` 命令开始，支持 skill/resource 模板和 `-package` 成品包校验。`delivery-check` 收尾样例由模板生成，不含真实模型；验收见 [P14A](../../docs/plans/qimu-plugin-closeout-acceptance.md)。本目录已有版本继续作为历史阶段样例。
 
 这些包通过应用插件 v3 安装入口登记版本与技能。P01 只验收安装；P02 增加可信 Host 操作执行，1.2.0 包用于完整验收读取和快照审批。
 

@@ -1,496 +1,181 @@
 ---
-title: 应用插件 v3 开发与接入指南（设计稿）
-description: 启幕 Agent 应用插件的包合同、操作、技能、远程 API、流程及画布接入规范。
+title: 应用插件 v3 开发与接入指南
+description: 当前可用的插件模板、打包校验、Agent 操作、远程连接、持久流程与画布接入。
 ---
 
 # 应用插件 v3 开发与接入指南
 
-> 状态：P00–P07 已验收；P08 增加持久会话与跨入口继续，待用户验收。插件从 Agent 调用时继承宿主确定的 ThreadID；仍使用原 Run、审批、输入与 Task。作者无需新增执行器，精确会话 API 见 `docs/plans/qimu-plugin-p08-acceptance.md`。任意代码运行未开放；真实供应商待联调。
-> 本文示例不包含真实服务或密钥。带 `example.invalid` 的地址只说明协议结构；真实模型选择和质量验证属于应用接入工作。
+本文只描述插件集成分支中已实现的接入合同。P00–P07 已验收，P08 与插件收尾 P14A 的手工验收单独记录；不代表生产已部署。完整目标架构见[设计文档](../../../design/qimu-plugin-platform-v3-design.md)，交付检查见[插件收尾验收](../../../plans/qimu-plugin-closeout-acceptance.md)。
 
-P00 实现离线合同校验，P01 提供安装版本，P02/P03 开放三个可信 Host Adapter，P04 开放 HTTP 单任务，P05 开放顺序 pipelines，P06 开放受控批次，P07 开放标准交互组件。当前已实施合同、限制与示例见 [P07 接入与验收](../../../plans/qimu-plugin-p07-acceptance.md)；下文超出其范围的高级画布与扩展贡献仍为后续目标。旧协议解析器不直接接收 v3，应用包由独立领域服务处理。
+## 1. 插件负责什么，宿主负责什么
 
-P03 开放第三个可信 Host Adapter `canvas.blueprint.instantiate`，见[P03 验收说明](../../../plans/qimu-plugin-p03-acceptance.md)。插件作者通过声明操作、视图、蓝图及技能使用该能力，不需要修改 Agent 主循环。只有新增宿主执行类别时才需要实现并注册新的可信 Adapter。
+插件是安装与版本单位，Skill 是 Agent 的方法说明，Operation 是有输入输出约束的动作。启幕负责权限、批准、任务、资源、费用和画布落盘；技能正文不能授予权限，Agent 不能代替用户批准。
 
-配套：[需求与架构](../../../design/qimu-plugin-platform-v3-design.md)、[实施设计](../../../plans/qimu-plugin-platform-v3-implementation.md)。现有协议插件用法见 [当前开发指南](../../../../web/src/pages/plugins/plugin-development-guide.md)。
-
-多工作台与技能启动交互见[补充设计](../../../design/qimu-composable-workbenches-design.md)。其中 workbenches/recipes/objectTypes 是后续合同候选，本文首期示例不接受这些尚未实现的贡献；技能仍可仅提供 Markdown 方法说明。
-
-## 1. 选择最小插件形态
-
-| 目标 | 应提供的贡献 |
+| 需求 | 当前接入方式 |
 | --- | --- |
-| 提供创作指南/品牌规则 | skills |
-| 调用一个业务 API | operations + connectors，可附 skills |
-| 新模型请求协议 | 现有 providers；需要 Agent 专门动作时再附 operations |
-| 持久化多步骤业务 | operations + pipelines，可附 views |
-| Agent 搭建业务画布 | 上述能力 + canvasBlueprints；复用标准节点或声明受支持 canvasNodes |
-| 独立结果/参数面板 | views，不要求 canvasBlueprints |
+| 方法指导、品牌规范、交付要求 | 纯 Markdown Skill，无需 Operation |
+| 读取已上传视频元数据、保存结果快照 | 声明 Host Operation，使用 resource.inspect / resource.snapshot |
+| 外部模型或业务服务 | HTTP Operation + Connector，由后台 Task 调用 |
+| 多步骤、等用户输入、批次处理与局部重做 | Pipeline + Schema，复用运行、输入、批准和派生机制 |
+| 结果卡片、表单、画布节点与连线 | 标准 View / CanvasBlueprint，用户批准后投影 |
+| 自定义模型渠道协议 | 使用原 v1/v2 Provider 体系，不混进 v3 应用 Manifest |
+| 新执行类别、任意自定义 UI 或任意本地代码 | 当前不能仅靠包获得；需要单独扩展可信宿主能力 |
 
-一个包可以混合贡献。既有 `workflows` 表示 Provider 下的模型/工作流入口；v3 `pipelines` 表示业务 DAG，不能覆盖同名字段的旧含义。
+无需修改 Agent 主循环即可增加已有执行类别的新插件。新增宿主执行类别需要实现 Adapter，并补权限、结果合同及测试。“通用”不等于可以通过插件绕过资源归属、付费确认或执行任意代码。
 
-混合贡献以宿主明确支持为准：首期 v3 应用不直接携带旧 providers，待协议运行时支持按 releaseId 装载后开放。当前模型协议包继续使用 v1/v2；应用通过宿主模型 Adapter 调用已有 Provider。
+## 2. 十分钟创建第一个包
 
-## 2. 包合同
+工具需要项目指定的 Go 版本（见 backend/go.mod），从仓库根目录开始：
 
-### 2.1 公共字段
+```sh
+cd backend
+go run ./cmd/plugin-contract -init ../../delivery-check -template resource -id delivery-check -publisher my-studio
+go run ./cmd/plugin-contract -dir ../../delivery-check
+go run ./cmd/plugin-contract -dir ../../delivery-check -out ../../delivery-check-1.0.0.yingce-plugin
+go run ./cmd/plugin-contract -package ../../delivery-check-1.0.0.yingce-plugin
+```
 
-| 字段 | 合同 |
-| --- | --- |
-| apiVersion | 本设计为 `yingce.plugin/v3` |
-| id | 全局稳定 kebab-case 插件 ID；归属由宿主登记，保留官方 ID 禁止冒用 |
-| version | SemVer 发布版本；相同 ID/version 不得包含不同内容 |
-| publisher | 作者声明；宿主将其与已登记发布者核对，不信任自报身份 |
-| requires.hostApi | SemVer 宿主能力范围；是 SDK 版本，不是前端 package.json 版本 |
-| permissions | 所有贡献所需权限的上界；安装后还需实际授权 |
-| dependencies | 显式插件版本范围；可选依赖不可支撑必需操作 |
-| contributes | 至少一种贡献；首期未知可执行贡献拒绝，不静默忽略 |
+目标目录的父目录必须存在；模板目录及成品包必须尚不存在。可改用自己的新目录/文件名，工具不会覆盖旧文件。目录中不要混入 README、截图、node_modules、密钥或其他开发材料；此工具校验的是交付包根目录。
 
-贡献内 localId 唯一，操作全名为 `pluginId.localId`。不同版本不通过拼接到操作名表达；运行请求携带 releaseId 或由宿主解析安装版本。跨插件调用必须声明依赖并进入 releaseLock。
+- `-template skill`：纯目标澄清技能，无权限和操作。
+- `-template resource`：素材交付检查，包含读取、保存、画布投影三个操作及对应 Schema/View/Blueprint。仅检查已有元数据，不抽帧、不识别人脸、不调用模型。
+- `-id` 和 `-publisher`：小写字母开头，可含数字和连字符，模板工具限制 1–64 字符。使用自己的稳定命名。
+- `-version 1.1.0 -out <新包>`：生成新发布，不修改源 Manifest。
+- `-reserved-ids id-a,id-b`：离线检查已知保留命名。服务器仍会独立检查真实命名空间与发布者归属。
+- `-dir`、`-package`、`-init` 三种模式互斥；`-out` 与 `-version` 仅用于目录模式，版本覆盖必须指定输出包。
 
-允许目录：在当前包容器基础上增加 `skills/operations/pipelines/schemas/views/connectors/blueprints/`。首期应用包只允许已批准的文本/静态资源格式；包中存在 JS、二进制或自定义 entry 不等于宿主会执行。支付包仍按既有专用策略处理。
+成功输出的 `valid: true` 表示静态合同通过；`runtimeVerified: false` 表示工具没有安装、授权或执行。保留的 `profile: p00-contract/1` 是冻结的合同配置标识，不代表当前运行时仍处于 P00。不要将工具输出当成供应商可达、模型效果或安全审核报告。
 
-引用仅限包内相对路径，拒绝目录穿越、重复 ZIP 条目、符号链接、远程 Schema 引用。读取与解压有累计上限，不能只校验压缩包大小。参考资源不能夹带模型凭证。
+打包完成会使用真实安装器的有界 ZIP 读取和合同校验再验证。包摘要基于路径与文件内容，不依赖 ZIP 时间元数据。
 
-### 2.2 Schema 子集
-
-首期 JSON Schema 固定采用 Draft 2020-12 的受控子集：`type/properties/required/additionalProperties/items/enum/const/minimum/maximum/minLength/maxLength/minItems/maxItems/description/$defs/$ref`。`$ref` 仅支持包内文件及 JSON Pointer；递归引用、远程引用及未支持验证关键字在安装时报错。
-
-表单只消费兼容字段。复杂字段可以通过宿主 `resource-picker`、`mapping-editor` 等命名组件表示，但组件不改变服务端 Schema。`default` 若支持，只作为展示建议，不能替用户提供必填授权或凭证。
-
-## 3. 完整最小示例：视频资源检查助手
-
-以下七个文件构成最小教学样例。P02 已注册 `resource.inspect` Host Adapter，它只返回已有资源元数据；需要下载探测的媒体处理另建异步操作，避免把高成本工作藏在 inline 读取中。该 Adapter 通过统一调用 API 使用，不是独立 HTTP 路径。
+## 3. 包结构与稳定合同
 
 ```text
-resource-helper/
-├── manifest.json
-├── skills/check-source/SKILL.md
-├── operations/inspect-video.json
-├── schemas/inspect-input.json
-├── schemas/inspect-output.json
-├── views/inspect-result.json
-└── blueprints/inspect-board.json
+manifest.json
+skills/<skill-id>/SKILL.md
+operations/<operation-id>.json
+schemas/<schema-id>.json
+views/<view-id>.json
+blueprints/<blueprint-id>.json
+connectors/<connector-id>.json
+pipelines/<pipeline-id>.json
 ```
 
-### 3.1 manifest.json
-
-```json
-{
-  "apiVersion": "yingce.plugin/v3",
-  "id": "resource-helper",
-  "name": "视频资源检查助手",
-  "version": "1.0.0",
-  "description": "读取已上传视频的资源信息，可展示在 Agent 或画布中。",
-  "publisher": { "id": "example-publisher", "displayName": "示例作者" },
-  "requires": { "hostApi": "^3.0.0" },
-  "permissions": ["media.read", "canvas.read", "canvas.write"],
-  "dependencies": [],
-  "contributes": {
-    "skills": [{
-      "id": "check-source",
-      "name": "check-source",
-      "description": "检查用户选中的已上传视频；不执行生成或转码。",
-      "entry": "skills/check-source/SKILL.md",
-      "activation": "auto",
-      "operations": ["resource-helper.inspect-video"]
-    }],
-    "operations": [{ "id": "inspect-video", "ref": "operations/inspect-video.json" }],
-    "views": [{ "id": "inspect-result", "ref": "views/inspect-result.json" }],
-    "canvasBlueprints": [{ "id": "inspect-board", "ref": "blueprints/inspect-board.json" }]
-  }
-}
-```
-
-canvas 权限仅用于可选的画布展示，读取操作自身不要求 canvasId。授权可只授予 media.read，此时 Agent 仍可读取，画布展示动作不可用。
-
-### 3.2 skills/check-source/SKILL.md
-
-```markdown
----
-name: check-source
-description: 检查已上传视频的资源信息，不生成、替换或转码视频。
----
-
-1. 从用户当前选区或显式引用中取得真实 resourceId，不猜测 ID。
-2. 查阅 resource-helper.inspect-video 的合同和可用状态。
-3. 无有效视频输入时提示选择或上传视频，不擅自扩大到全部画布资源。
-4. 调用操作，说明返回的资源名称和 MIME 类型。
-5. 未返回时长或尺寸时明确说明元数据缺失，不推测数值。
-6. 用户需要保留在画布时，调用宿主画布模板实例化动作，绑定该结果。
-```
-
-技能不直接访问网络或保存状态。修改工作方法可派生独立用户 SkillVersion；包内原始技能保持不可变。
-
-### 3.3 operations/inspect-video.json
-
-```json
-{
-  "id": "inspect-video",
-  "description": "读取当前用户视频资源的已知元数据。",
-  "inputSchemaRef": "schemas/inspect-input.json",
-  "outputSchemaRef": "schemas/inspect-output.json",
-  "requiredPermissions": ["media.read"],
-  "effects": ["read"],
-  "context": { "requiresCanvas": false, "requiresProject": false },
-  "execution": { "kind": "host", "adapter": "resource.inspect", "mode": "inline" },
-  "resultView": "inspect-result"
-}
-```
-
-`mode` 为 inline/task，由宿主 Adapter 校验，插件不能把远程收费操作声明为 inline 读取。所有 Operation 默认输出名称为 `result`，其内容受 outputSchemaRef 约束；Pipeline 可提供命名输出。
-
-### 3.4 schemas/inspect-input.json
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "resourceId": { "type": "string", "minLength": 1, "maxLength": 80 }
-  },
-  "required": ["resourceId"],
-  "additionalProperties": false
-}
-```
-
-### 3.5 schemas/inspect-output.json
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "resourceId": { "type": "string", "minLength": 1 },
-    "kind": { "const": "video" },
-    "name": { "type": "string" },
-    "mimeType": { "type": "string" },
-    "durationMs": { "type": "number", "minimum": 0 },
-    "width": { "type": "integer", "minimum": 1 },
-    "height": { "type": "integer", "minimum": 1 }
-  },
-  "required": ["resourceId", "kind", "name", "mimeType"],
-  "additionalProperties": false
-}
-```
-
-资源 kind 与归属由宿主实查；JSON Schema 本身不能证明资源属于用户。缺失的可选元数据省略，不以 0 填充未知时长。
-
-### 3.6 views/inspect-result.json
-
-```json
-{
-  "id": "inspect-result",
-  "component": "key-value/v1",
-  "schemaRef": "schemas/inspect-output.json",
-  "fields": [
-    { "path": "/name", "label": "名称" },
-    { "path": "/mimeType", "label": "格式" },
-    { "path": "/durationMs", "label": "时长（毫秒）" }
-  ]
-}
-```
-
-### 3.7 blueprints/inspect-board.json
-
-```json
-{
-  "id": "inspect-board",
-  "nodes": [{
-    "key": "source-info",
-    "nodeType": "plugin-result",
-    "title": "视频资源信息",
-    "position": { "x": 0, "y": 0 },
-    "binding": "result",
-    "view": "inspect-result"
-  }],
-  "connections": []
-}
-```
-
-`plugin-result` 已在 P03 注册为标准节点。`key` 是模板内标识，宿主将其解析为真实 nodeId。实例化动作需要当前画布 snapshotHash、实际授权和唯一调用键；读取 inspect-video 成功本身不等于自动获得 canvas.write。节点不接受任意结果 JSON 或媒体地址，只保存成功结果引用。
-
-本例 inline 结果没有 runId。`resource.snapshot` 在用户批准后以单步 PluginRun 固化结果并生成 ResultRef；P03 的 1.3.0 样例要求把 inline 返回的 digest 作为 expectedDigest 回传。画布操作引用已成功的 runId 与 ResultRef.digest，不使用虚构 runId，也不重新执行收费服务。
-
-### 3.5 P03 当前可执行的画布保存合同
-
-操作声明 `execution={kind:"host", adapter:"canvas.blueprint.instantiate", mode:"inline"}`、`effects=["draft_write"]`、`requiredPermissions=["canvas.read","canvas.write"]`，且 `context.requiresCanvas=true`。调用示例：
-
-```json
-{
-  "operation": "resource-helper.place-result",
-  "releaseId": "从 describe 获取的真实发布 ID",
-  "context": { "hostSurface": "canvas", "canvasId": "当前用户的真实画布 ID" },
-  "input": {
-    "runId": "已成功快照的运行 ID",
-    "resultDigest": "ResultRef 返回的 64 位摘要",
-    "blueprintId": "inspect-board",
-    "snapshotHash": "canvas_get_state 返回的最新 64 位摘要",
-    "instanceKey": "default",
-    "x": 80,
-    "y": 80
-  }
-}
-```
-
-HTTP 使用 `POST /api/plugin-invocations` 并带幂等键；按钮可以从 `GET /api/plugin-canvases/:id/snapshot` 获取同一画布摘要。来源只允许来自相同用户和同一发布。P07 蓝图为同一成功结果的 plugin-result 节点，或同一待输入请求的 plugin-input 节点，不混合不同来源。connections 可引用本模板节点，表示流程展示关系；节点与连线总数不超过 20。输入使用 inputRequestId，结果使用 resultDigest，两者互斥；视图 Schema 必须与来源匹配。具体合同及完整样例见 P07 验收文档。
-
-批准后返回 `canvasId/sourceRunId/blueprintId/projectionId/bindings`。同一 instanceKey 重试返回同一绑定；目标标题、位置、尺寸或结果绑定已变化、节点被删除时返回 projection_conflict。先取消过期审批，再读取新 snapshotHash 重试；只有用户明确要另建时才使用新 instanceKey。冲突不改写成功业务结果，不重新检查或生成媒体。
-
-画布 metadata.pluginResult 仅含 runId、digest、releaseId、viewId、projectionId、bindingKey。显示组件按用户权限重新读取 Run 并校验 digest，包内字段标签和数据只作为文本渲染。当前 progress 展示来自真实运行状态；`progress/v1` 表单/流程组件仍是后续目标。
-
-## 4. 接入一个真实远程 API
-
-P04 当前可执行合同以 `backend/internal/plugins/contracts/testdata/remote-helper-p04/` 为准，安装包与完整页面验收见 [P04 验收说明](../../../plans/qimu-plugin-p04-acceptance.md)。Manifest 新增 `contributes.connectors`，operation 使用 `execution.kind=http/mode=task`、connector、action。必须声明 connection.use 与 external_write/generation；资源输入另需 media.read，媒体输出另需 resource.create。
-
-当前映射使用 `input.<字段>` 与 `resource.<字段>`，后者在 `resources` 中声明 image/video/audio，宿主验证归属后准备临时地址。结果 `outputs` 把目标字段映射到响应 JSON Pointer；`artifact={urlPath,field,kind}` 声明一份需导入的媒体，宿主用资源对象替换临时地址。原始 URL 和密钥不能出现在公开结果。
-
-Idempotency 的 header 模式必须提供 header 与 retentionSeconds（60–86400），恢复保留同一键和同一正文；lookup 为 GET `/requests/{submissionKey}` 之类的受控查询。没有这两种能力时提交不明进入 paused。Cancellation 的 request 模式声明受控请求，仍需通过 statusPath/statusMap 读取取消确认；收到 HTTP 成功回执不代表已取消。
-
-用户连接经后端加密存储并固定修订，插件包不含真实 Key。管理员服务费以每次成功结果固定微积分配置，批准时预留；用户 Key 的供应商费用单独展示，不由该账务估算或退款。结果导入失败只恢复原任务查询/导入；普通 Task 重试不能重新发起生成。
-
-### 4.1 接入前记录服务合同
-
-作者必须确认同步/异步协议、认证、输入上传方式、请求大小、状态值、幂等/查询语义、取消、结果有效期、计价和错误类型。支持视频生成不等于支持深度、姿态或遮罩输入。
-
-复用已有生成 Provider 时优先绑定逻辑模型及能力限制，不另存一份模型 Key。非生成服务使用 Connector。用户配置的连接是独立实例，包中只包含声明。
-
-### 4.2 异步 HTTP 合同片段
-
-下面是设计语法片段，不是现成深度模型供应商配置。真实插件需要在 manifest 登记 connector/operation，并提供对应输入输出 Schema。
-
-```json
-{
-  "id": "depth-api",
-  "transport": "http",
-  "baseUrl": "https://depth.example.invalid",
-  "auth": { "type": "bearer" },
-  "actions": {
-    "estimate": {
-      "submit": {
-        "method": "POST",
-        "path": "/jobs",
-        "body": {
-          "video_url": { "from": "resource.sourceVideo" }
-        }
-      },
-      "jobIdPath": "/id",
-      "poll": { "method": "GET", "path": "/jobs/{jobId}" },
-      "statusPath": "/status",
-      "statusMap": {
-        "queued": "pending",
-        "running": "pending",
-        "completed": "succeeded",
-        "failed": "failed"
-      },
-      "resources": { "sourceVideo": "video" },
-      "outputs": { "summary": "/output/summary" },
-      "artifact": { "urlPath": "/output/depth_url", "field": "depthVideo", "kind": "video" },
-      "idempotency": { "mode": "unsupported" },
-      "cancellation": { "mode": "unsupported" }
-    }
-  }
-}
-```
-
-此例明确不支持幂等和取消，提交网络超时进入 unknown 待核实；不能拿它测试“自动安全重试”。实际服务支持幂等时才声明具体 Header/字段及查询端点，并做联调证明。
-
-`from` 只引用 input 中的字段或 resources 声明的用户资源；路径参数按 URL segment 编码；禁止任意模板表达式或 JS。响应路径使用 JSON Pointer，状态值未知时暂停核实。HTTP transport 使用已有出站防护，鉴权 API 不跟随重定向，结果下载每次重定向重新检查。媒体资源以宿主签发的短期地址发送，不把鉴权 URL 放入模型上下文。
-
-Operation 执行绑定示例：
-
-```json
-{
-  "kind": "http",
-  "connector": "depth-api",
-  "action": "estimate",
-  "mode": "task"
-}
-```
-
-不同作者共享的 HTTP transport 负责提交、轮询、超时、导入等机制；特殊协议可以由远程包装服务归一化。需要新宿主 Adapter 时提交 SDK 扩展，不在 Agent 主循环加入供应商名称分支。
-
-### 4.3 资源与凭证
-
-- 参数传 resourceId；宿主验证资源就绪、归属及允许发送范围。
-- 用户连接记录引用 credentialRef；密钥不进入 manifest、Skill、URL、事件或结果。
-- 上游临时结果先导入启幕，再向 Agent 发布 Resource 引用；导入失败保留 upstream_completed 状态，重试导入而非重做模型。
-- 使用服务端已实现的资源配额与引用保护；资源下载有大小、MIME 和目标地址检查。
-- 需要私网服务时通过现有精确允许主机配置接入，不接受插件请求全私网放行。
-
-## 5. 流程开发合同
-
-### 5.1 步骤语法
-
-Pipeline 文件声明 `id/inputSchemaRef/outputSchemaRef/steps/outputs`。首期步骤类型为 `operation`、`wait_input`；并发、条件与批量是步骤属性。生成、翻译、合成都是 Operation，不另建各自执行引擎。
-
-| 属性 | 语义 |
-| --- | --- |
-| key | 流程内稳定步骤名 |
-| dependsOn | 显式依赖；安装时检查 DAG，无环 |
-| operation | 操作全名，来自自身包或显式依赖 |
-| inputs | 字段映射，每项为 `{literal: ...}` 或 `{from: ...}` |
-| when | 受控 `exists/equals` 判断，不执行脚本 |
-| foreach | 上游数组引用、稳定 itemKey 字段、并发上限 |
-| formSchemaRef/view | wait_input 的表单合同及可选视图 |
-
-`from` 格式为 `input#/field`、`steps/<key>#/result/field` 或批量步骤内 `item#/field`。不支持任意对象遍历、代码执行、隐式字符串插值。必须显式声明使用的上游依赖；不存在字段视为错误，不静默传空值。
-
-### 5.2 流程片段
-
-```json
-{
-  "steps": [
-    {
-      "key": "analysis",
-      "type": "operation",
-      "operation": "video-localization.analyze",
-      "dependsOn": [],
-      "inputs": { "sourceResourceId": { "from": "input#/sourceResourceId" } }
-    },
-    {
-      "key": "replacements",
-      "type": "wait_input",
-      "dependsOn": ["analysis"],
-      "formSchemaRef": "schemas/replacements.json",
-      "view": "replacement-editor"
-    },
-    {
-      "key": "generation",
-      "type": "operation",
-      "operation": "video-localization.generate-shot",
-      "dependsOn": ["analysis", "replacements"],
-      "foreach": {
-        "from": "steps/analysis#/result/shots",
-        "itemKey": "/shotId",
-        "maxConcurrency": 2
-      },
-      "inputs": {
-        "shot": { "from": "item#" },
-        "replacements": { "from": "steps/replacements#/result" }
-      }
-    }
-  ]
-}
-```
-
-此片段需要真实 analyze/generate-shot 操作与表单 Schema，不能单独作为可安装包。并发值 2 只是例子，最终取插件请求、用户配额、模型和宿主限制的最小值。
-
-批量项必须有稳定 itemKey；重复 key 拒绝。后续聚合结果按输入顺序发布，不按任务完成顺序重排镜头。首期条件跳过产生 skipped，依赖跳过值必须有明确缺省映射，否则阻塞并返回数据依赖错误。
-
-### 5.3 用户输入与派生运行
-
-用户操作节点时传 runId、inputRequestId、runRevision、inputRevision 和 values。后端验证 Schema、资源归属和当前等待步骤，原子保存并推进。网络重复提交返回首次结果；同键不同内容冲突。
-
-修改已提交方案使用 derive：生成新 runId，保存 parentRunId，只复用经摘要验证未受影响的输出。不会在已成功的旧运行中覆盖历史数据。重生成收费镜头仍需符合现有授权范围。
-
-## 6. 画布与界面接入
-
-### 6.1 读取与修改
-
-先读取真实画布和选区、获取 snapshotHash，再通过宿主命令操作。首期沿用后端已开放的 add/update/connect 和结构化分镜/批量表动作，不开放任意 metadata、删除或媒体 URL。
-
-插件 View 按钮绑定操作全名或宿主输入动作。输出应用到已有节点需要校验版本；发生冲突可新建结果节点。布局、分组、视口聚焦等能力以 SDK catalog 为准，不能仅凭前端类型判断后端可执行。
-
-### 6.2 标准组件
-
-已提供 `table/v1`、`entity-cards/v1`、`mapping-editor/v1`、`media-compare/v1`、`key-value/v1`；待输入表单复用原宿主控件，未单独注册 form/v1 或 progress/v1。collectionPath 用于集合，fields 的 path 为 JSON Pointer。媒体组件只读取宿主资源 ID。输入视图须匹配 formSchemaRef，且只能使用 key-value/mapping-editor。命名动作限定 editor.focus、result.continue、input.submit，分别复用在线画布和既有输入 API，不提供任意脚本。
-
-没有画布时结果可在 Agent 卡片或应用面板展示；纯技能和素材查询不得要求创建临时画布。用户关页面后后台流程继续；纯浏览器编辑功能必须标记 executionEnvironment=browser，并禁止被离线 Pipeline 当作已完成。
-
-## 7. 内部接口与实施状态
-
-以下均为登录态内部 API，不是对外开放平台。P02 实现操作检索/描述/调用、Run 查询、批准与取消；P04 实现连接管理及受控 resume。输入、SSE、派生和分页大结果仍是后续目标。不覆盖现有 `/api/plugins`、`/api/agent` 或 `/api/creation-runs`。
-
-P03 新增 `/api/plugin-canvases/:id/snapshot` 和 Run 的 `viewId` 查询参数；投影继续复用已有调用与审批接口，不新增一套执行器。下面表格同时包含未来接口，只有上述已实现路径可实际调用。
+只有 manifest.json 必需，其余按贡献使用。Manifest 使用 `yingce.plugin/v3`，包含 id、version、publisher、requires、permissions、dependencies、contributes。可用贡献键为 skills、operations、views、canvasBlueprints、connectors、pipelines。
+
+生成模板是可复制的最小完整示例。权威 Schema 和验证器在 `backend/internal/plugins/contracts/`；完整模板在 `backend/internal/plugins/authoring/templates/`。不要从旧设计稿复制未实施的字段。
+
+限制：ZIP ≤48 MiB、文件数 ≤256、单文件 ≤16 MiB、解压总量 ≤64 MiB；Manifest/JSON ≤512 KiB、JSON 深度 ≤32。内容必须 UTF-8，拒绝重复 JSON 字段、未识别字段、越界引用、路径穿越、符号链接和任意脚本。Schema 是受支持子集，不支持任意远程 $ref。
+
+发布不可原地改写：相同 id/version 的不同内容会冲突，必须增加版本。新增权限须由用户重新确认；新增发布不会自动切换用户当前版本或历史 Run。依赖版本、有效授权和能力可用性由服务器复核。
+
+publisher 是管理员受控安装下的归属标识，不是签名认证；填写“官方作者”不会得到可信执行权限。公开作者注册、签名审核、社区市场尚未开放。
+
+## 4. 安装、启用与 Agent 使用
+
+1. 管理员在 `/admin/plugins` 上传 .yingce-plugin；普通用户不能安装服务器包。
+2. 用户在 `/plugins` 选择应用的发布版本并启用，核对请求权限。资源模板需要 media.read、resource.create、canvas.read、canvas.write。
+3. 检查“我的技能”中出现插件技能；模板默认 explicit，用户在 Agent 中明确选择后使用。
+4. 上传就绪视频，在画布引用它并选择技能，要求“检查这段视频的已有信息，确认后保存到画布”。
+5. Agent 取得真实 resourceId，描述并调用检查操作；未知字段应说明未记录。nodeId、文件名不能代替资源 ID。
+6. 保存快照、投影到画布分别走宿主批准。未批准前不写入，Agent 不自批；无画布时可以只检查和保存结果。
+
+Agent 通过通用 operation_search / operation_describe / operation_invoke 使用插件，而不是每个插件新增工具名。已启用不意味着每项 Operation 当前都有权限；调用前描述操作，使用服务器返回的可用性和合同，不能凭技能正文推定。
+
+宿主固定当前发布、上下文和授权。首页与画布共享会话属于 P08；插件不创建第二套聊天记录。用户输入、批准和任务状态保存在后台，不依赖 Agent 一次回复或浏览器持续打开。
+
+## 5. Operation 与画布合同
+
+Host 操作声明 inputSchemaRef、outputSchemaRef、requiredPermissions、effects、context、execution；模板展示确切字段。
+
+当前三个可信 Host Adapter：
+
+| Adapter | 权限 | 实际作用 |
+| --- | --- | --- |
+| resource.inspect | media.read | 读取当前用户就绪视频的已记录元数据，返回摘要 |
+| resource.snapshot | media.read、resource.create | 携带上次读取的 expectedDigest，批准后保存结构化结果 |
+| canvas.blueprint.instantiate | canvas.read、canvas.write | 将有效结果或受支持输入绑定为标准画布节点，批准后写入 |
+
+画布是结果与交互入口，不是后台工作流状态机。投影前读取 canvas snapshotHash；提交 runId、resultDigest、blueprintId、snapshotHash、instanceKey。重复投影保留同一 instanceKey，只有用户明确要求另建时才换值。画布变化导致冲突时刷新快照、重新请求批准，不覆盖用户编辑、不重新执行原业务。
+
+P07 支持 key-value、表格、实体卡片、媒体对比、输入/映射编辑等标准视图及受控蓝图动作；精确组件和节点合同以[对应样例与验收](../../../plans/qimu-plugin-p07-acceptance.md)为准。不能通过包注入 React/JS 组件或读写任意画布字段。
+
+## 6. 外部 API：先验证协议，再验证模型效果
+
+参考 `backend/internal/plugins/contracts/testdata/remote-helper-p04/`。该样例只验证同步回显、异步任务与图片导入，不具备真实视频处理能力。
+
+当前 HTTP Connector 支持固定 JSON POST 提交、GET 轮询/按提交键查询、POST/DELETE 取消；鉴权为 none、bearer 或自定义鉴权头。请求映射支持 literal、input 字段、已授权 resource 字段，响应使用 JSON Pointer；路径变量仅限受控 jobId / submissionKey。
+
+用户在插件连接面板配置地址与凭据，凭据由宿主加密存储。禁止写入包、技能、提示词或公开结果。初始 URL、拨号及下载重定向均校验出站范围。默认禁止私网，隔离开发环境确需本地演示时按 P04 文档精确放行，不使用宽泛白名单。
+
+单次请求最多 8 个输入资源、1 个媒体产物；请求/响应 JSON ≤256 KiB，发布结果 ≤64 KiB，下载受资源策略及 64 MiB 上限约束。音视频导入依赖 ffprobe。较长短剧整集、多产物或大体积深度视频需要先评估拆分、压缩或宿主扩展，不能仅凭“API 可调用”承诺整集处理。
+
+上游必须明确幂等支持、保存窗口、任务查询、结果有效期、取消语义和费用。提交不明时暂停核实；导入失败只恢复导入，不能重新生成。平台服务费与供应商使用用户 Key 的费用分别说明。OAuth、Webhook、任意 multipart、流式 API、多媒体产物批量导入均未开放；必要时由独立服务适配成当前合同。
+
+一键出海、深度估计、人物动作/运镜还原的真实模型效果仍需单独接入验收，Hypit 不属于当前依赖。
+
+## 7. 持久流程、用户输入和批次
+
+从 `pipeline-helper-p05`、`batch-helper-p06` 和 `canvas-helper-p07` 示例逐步增加贡献：
+
+- Pipeline 持久执行本包操作，支持 wait_input；草稿保存与正式提交是不同动作，提交带 revision 和幂等键。
+- P06 支持受控 DAG、when/foreach、稳定 itemKey、有序结果、批次精确批准、并发与预算限制。
+- 派生会创建新 Run，显式复用有效的成功结果；用户更改输入不能重写历史运行。
+- P07 把待输入和结果展示到画布；删除节点不等于取消后台 Run，操作仍须经过运行权限校验。
+- 持久执行不代表无限重试；提交未知、权限变化、连接异常和预算不足必须保留真实状态。
+
+每个流程最多 64 步、最多 256 项、并发上限 8；实际可用并发还受用户、连接与平台限制。不要把应用工作台配置当成 Pipeline 字段，workbenches / recipes / objectTypes 尚未开放。
+
+## 8. 当前 HTTP 接入面
+
+以下路径带 `/api` 前缀，使用启幕登录身份及对象归属校验；它们是当前产品 API，不是已开放的第三方机器身份 API。成功响应使用 `{code,data,msg}`，失败还可能包含 reason；HTTP 200 也必须检查 code。
 
 | 方法与路径 | 用途 |
 | --- | --- |
-| GET `/api/plugin-operations?q=&cursor=` | 检索当前用户可发现的操作摘要及可用性 |
-| GET `/api/plugin-operations/:pluginId/:operationId?releaseId=` | 读取完整合同 |
-| POST `/api/plugin-invocations` | 校验并调用；必要时返回等待审批的运行 |
-| GET `/api/plugin-runs/:id` | 获取状态、步骤摘要、待输入/审批、结果及投影状态 |
-| POST `/api/plugin-runs/:id/inputs/:inputRequestId` | 提交结构化输入 |
-| POST `/api/plugin-runs/:id/approvals/:approvalId` | 用户批准或拒绝；Agent 不可自行批准 |
-| POST `/api/plugin-runs/:id/resume` | 继续暂停运行；不能绕过缺输入或待审批 |
-| POST `/api/plugin-runs/:id/cancel` | 持久化取消意图并取消子任务 |
-| POST `/api/plugin-runs/:id/derive` | 修改输入后派生运行 |
-| GET `/api/plugin-runs/:id/events?after=` | SSE 重放 |
-| GET `/api/plugin-runs/:id/results/:resultId?cursor=` | 分页读取结果 |
-| GET/PUT `/api/plugin-connections` | 当前用户连接列表/保存新修订（P04 已实现） |
-| PATCH `/api/plugin-connections/:id` | 更新连接配置；服务端控制 secret 写入及脱敏返回 |
+| POST /api/plugins | 管理员上传二进制包或 multipart 的 file 字段 |
+| GET /api/plugins/applications | 用户可见应用、发布与当前授权状态 |
+| PUT /api/plugins/applications/:id/activation | releaseId、enabled、grantedPermissions、revision |
+| PUT /api/admin/plugins/applications/:id | 管理员 availability / uninstall / revoke，带最新 revision |
+| GET /api/plugin-operations | q、cursor、hostSurface、canvasId、projectId；返回 operations/nextCursor |
+| GET /api/plugin-operations/:pluginId/:operationId | releaseId 和上下文，查询实际合同与可用性 |
+| POST /api/plugin-invocations | operation、releaseId、input、可选 context；副作用携带 Idempotency-Key |
+| GET /api/plugin-runs | 用户运行历史，精确筛选字段见 handler/plugin_pipeline.go |
+| GET /api/plugin-runs/:id | 运行、结果、批准、输入；可选 viewId |
+| POST /api/plugin-runs/:id/approvals/:approvalId | decision、revision，必须由用户决定 |
+| PUT /api/plugin-runs/:id/inputs/:inputId | mode、value、revision，提交携带幂等键 |
+| GET /api/plugin-runs/:id/events | SSE，Last-Event-ID 或 after 为递增事件序号 |
+| POST /api/plugin-runs/:id/cancel | 停止请求，外部任务取消以供应商确认状态为准 |
+| POST /api/plugin-runs/:id/resume | revision、action、按需 providerJobId |
+| POST /api/plugin-runs/:id/derive | 创建派生运行，字段见 handler/plugin_pipeline.go |
+| GET /api/plugin-runs/:id/batch-quote | 当前批次报价与授权范围 |
+| POST /api/plugin-runs/:id/batch-approval | 批准当前报价，不授权未知后续批次 |
+| GET /api/plugin-connections | 当前用户连接及状态，不返回明文凭据 |
+| PUT /api/plugin-connections | 保存连接与不可变修订；不是 PATCH /:id |
+| GET /api/plugin-canvases/:id/snapshot | 投影前取得实际画布快照 |
+| GET /api/plugin-batch-diagnostics | 当前用户范围内的批次诊断 |
 
-创建调用体示例：
+批准、输入、派生和恢复正文以 `web/src/services/api/plugin-operations.ts` 及后端 handler 为准；若文件调整，直接查找对应路由定义。结果读取使用 Run 接口，不存在设计稿中的 /results/:resultId 分页接口。SSE 断线重连保留事件游标并刷新 Run 快照，不能把 runId 当游标。
 
-```json
-{
-  "operation": "resource-helper.inspect-video",
-  "releaseId": "<从目录取得的真实发布ID>",
-  "input": { "resourceId": "<真实资源ID>" },
-  "context": { "canvasId": "<可选真实画布ID>" }
-}
-```
+管理员价格使用 GET /api/admin/plugin-operation-prices/:releaseId/:operationId 与 PUT /api/admin/plugin-operation-prices。孤立包清理必须先 POST /api/admin/plugins/applications/orphans/preview 再由管理员决定 prune，不能用它替代卸载。
 
-示例尖括号是说明占位符，实际调用必须替换。HTTP 写请求使用 `Idempotency-Key`；Agent 侧由宿主按 agentRunId/toolCallId 生成稳定键，不要求模型生成。读取操作返回 `kind=inline/result`；持久调用返回 `kind=run/runId/status`。异步接收可用 HTTP 202 + `{code:0,data,msg}`，业务失败按现有 AppError 返回对应 HTTP 状态及 `reason`。
+目前没有单独发布 JS SDK 或能力发现服务；已有操作搜索、描述、模板和真实服务合同就是接入入口。对外 API Key、OAuth 应用、Webhook、外部系统主动调度启幕另行设计。
 
-同一个调用键只接受同一规范输入、操作版本和作用域。身份从登录上下文读取；context 只是目标声明，必须查实际归属。客户端不得提交授权状态、价格、credentialRef 或有效权限列表。
+## 9. 升级、停用、恢复和诊断
 
-SSE 使用单 run 单调 sequence 作为事件 ID；支持 Last-Event-ID/after。连接断开不取消运行。事件过期返回需刷新快照的明确原因，不能假装从头完整重放。事件类型至少包括 run.created、step.started、step.completed、input.requested、approval.requested、result.ready、projection.conflict、run.completed、run.failed、run.cancelled。
+先在隔离环境验证新包，再让管理员上传，最后选择测试用户切换。平台安装不自动给所有用户授权；当前没有完整的公开市场或用户灰度规则引擎。
 
-### 7.1 可诊断错误
+升级前记录插件 ID、发布版本、packageDigest、授权和依赖；相同版本内容不同必须重新发版本。问题版本可停止平台可用性或撤回指定发布；uninstall 为逻辑卸载，不删除历史运行/引用资产。撤回不可作为可随意恢复的临时开关。
 
-| reason | 处理 |
-| --- | --- |
-| plugin_disabled / plugin_revoked | 查看启用或管理员策略，不自动切换插件 |
-| plugin_version_conflict | 获取安装版本；运行中不能静默升级 |
-| plugin_dependency_missing | 说明缺失依赖，不自动安装 |
-| operation_input_invalid | 修正 Schema 指出的字段 |
-| operation_unavailable | 展示具体能力限制 |
-| connection_unconfigured | 提示配置指定连接，不询问模型上下文中的密钥 |
-| scope_forbidden | 检查资源归属与范围，不能换默认用户重试 |
-| approval_required / quote_changed | 打开对应授权卡片 |
-| upstream_submission_unknown | 查询上游或人工核实，禁止直接重发 |
-| upstream_output_invalid | 保存诊断，不能发布成功结果 |
-| projection_conflict | 保留成功结果，重新选择目标 |
-| run_revision_conflict | 刷新当前输入与进度，保留用户草稿 |
+停用阻止新操作，不等于撤销已经发给供应商的任务。逐个核对在途 Run/Task、批准、平台预留费与供应商账单；保留 Worker、数据库、插件存储与加密密钥以处理原任务。全局 CANVAS_APPLICATION_PLUGINS_ENABLED=false 可阻断安装/启用及新操作准入，但不是“远程任务已取消”的证明。
 
-## 8. 深度视频插件的输出合同
+出现冲突先读取最新 revision/快照，不用更换幂等键盲试。提交未知只使用服务允许的 attach_job、retry_safe、retry_poll 或 retry_import；不支持的恢复动作会被拒绝。供应商幂等窗口过期必须人工核实。
 
-深度预览和控制数据分别输出，建议 Schema 身份 `media.video-depth/v1`。字段至少包含：
+排查时收集 pluginId、releaseId、包摘要、runId、taskId、当前状态、reason、revision 和脱敏日志，结合运行卡、任务中心和批次诊断。不要导出凭据、签名 URL、原始请求正文；当前未提供插件专属“一键诊断 ZIP”。
 
-| 字段 | 含义 |
-| --- | --- |
-| sourceResourceId/sourceDigest | 对应原始视频和内容摘要 |
-| previewResourceId | 可选灰度/伪彩预览，仅供观看 |
-| controlResourceId/format | 真正供模型使用的数据及格式 |
-| width/height/frameCount | 空间与帧数量 |
-| timeBase/frameMapping | 对齐原视频的时间基准；变帧率时逐帧时间戳，不只给 FPS |
-| depthType/units | relative 或 metric；相对深度不能假称米 |
-| nearConvention/normalization/invalidValue | 近远方向、归一化方法、无效值编码 |
-| model/provider/version | 来源与可复现范围 |
+生产迁移与二进制回退按[收尾验收与运维清单](../../../plans/qimu-plugin-closeout-acceptance.md)演练。保留数据库、资源、插件归档和 .settings-key 的一致备份；旧 Worker 不认识新任务时不能直接混用或降级。
 
-预览视频压缩、颜色映射或 8 bit 量化可能损失控制信息，不能将其默认等同于原始深度。下游必须声明接受的控制 Schema 和格式，必要转换是单独有损/无损操作。姿态、遮罩、光流、相机轨迹各有独立 Schema，不伪装成 depth。
+## 10. 接入完成标准
 
-## 9. 作者开发与发布流程
+开发者应独立完成：新 ID 建包 → 离线校验 → 管理员安装 → 用户启用授权 → Skill 可见 → Operation 描述/调用 → 需要时批准 → 真实结果读取 → 按需画布投影 → 升级不篡改历史 → 停用后拒绝新调用且历史可读。
 
-1. 查宿主操作及视图目录，选择已支持能力与最低 hostApi 范围。
-2. 编写 Manifest、输入输出 Schema、操作与技能；需要时加入流程和视图。
-3. 当前可在 backend 运行 `go run ./cmd/plugin-contract -dir <已展开插件目录>` 校验；加 `-out <新文件.yingce-plugin>` 打包，加 `-version <正式版本>` 可仅覆盖产物版本。生成器拒绝覆盖已有文件。离线工具不安装、不执行、不校验真实账号所有权；服务端安装执行额外的归属/依赖/技能存储校验。
-4. 管理员在开发实例导入包；配置用户连接与权限。使用 Mock 验证协议机制，再用真实服务完成验收。
-5. 通过 Agent 和界面两种入口执行同一操作，检查状态、结果与权限一致。
-6. 验证重启、重复提交、取消、版本升级、用户切换和缺资源。
-7. 生成 `.yingce-plugin` ZIP，manifest.json 位于根目录；版本与内容摘要固定。平台 SDK 实施后提供可重复打包和校验入口。
-8. 在受控目录发布；更新增加版本，禁止同版本替换内容。发布者认证与公开社区分发另行实施。
-
-诊断包记录 plugin/release/run/step/task/trace ID、合同摘要、阶段和机器可读原因；默认不含凭证、签名 URL 或原始敏感业务正文。
-
-## 10. 接入验收清单
-
-- 包内所有路径、ID、依赖及 Schema 引用有效；未经支持的运行时明确拒绝。
-- 插件停用、权限不足和错误归属都无法执行；Skill 指令不能改变这些结果。
-- 工具 Schema 对 Agent、表单和后端一致；未知参数拒绝。
-- 模型选择与报价由宿主实查，用户未授权时没有收费副作用。
-- HTTP 超时、未知状态、临时结果地址过期分别处理；不会把上游完成等同于资源已保存。
-- 无画布工具可独立运行；需要画布的操作明确检查 scope。
-- 刷新和重启可恢复；已知作业重试不重复提交，提交不明时按上游能力核实或暂停；取消状态如实反映上游能力。
-- 成功结果可追踪输入/版本；局部修改产生派生结果；升级不改变在途流程。
-- 示例插件不引用 qimu 私有 Store/service/数据库；新增供应商不修改 Agent 主循环。
-- Mock 测试通过只代表协议机制通过，真实媒体质量和服务费用另有验收记录。
+本次提供自动化真实宿主验证；“新作者未参与平台实现、只读文档即可接入”的人工体验仍需用户或另一位开发者验收。公开社区、工作台组合和真实视频供应商质量不包含在该结论中。
