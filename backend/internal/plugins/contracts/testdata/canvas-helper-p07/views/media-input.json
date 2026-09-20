@@ -1,0 +1,15 @@
+{
+  "id": "media-input",
+  "component": "key-value/v1",
+  "schemaRef": "schemas/media.json",
+  "fields": [
+    {
+      "path": "/before",
+      "label": "原媒体"
+    },
+    {
+      "path": "/after",
+      "label": "替换媒体"
+    }
+  ]
+}

@@ -408,6 +408,14 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 	}
 	for _, v := range asArray(contributes["canvasBlueprints"]) {
 		bp := docs[v.(map[string]any)["ref"].(string)]
+		raw, _ := json.Marshal(bp)
+		var definition CanvasBlueprint
+		if err := json.Unmarshal(raw, &definition); err != nil {
+			return err
+		}
+		if err := ValidateBlueprint(definition, files); err != nil {
+			return err
+		}
 		keys := map[string]bool{}
 		for _, n := range bp["nodes"].([]any) {
 			node := n.(map[string]any)

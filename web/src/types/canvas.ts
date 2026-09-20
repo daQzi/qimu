@@ -21,6 +21,7 @@ export type ViewportTransform = {
 
 export enum CanvasNodeType {
 	PluginResult = "plugin-result",
+	PluginInput = "plugin-input",
     Image = "image",
     Text = "text",
     Drawing = "drawing",
@@ -202,7 +203,8 @@ export type CanvasSkillSnapshot = {
 };
 
 export type CanvasNodeMetadata = {
-	pluginResult?: { runId: string; digest: string; releaseId: string; viewId: string; projectionId: string; bindingKey: string };
+	pluginResult?: { runId: string; digest: string; releaseId: string; viewId: string; projectionId: string; bindingKey: string; canvasId?: string; actions?: string[] };
+	pluginInput?: { runId: string; inputRequestId: string; stepKey: string; digest: string; releaseId: string; viewId: string; projectionId: string; bindingKey: string; canvasId: string; actions?: string[] };
     /** Credential-free editable generation contract; submitted recipes live with tasks. */
     generationSpec?: GenerationSpec;
     /** Namespaced extension ownership for nodes contributed by a unified plugin. */
@@ -493,7 +495,7 @@ export type CanvasConnection = {
     toHandleId?: string;
     fromAnchorRatio?: number;
     toAnchorRatio?: number;
-    relation?: "storyboard-output" | "storyboard-asset-reference" | "batch-output";
+    relation?: "storyboard-output" | "storyboard-asset-reference" | "batch-output" | "plugin-flow";
     storyboardRowId?: string;
 };
 

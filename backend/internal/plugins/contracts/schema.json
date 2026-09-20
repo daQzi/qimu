@@ -456,12 +456,13 @@
         "component": {
           "type": "string",
           "enum": [
-            "key-value/v1"
+            "key-value/v1", "table/v1", "entity-cards/v1", "mapping-editor/v1", "media-compare/v1"
           ]
         },
         "schemaRef": {
           "$ref": "#/$defs/path"
         },
+        "collectionPath": { "type": "string", "pattern": "^/", "maxLength": 240 },
         "fields": {
           "type": "array",
           "items": {
@@ -510,7 +511,7 @@
                 "$ref": "#/$defs/id"
               },
               "nodeType": {
-                "const": "plugin-result"
+                "enum": ["plugin-result", "plugin-input"]
               },
               "title": {
                 "type": "string",
@@ -538,10 +539,14 @@
                 "additionalProperties": false
               },
               "binding": {
-                "const": "result"
+                "enum": ["result", "input"]
               },
               "view": {
                 "$ref": "#/$defs/id"
+              },
+              "actions": {
+                "type": "array", "maxItems": 3, "uniqueItems": true,
+                "items": { "enum": ["editor.focus", "input.submit", "result.continue"] }
               }
             },
             "required": [
@@ -559,7 +564,11 @@
         },
         "connections": {
           "type": "array",
-          "maxItems": 0
+          "maxItems": 19,
+          "items": {
+            "type": "object", "required": ["from", "to"], "additionalProperties": false,
+            "properties": { "from": { "$ref": "#/$defs/id" }, "to": { "$ref": "#/$defs/id" } }
+          }
         }
       },
       "required": [

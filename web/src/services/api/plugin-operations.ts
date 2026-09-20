@@ -3,9 +3,9 @@ import type { PluginInvocation, PluginInvocationContext, PluginOperation, Plugin
 
 export type OperationDescription = { operation: string; releaseId: string; contractHash: string; definition: PluginOperation; schemas: Record<string, unknown>; available: boolean; reason?: string; resultView?: PluginResultView };
 export type InvocationOutput = { kind: "inline"; result: unknown; digest: string } | { kind: "run"; runId: string; status: string; revision: number; approvalId: string };
-export type PluginResultView = { id: string; component: "key-value/v1"; fields: { path: string; label: string }[] };
-export type PluginCanvasAction = { operation: string; releaseId: string; blueprintId: string };
-export type PluginInputRequest = { id: string; runId: string; stepKey: string; revision: number; status: string; schema: Record<string, unknown>; draft?: unknown; submitted?: unknown };
+export type PluginResultView = { id: string; component: "key-value/v1" | "table/v1" | "entity-cards/v1" | "mapping-editor/v1" | "media-compare/v1"; collectionPath?: string; fields: { path: string; label: string }[] };
+export type PluginCanvasAction = { operation: string; releaseId: string; blueprintId: string; inputRequestId?: string };
+export type PluginInputRequest = { id: string; runId: string; stepKey: string; revision: number; status: string; schema: Record<string, unknown>; view?: PluginResultView; draft?: unknown; submitted?: unknown };
 export type PluginRunView = {
     id: string;
     operation: string;

@@ -1,0 +1,65 @@
+{
+  "type": "object",
+  "properties": {
+    "canvasId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "sourceRunId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "blueprintId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "projectionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "bindings": {
+      "type": "object",
+      "properties": {
+        "mapping": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "media": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "table": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "cards": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "compare": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "canvasId",
+    "sourceRunId",
+    "blueprintId",
+    "projectionId",
+    "bindings"
+  ],
+  "additionalProperties": false
+}

@@ -2,6 +2,7 @@ import { Button, Input, Select } from "antd";
 import { useRef, useState } from "react";
 import { updatePluginInput, type PluginInputRequest, type PluginRunView } from "@/services/api/plugin-operations";
 import { useUserStore } from "@/stores/use-user-store";
+import { PluginMappingEditor } from "./plugin-mapping-editor";
 
 // Primitive fields have ordinary controls. Structured/ref schemas use explicit
 // JSON, with the same authoritative server validation; no guessed defaults.
@@ -10,16 +11,19 @@ export function PluginInputForm({ run, input, onUpdated }: { run: PluginRunView;
     const [text, setText] = useState(JSON.stringify(input.draft ?? {}, null, 2));
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
+    const [jsonMode, setJSONMode] = useState(false);
     const attempt = useRef<{ signature: string; key: string } | undefined>(undefined);
     const props = input.schema.properties as Record<string, Record<string, unknown>> | undefined;
     const simple = input.schema.type === "object" && props && !input.schema.$ref && Object.values(props).every((p) => ["string", "boolean", "number", "integer"].includes(String(p.type)) && !p.$ref);
-    const parsed = (() => {
+    const parsedValue: unknown = (() => {
         try {
-            return JSON.parse(text) as Record<string, unknown>;
+            return JSON.parse(text);
         } catch {
-            return {};
+            return undefined;
         }
     })();
+    const objectValue = !!parsedValue && typeof parsedValue === "object" && !Array.isArray(parsedValue);
+    const parsed = (objectValue ? parsedValue : {}) as Record<string, unknown>;
     const required = Array.isArray(input.schema.required) ? input.schema.required : [];
     const field = (name: string, value: unknown) => {
         const next = { ...parsed };
@@ -46,11 +50,18 @@ export function PluginInputForm({ run, input, onUpdated }: { run: PluginRunView;
     return (
         <section aria-label="流程输入" className="space-y-2">
             <p>请补充：{input.stepKey}。提交内容后，收费或外部操作仍需单独确认。</p>
-            {simple ? (
+            {input.view?.component === "mapping-editor/v1" && (
+                <Button size="small" aria-pressed={jsonMode} onClick={() => setJSONMode(!jsonMode)}>
+                    {jsonMode ? "表格编辑" : "JSON 编辑"}
+                </Button>
+            )}
+            {input.view?.component === "mapping-editor/v1" && !jsonMode ? (
+                <PluginMappingEditor value={parsedValue} schema={input.schema} view={input.view} disabled={busy} onChange={(value) => setText(JSON.stringify(value, null, 2))} />
+            ) : simple && !jsonMode && objectValue ? (
                 Object.entries(props).map(([name, schema]) => (
                     <label key={name} className="block space-y-1">
                         <span>
-                            {String(schema.title || name)}
+                            {input.view?.fields.find((field) => field.path === `/${name.replace(/~/g, "~0").replace(/\//g, "~1")}`)?.label || String(schema.title || name)}
                             {required.includes(name) ? " *" : ""}
                         </span>
                         {Array.isArray(schema.enum) || schema.type === "boolean" ? (

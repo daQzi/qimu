@@ -1,0 +1,16 @@
+{
+  "id": "cards",
+  "component": "entity-cards/v1",
+  "schemaRef": "schemas/result.json",
+  "collectionPath": "/mappings",
+  "fields": [
+    {
+      "path": "/source",
+      "label": "原始内容"
+    },
+    {
+      "path": "/target",
+      "label": "替换内容"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "place",
+  "description": "把等待输入或成功结果投影到画布。以 canvasActions 的 blueprintId/inputRequestId 或 resultRef.digest 绑定；先读取真实 canvas snapshotHash。需要画布审批，不调用模型。",
+  "inputSchemaRef": "schemas/projection-input.json",
+  "outputSchemaRef": "schemas/projection-output.json",
+  "requiredPermissions": [
+    "canvas.read",
+    "canvas.write"
+  ],
+  "effects": [
+    "draft_write"
+  ],
+  "context": {
+    "requiresCanvas": true,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "host",
+    "adapter": "canvas.blueprint.instantiate",
+    "mode": "inline"
+  }
+}

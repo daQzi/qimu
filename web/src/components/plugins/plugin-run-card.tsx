@@ -6,14 +6,15 @@ import { PluginResultValues } from "./plugin-result-values";
 import { PluginCanvasSave } from "./plugin-canvas-save";
 import { PluginRemoteStatus } from "./plugin-remote-status";
 import { PluginInputForm } from "./plugin-input-form";
+import { requestPluginEditorAction } from "@/lib/plugins/plugin-editor-actions";
 import { PluginBatchControls } from "./plugin-batch-controls";
 import { resumePluginRun } from "@/services/api/plugin-remote";
 import { apiBaseURL } from "@/services/api/request";
 import { refreshCanvasAfterAgent, saveRemoteUserDataNow } from "@/services/user-data-sync";
 
-export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { runId: string; canvasId?: string; expectedDigest?: string; viewId?: string }) {
+export function PluginRunCard({ runId, canvasId, expectedDigest, viewId, inputRequestId, expectedReleaseId }: { runId: string; canvasId?: string; expectedDigest?: string; viewId?: string; inputRequestId?: string; expectedReleaseId?: string }) {
     const userID = useUserStore((s) => s.user?.id);
-    const scope = `${userID || ""}:${runId}:${viewId || ""}:${expectedDigest || ""}:${canvasId || ""}`;
+    const scope = `${userID || ""}:${runId}:${viewId || ""}:${expectedDigest || ""}:${canvasId || ""}:${inputRequestId || ""}:${expectedReleaseId || ""}`;
     const currentScope = useRef(scope);
     currentScope.current = scope;
     const [loaded, setLoaded] = useState<{ scope: string; run: PluginRunView }>();
@@ -51,13 +52,15 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
         void getPluginRun(runId, controller.signal, viewId)
             .then((value) => {
                 if (expectedDigest && value.resultRef?.digest !== expectedDigest) throw new Error("结果摘要与节点绑定不符，请重新绑定真实成功结果");
+                if (expectedReleaseId && value.releaseId !== expectedReleaseId) throw new Error("节点发布绑定与运行不符");
+                if (inputRequestId && !value.pipeline?.inputs.some((input) => input.id === inputRequestId && input.runId === runId)) throw new Error("输入请求不属于该运行");
                 if (currentScope.current === scope) setLoaded((current) => (current?.scope === scope && current.run.revision > value.revision ? current : { scope, run: value }));
             })
             .catch((cause) => {
                 if (!controller.signal.aborted && currentScope.current === scope) setError(cause instanceof Error ? cause.message : "读取运行失败");
             });
         return () => controller.abort();
-    }, [scope, runId, refresh, viewId, expectedDigest]);
+    }, [scope, runId, refresh, viewId, expectedDigest, inputRequestId, expectedReleaseId]);
     const act = async (action: "approve" | "reject" | "cancel") => {
         if (!run || busy) return;
         setBusy(true);
@@ -102,6 +105,11 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
                     )}
                     {run.pipeline && (
                         <>
+                            {inputRequestId && run.pipeline.inputs.find((input) => input.id === inputRequestId)?.status === "submitted" && <p role="status">此节点的输入已提交，后台流程将继续；无需重复填写。</p>}
+                            {canvasId && !inputRequestId && run.pipeline.inputs.some((input) => input.status === "pending") && <Button size="small" onClick={() => {
+                                try { requestPluginEditorAction({ command: "editor.focus", canvasId, runId, inputRequestId: run.pipeline!.inputs.find((input) => input.status === "pending")!.id }); }
+                                catch (cause) { setError(cause instanceof Error ? cause.message : "定位失败"); }
+                            }}>定位下一个待填写节点</Button>}
                             <PluginBatchControls
                                 key={scope}
                                 run={run}
@@ -130,7 +138,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
                             </ol>
                             {["waiting_input", "running", "waiting_approval"].includes(run.status) &&
                                 run.pipeline.inputs
-                                    .filter((i) => i.status === "pending")
+                                    .filter((i) => i.status === "pending" && (!inputRequestId || i.id === inputRequestId))
                                     .map((input) => (
                                         <PluginInputForm
                                             key={`${scope}:${input.id}:${input.revision}`}
@@ -171,8 +179,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
                     )}
                     {((run.executionAdapter !== "http" && !run.pipeline) || run.status === "succeeded") && <PluginResultValues value={run.result ?? run.preview} view={run.view} />}
                     {canvasId &&
-                        run.status === "succeeded" &&
-                        run.canvasActions?.map((action) => <PluginCanvasSave key={`${scope}:${action.operation}:${action.blueprintId}`} run={run} canvasId={canvasId} action={action} onCreated={(id) => setProjection({ scope, id })} />)}
+                        run.canvasActions?.map((action) => <PluginCanvasSave key={`${scope}:${action.operation}:${action.blueprintId}:${action.inputRequestId || ""}`} run={run} canvasId={canvasId} action={action} onCreated={(id) => setProjection({ scope, id })} />)}
                     {canvasId && run.executionAdapter === "canvas.blueprint.instantiate" && run.status === "succeeded" && (
                         <Button size="small" onClick={() => void refreshCanvasAfterAgent(canvasId).catch((cause) => setError(cause instanceof Error ? cause.message : "画布同步失败"))}>
                             同步画布结果

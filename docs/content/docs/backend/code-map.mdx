@@ -5,6 +5,8 @@ description: 从产品功能快速定位主要代码入口
 
 # 代码功能地图
 
+插件 P07：`plugins/contracts/presentation.go` 校验命名组件、输入视图与蓝图；`plugins/canvas_actions.go` 提供匹配 Run 当前状态的投影入口。`app/plugin_canvas_projection.go` 在既有画布事务中写输入/结果节点、流程关系线及投影来源。`plugin-input-node-content.tsx` 与运行卡片共用 `PluginInputForm`；`PluginMappingEditor`、`PluginResultValues`、`PluginMediaValue` 渲染标准组件。`plugin-editor-actions.ts` 只承载在线定位/继续对话，画布页面执行选择和预填，不是后台 Adapter。样例与验收见 `docs/plans/qimu-plugin-p07-acceptance.md`。
+
 插件 P06：`internal/plugins/pipeline_batch.go` 负责受控 DAG/foreach 状态，`pipeline_authorization.go` 负责精确批次授权，`pipeline_derive.go` 负责依赖闭包与安全复用；`app/plugin_batch.go` 组合原 Task/Agent 预算与五层并发，`repository/plugin_batch.go` 持久化执行槽和诊断。`PluginBatchControls` 在原运行卡片提供报价/派生操作，不修改插件专属 Agent 主循环。接入与验收见 `docs/plans/qimu-plugin-p06-acceptance.md`。
 
 这是一张入口地图，不罗列所有文件。先找到功能所属层，再沿调用关系阅读。

@@ -201,9 +201,6 @@ func (s *Service) GetRun(userID, id string, viewID ...string) (RunView, error) {
 		view.Result = json.RawMessage(run.ResultJSON)
 		view.ResultRef = &contracts.ResultRef{RunID: run.ID, StepKey: "invoke", Attempt: max(1, run.Attempt), OutputKey: "result", SchemaID: run.Operation + "/result", SchemaVersion: run.ReleaseVersion, Digest: hashBytes([]byte(run.ResultJSON))}
 	}
-	if err := s.decorateRunView(&view, viewID...); err != nil {
-		return RunView{}, err
-	}
 	if run.TaskID != nil {
 		remote, err := s.repo.PluginRemoteForRun(userID, id)
 		if err != nil {
@@ -216,6 +213,9 @@ func (s *Service) GetRun(userID, id string, viewID ...string) (RunView, error) {
 		if err != nil {
 			return RunView{}, err
 		}
+	}
+	if err := s.decorateRunView(&view, viewID...); err != nil {
+		return RunView{}, err
 	}
 	return view, nil
 }

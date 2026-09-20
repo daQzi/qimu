@@ -20,6 +20,7 @@ const DEFAULT_MIN_SIZE = { width: 220, height: 160 } as const;
  */
 const BUILTIN_NODE_TRAITS = {
 	[CanvasNodeType.PluginResult]: { label: "插件结果", icon: <FileText />, minSize: DEFAULT_MIN_SIZE, showInCreateMenu: false, showOutputConnection: false, showInputConnection: false, resourceKind: () => null },
+	[CanvasNodeType.PluginInput]: { label: "插件输入", icon: <FileText />, minSize: DEFAULT_MIN_SIZE, showInCreateMenu: false, showOutputConnection: false, showInputConnection: false, resourceKind: () => null },
     [CanvasNodeType.Image]: {
         label: "图片",
         icon: <ImageIcon />,

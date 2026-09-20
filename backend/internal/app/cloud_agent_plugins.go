@@ -198,7 +198,7 @@ func (s *Service) executeCloudAgentPluginTool(run *model.CloudAgentExecution, st
 			if err != nil {
 				return nil, err
 			}
-			if pending.Status == "waiting_approval" && pending.IdempotencyKey != key {
+			if pending.Status == "waiting_approval" && pending.IdempotencyKey != key && !cloudAgentPendingInputProjection(pending, description.Definition, args.Input) {
 				return nil, &kernel.AppError{Status: 409, Code: 409, Reason: "approval_required", Message: "已有快照等待用户确认，请先处理运行 " + pending.ID}
 			}
 			if pending.Status != "waiting_approval" {
@@ -257,4 +257,22 @@ func (s *Service) executeCloudAgentPluginTool(run *model.CloudAgentExecution, st
 		}
 		return result, nil
 	}
+}
+
+// A parallel pipeline can wait for both user input and a paid child approval.
+// Projecting its exact input is a separate canvas approval, never child authorization.
+func cloudAgentPendingInputProjection(pending plugins.RunView, op contracts.Operation, input map[string]json.RawMessage) bool {
+	if op.Execution.Adapter != "canvas.blueprint.instantiate" || pending.Pipeline == nil {
+		return false
+	}
+	var runID, inputID string
+	if json.Unmarshal(input["runId"], &runID) != nil || json.Unmarshal(input["inputRequestId"], &inputID) != nil || runID != pending.ID {
+		return false
+	}
+	for _, request := range pending.Pipeline.Inputs {
+		if request.ID == inputID && request.Status == "pending" {
+			return true
+		}
+	}
+	return false
 }

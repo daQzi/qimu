@@ -230,7 +230,12 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
             const permissions = new Set<string>();
             p.steps.forEach((step: ObjectValue) => {
                 if (step.type === "wait_input") {
-                    if (step.view) fail("operation_unavailable", "custom input views require P07");
+                    if (step.view) {
+                        const entry = contributions.views?.find((r: ObjectValue) => r.id === step.view);
+                        const view = entry && docs[entry.ref];
+                        if (!view) fail("package_reference_invalid", "input view");
+                        if (view.schemaRef !== step.formSchemaRef || !["key-value/v1", "mapping-editor/v1"].includes(view.component)) fail("contract_invalid", "input view schema/component");
+                    }
                     requireSchema(step.formSchemaRef);
                     return;
                 }
@@ -277,11 +282,24 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         }
     for (const entry of contributions.views ?? []) requireSchema(docs[entry.ref].schemaRef);
     for (const entry of contributions.canvasBlueprints ?? []) {
+        const blueprint = docs[entry.ref];
+        if (blueprint.nodes.length + (blueprint.connections?.length || 0) > 20) fail("contract_invalid", "blueprint exceeds 20 canvas mutations");
         const keys = new Set<string>();
         for (const node of docs[entry.ref].nodes) {
+            if (node.binding !== blueprint.nodes[0].binding) fail("contract_invalid", "one blueprint binds one input request or one successful result");
             if (keys.has(node.key)) fail("contract_invalid", "duplicate blueprint key");
             keys.add(node.key);
             if (!registry.views.has(node.view)) fail("package_reference_invalid", "blueprint view");
+            const view = docs[contributions.views.find((r: ObjectValue) => r.id === node.view).ref];
+            if ((node.nodeType === "plugin-input") !== (node.binding === "input")) fail("contract_invalid", "node and binding kinds differ");
+            if (node.binding === "input" && !["key-value/v1", "mapping-editor/v1"].includes(view.component)) fail("contract_invalid", "input component is not editable");
+            for (const action of node.actions || []) if (action !== "editor.focus" && !(action === "input.submit" && node.binding === "input") && !(action === "result.continue" && node.binding === "result")) fail("contract_invalid", "node action");
+        }
+        const edges = new Set<string>();
+        for (const edge of blueprint.connections || []) {
+            const key = `${edge.from}:${edge.to}`;
+            if (!keys.has(edge.from) || !keys.has(edge.to) || edge.from === edge.to || edges.has(key)) fail("contract_invalid", "invalid blueprint connection");
+            edges.add(key);
         }
     }
     validateUserSchemas(files, docs);

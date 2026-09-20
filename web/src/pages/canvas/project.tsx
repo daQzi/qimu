@@ -34,6 +34,7 @@ import { getNodeSpec } from "@/constant/canvas";
 import { CanvasConfigComposer } from "@/components/canvas/canvas-config-composer";
 import { CanvasConfigNodePanel } from "@/components/canvas/canvas-config-node-panel";
 import { CanvasCloudAgentPanel } from "@/components/canvas/canvas-cloud-agent-panel";
+import { pluginActionNode, type PluginEditorEvent } from "@/lib/plugins/plugin-editor-actions";
 import { CanvasActiveTaskPanel } from "@/components/canvas/canvas-active-task-panel";
 import { CanvasAssetTray } from "@/components/canvas/canvas-asset-tray";
 import { CanvasProjectSidebar } from "@/components/canvas/canvas-project-sidebar";
@@ -1593,6 +1594,23 @@ function InfiniteCanvasPage() {
         setContextMenu,
         focusSelection: fitCanvasSelection,
     });
+
+    useEffect(() => {
+        const handle = (event: Event) => {
+            const action = (event as CustomEvent<PluginEditorEvent>).detail;
+            if (!action || action.canvasId !== projectId || action.userId !== useUserStore.getState().user?.id) return;
+            action.handled = true;
+            const node = pluginActionNode(nodesRef.current, action);
+            if (!node) { action.error = "节点尚未同步或已删除，请同步画布或从运行卡片另建节点。"; return; }
+            focusCanvasNode(node.id);
+            if (action.command === "result.continue") {
+                setAgentPrefillPrompt(`请基于插件运行 ${action.runId} 的成功结果继续分析（画布节点 ${node.id}）。先用 result_read 读取真实结果。`);
+                openAgent();
+            }
+        };
+        window.addEventListener("qimu:plugin-editor-action", handle);
+        return () => window.removeEventListener("qimu:plugin-editor-action", handle);
+    }, [projectId, nodesRef, focusCanvasNode, openAgent]);
 
     const { selectCanvasStyle, applyCanvasStyleAsync, styleApplying } = useCanvasStyleWorkflow({
         canvasId: projectId,

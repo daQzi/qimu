@@ -1,0 +1,21 @@
+{
+  "id": "media-input",
+  "nodes": [
+    {
+      "key": "media",
+      "nodeType": "plugin-input",
+      "title": "media-input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "binding": "input",
+      "view": "media-input",
+      "actions": [
+        "editor.focus",
+        "input.submit"
+      ]
+    }
+  ],
+  "connections": []
+}

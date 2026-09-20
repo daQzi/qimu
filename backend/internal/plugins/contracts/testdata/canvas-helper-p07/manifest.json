@@ -1,0 +1,86 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "canvas-helper",
+  "name": "画布交互示例",
+  "version": "1.0.0",
+  "description": "演示填写替换映射、选择已有媒体、结果表格与对比画布。不分析或生成视频。",
+  "publisher": {
+    "id": "example-publisher",
+    "displayName": "示例作者"
+  },
+  "requires": {
+    "hostApi": "^3.0.0"
+  },
+  "permissions": [
+    "canvas.read",
+    "canvas.write"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "guide",
+        "name": "canvas-guide",
+        "description": "按节点填写内容，展示已有资源对比，不执行媒体生成。",
+        "entry": "skills/guide/SKILL.md",
+        "activation": "auto",
+        "operations": [
+          "canvas-helper.process",
+          "canvas-helper.place"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "process",
+        "ref": "operations/process.json"
+      },
+      {
+        "id": "place",
+        "ref": "operations/place.json"
+      }
+    ],
+    "pipelines": [
+      {
+        "id": "process",
+        "ref": "pipelines/process.json"
+      }
+    ],
+    "views": [
+      {
+        "id": "mapping",
+        "ref": "views/mapping.json"
+      },
+      {
+        "id": "media-input",
+        "ref": "views/media-input.json"
+      },
+      {
+        "id": "table",
+        "ref": "views/table.json"
+      },
+      {
+        "id": "cards",
+        "ref": "views/cards.json"
+      },
+      {
+        "id": "compare",
+        "ref": "views/compare.json"
+      }
+    ],
+    "canvasBlueprints": [
+      {
+        "id": "mapping-input",
+        "ref": "blueprints/mapping-input.json"
+      },
+      {
+        "id": "media-input",
+        "ref": "blueprints/media-input.json"
+      },
+      {
+        "id": "results",
+        "ref": "blueprints/results.json"
+      }
+    ]
+  }
+}

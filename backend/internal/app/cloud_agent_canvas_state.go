@@ -18,7 +18,7 @@ var cloudAgentStructuredProjectors = map[string]cloudAgentStructuredProjector{
 			return nil, nil
 		}
 		out := map[string]any{}
-		for _, key := range []string{"runId", "digest", "releaseId", "viewId", "bindingKey"} {
+		for _, key := range []string{"runId", "digest", "releaseId", "viewId", "bindingKey", "inputRequestId", "stepKey"} {
 			if text, ok := binding[key].(string); ok {
 				out[key] = truncateRunes(text, 160)
 			}

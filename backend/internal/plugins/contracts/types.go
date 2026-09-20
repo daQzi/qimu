@@ -94,17 +94,22 @@ type ResultRef struct {
 }
 
 type ResultView struct {
-	ID        string `json:"id"`
-	Component string `json:"component"`
-	SchemaRef string `json:"schemaRef"`
-	Fields    []struct {
+	ID             string `json:"id"`
+	Component      string `json:"component"`
+	SchemaRef      string `json:"schemaRef"`
+	CollectionPath string `json:"collectionPath,omitempty"`
+	Fields         []struct {
 		Path  string `json:"path"`
 		Label string `json:"label"`
 	} `json:"fields"`
 }
 
 type CanvasBlueprint struct {
-	ID    string `json:"id"`
+	ID          string `json:"id"`
+	Connections []struct {
+		From string `json:"from"`
+		To   string `json:"to"`
+	} `json:"connections,omitempty"`
 	Nodes []struct {
 		Key      string `json:"key"`
 		NodeType string `json:"nodeType"`
@@ -113,8 +118,9 @@ type CanvasBlueprint struct {
 			X float64 `json:"x"`
 			Y float64 `json:"y"`
 		} `json:"position"`
-		Binding string `json:"binding"`
-		View    string `json:"view"`
+		Binding string   `json:"binding"`
+		View    string   `json:"view"`
+		Actions []string `json:"actions,omitempty"`
 	} `json:"nodes"`
 }
 type SkillBinding struct {

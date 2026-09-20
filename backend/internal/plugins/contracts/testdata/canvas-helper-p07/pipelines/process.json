@@ -1,0 +1,34 @@
+{
+  "id": "process",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/result.json",
+  "steps": [
+    {
+      "key": "mapping",
+      "type": "wait_input",
+      "dependsOn": [],
+      "formSchemaRef": "schemas/mapping.json",
+      "view": "mapping"
+    },
+    {
+      "key": "media",
+      "type": "wait_input",
+      "dependsOn": [
+        "mapping"
+      ],
+      "formSchemaRef": "schemas/media.json",
+      "view": "media-input"
+    }
+  ],
+  "outputs": {
+    "mappings": {
+      "from": "steps/mapping#/mappings"
+    },
+    "before": {
+      "from": "steps/media#/before"
+    },
+    "after": {
+      "from": "steps/media#/after"
+    }
+  }
+}

@@ -8,9 +8,10 @@ import (
 )
 
 type CanvasAction struct {
-	Operation   string `json:"operation"`
-	ReleaseID   string `json:"releaseId"`
-	BlueprintID string `json:"blueprintId"`
+	Operation      string `json:"operation"`
+	ReleaseID      string `json:"releaseId"`
+	BlueprintID    string `json:"blueprintId"`
+	InputRequestID string `json:"inputRequestId,omitempty"`
 }
 
 // Presentation is always read from the immutable, hash-verified release.
@@ -64,11 +65,9 @@ func (s *Service) decorateRunView(view *RunView, viewID ...string) error {
 				}
 			}
 		}
-		if view.Status == "succeeded" && op.Execution.Adapter == "canvas.blueprint.instantiate" {
-			for _, bp := range manifest.Contributes.CanvasBlueprints {
-				view.CanvasActions = append(view.CanvasActions, CanvasAction{Operation: manifest.ID + "." + op.ID, ReleaseID: release.ID, BlueprintID: bp.ID})
-			}
-		}
+	}
+	if err := s.decorateCanvasActions(view, files, manifest); err != nil {
+		return err
 	}
 	// Projection receipts are not new business results to recursively project.
 	if strings.HasPrefix(view.ExecutionAdapter, "canvas.") {

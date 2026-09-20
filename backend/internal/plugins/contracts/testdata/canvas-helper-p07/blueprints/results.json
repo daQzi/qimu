@@ -1,0 +1,60 @@
+{
+  "id": "results",
+  "nodes": [
+    {
+      "key": "table",
+      "nodeType": "plugin-result",
+      "title": "table",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "binding": "result",
+      "view": "table",
+      "actions": [
+        "editor.focus",
+        "result.continue"
+      ]
+    },
+    {
+      "key": "cards",
+      "nodeType": "plugin-result",
+      "title": "cards",
+      "position": {
+        "x": 500,
+        "y": 0
+      },
+      "binding": "result",
+      "view": "cards",
+      "actions": [
+        "editor.focus",
+        "result.continue"
+      ]
+    },
+    {
+      "key": "compare",
+      "nodeType": "plugin-result",
+      "title": "compare",
+      "position": {
+        "x": 1000,
+        "y": 0
+      },
+      "binding": "result",
+      "view": "compare",
+      "actions": [
+        "editor.focus",
+        "result.continue"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "table",
+      "to": "cards"
+    },
+    {
+      "from": "cards",
+      "to": "compare"
+    }
+  ]
+}

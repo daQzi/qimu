@@ -310,7 +310,7 @@ paths:
     put:
       tags: [agent]
       summary: 保存输入草稿或提交完整输入
-      description: 草稿不推进流程；submit 必须符合固定 Schema。同键同值重放成功，同键异值或过期 revision 返回 409。提交不代表收费审批。
+      description: 运行卡片及 plugin-input 画布节点共用此接口，runId/inputId 必须匹配当前用户的持久输入请求。草稿不推进流程；submit 必须符合固定 Schema。同键同值重放成功，同键异值或过期 revision 返回 409。提交不代表收费审批；删除画布节点不取消输入或运行。
       parameters:
         - $ref: "#/components/parameters/AgentRunID"
         - {name: inputId, in: path, required: true, schema: {type: string}}
@@ -433,7 +433,7 @@ paths:
     get:
       tags: [agent]
       summary: 读取当前用户的单步或流程运行
-      description: 包含固定发布版本、声明式 view、可选 canvasActions 和 projectionStatus/failureMessage；历史结果读取不授予新调用权限。
+      description: 包含固定发布版本、声明式 view、可选 canvasActions 和 projectionStatus/failureMessage。P07 的 pipeline.inputs[].view 描述输入组件；canvasActions 的 inputRequestId 表示待输入投影，否则表示成功结果投影。组件限 key-value/v1、table/v1、entity-cards/v1、mapping-editor/v1、media-compare/v1，集合视图可用 collectionPath，fields 为 JSON Pointer/label。投影需要 canvas.blueprint.instantiate 的既有审批，输入和结果来源互斥，同次节点与连线合计最多 20 项。历史读取不授予新调用权限。
       parameters:
         - $ref: "#/components/parameters/AgentRunID"
         - {name: viewId, in: query, schema: {type: string}, description: 固定发布中的视图 ID；需与结果 Schema 匹配}

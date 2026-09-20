@@ -8,9 +8,17 @@ const (
 func BuiltinRegistry() *Registry {
 	registry, err := NewRegistry([]Descriptor{
 		{
+			Type: "plugin-input", Version: "1", Label: "插件输入", DefaultWidth: 460, DefaultHeight: 420,
+			Purpose: "填写持久插件输入请求；仅蓝图可绑定 Run/inputRequestId，删除节点不会停止后台运行。",
+			Actions: []string{"input.submit", "editor.focus"}, RequiresPluginResult: true, CanUpdate: true,
+			SummaryFields: []string{"pluginInput"}, DetailFields: []string{"pluginInput"},
+			ProjectionKind: "plugin_result", ProjectionField: "pluginInput",
+			PatchFields: map[string]PatchField{"title": {Path: "title", Kind: patchKindString, Label: "节点名称", Order: 10, MaxRunes: maxAgentNodeTitleRunes}},
+		},
+		{
 			Type: "plugin-result", Version: "1", Label: "插件结果", DefaultWidth: 420, DefaultHeight: 320,
 			Purpose: "展示插件的持久成功结果；通过插件蓝图操作绑定，不能直接编写结果事实。",
-			Actions: []string{"result_read"}, RequiresPluginResult: true, CanUpdate: true,
+			Actions: []string{"result_read", "result.continue", "editor.focus"}, RequiresPluginResult: true, CanUpdate: true,
 			SummaryFields: []string{"pluginResult"}, DetailFields: []string{"pluginResult"},
 			ProjectionKind: "plugin_result", ProjectionField: "pluginResult",
 			PatchFields: map[string]PatchField{"title": {Path: "title", Kind: patchKindString, Label: "节点名称", Order: 10, MaxRunes: maxAgentNodeTitleRunes}},

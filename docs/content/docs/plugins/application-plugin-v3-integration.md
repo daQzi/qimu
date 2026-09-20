@@ -5,10 +5,10 @@ description: 启幕 Agent 应用插件的包合同、操作、技能、远程 AP
 
 # 应用插件 v3 开发与接入指南
 
-> 状态：P00–P05 已验收；P06 增加受控 DAG/when/foreach、精确批次批准与派生运行，待用户验收。画布输入节点和任意代码运行未开放；真实供应商待联调。
+> 状态：P00–P06 已验收；P07 增加画布输入、标准组件与受控交互蓝图，待用户验收。任意代码运行未开放；真实供应商待联调。
 > 本文示例不包含真实服务或密钥。带 `example.invalid` 的地址只说明协议结构；真实模型选择和质量验证属于应用接入工作。
 
-P00 实现离线合同校验，P01 提供安装版本，P02/P03 开放三个可信 Host Adapter，P04 开放 HTTP 单任务，P05 开放顺序 pipelines，P06 开放受控批次。当前已实施合同、限制与示例见 [P06 接入与验收](../../../plans/qimu-plugin-p06-acceptance.md)；下文超出其范围的高级画布与扩展贡献仍为后续目标。旧协议解析器不直接接收 v3，应用包由独立领域服务处理。
+P00 实现离线合同校验，P01 提供安装版本，P02/P03 开放三个可信 Host Adapter，P04 开放 HTTP 单任务，P05 开放顺序 pipelines，P06 开放受控批次，P07 开放标准交互组件。当前已实施合同、限制与示例见 [P07 接入与验收](../../../plans/qimu-plugin-p07-acceptance.md)；下文超出其范围的高级画布与扩展贡献仍为后续目标。旧协议解析器不直接接收 v3，应用包由独立领域服务处理。
 
 P03 开放第三个可信 Host Adapter `canvas.blueprint.instantiate`，见[P03 验收说明](../../../plans/qimu-plugin-p03-acceptance.md)。插件作者通过声明操作、视图、蓝图及技能使用该能力，不需要修改 Agent 主循环。只有新增宿主执行类别时才需要实现并注册新的可信 Adapter。
 
@@ -231,7 +231,7 @@ description: 检查已上传视频的资源信息，不生成、替换或转码�
 }
 ```
 
-HTTP 使用 `POST /api/plugin-invocations` 并带幂等键；按钮可以从 `GET /api/plugin-canvases/:id/snapshot` 获取同一画布摘要。结果只允许来自相同用户和同一发布，跨发布/跨插件结果绑定尚未开放。所有蓝图节点必须为 plugin-result，connections 必须为空；每个节点的视图 Schema 必须接受该成功结果。
+HTTP 使用 `POST /api/plugin-invocations` 并带幂等键；按钮可以从 `GET /api/plugin-canvases/:id/snapshot` 获取同一画布摘要。来源只允许来自相同用户和同一发布。P07 蓝图为同一成功结果的 plugin-result 节点，或同一待输入请求的 plugin-input 节点，不混合不同来源。connections 可引用本模板节点，表示流程展示关系；节点与连线总数不超过 20。输入使用 inputRequestId，结果使用 resultDigest，两者互斥；视图 Schema 必须与来源匹配。具体合同及完整样例见 P07 验收文档。
 
 批准后返回 `canvasId/sourceRunId/blueprintId/projectionId/bindings`。同一 instanceKey 重试返回同一绑定；目标标题、位置、尺寸或结果绑定已变化、节点被删除时返回 projection_conflict。先取消过期审批，再读取新 snapshotHash 重试；只有用户明确要另建时才使用新 instanceKey。冲突不改写成功业务结果，不重新检查或生成媒体。
 
@@ -392,7 +392,7 @@ Pipeline 文件声明 `id/inputSchemaRef/outputSchemaRef/steps/outputs`。首期
 
 ### 6.2 标准组件
 
-拟提供 `form/v1`、`table/v1`、`entity-cards/v1`、`mapping-editor/v1`、`media-compare/v1`、`progress/v1`、`key-value/v1`。仅支持宿主已登记的组件及数据 Schema。
+已提供 `table/v1`、`entity-cards/v1`、`mapping-editor/v1`、`media-compare/v1`、`key-value/v1`；待输入表单复用原宿主控件，未单独注册 form/v1 或 progress/v1。collectionPath 用于集合，fields 的 path 为 JSON Pointer。媒体组件只读取宿主资源 ID。输入视图须匹配 formSchemaRef，且只能使用 key-value/mapping-editor。命名动作限定 editor.focus、result.continue、input.submit，分别复用在线画布和既有输入 API，不提供任意脚本。
 
 没有画布时结果可在 Agent 卡片或应用面板展示；纯技能和素材查询不得要求创建临时画布。用户关页面后后台流程继续；纯浏览器编辑功能必须标记 executionEnvironment=browser，并禁止被离线 Pipeline 当作已完成。
 

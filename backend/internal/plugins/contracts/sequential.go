@@ -60,7 +60,9 @@ func validateSequentialPackage(files PackageFiles, doc map[string]any) error {
 	for _, step := range p.Steps {
 		if step.Type == "wait_input" {
 			if step.View != "" {
-				return invalid("operation_unavailable", "custom input views require P07")
+				if err := ValidateInputView(files, step.View, step.FormSchemaRef); err != nil {
+					return err
+				}
 			}
 			if _, ok := files[step.FormSchemaRef]; !ok || !strings.HasPrefix(step.FormSchemaRef, "schemas/") {
 				return invalid("package_reference_invalid", "input schema")

@@ -16,9 +16,9 @@ describe("节点注册表——覆盖完整性", () => {
         for (const type of ALL_TYPES) expect(getNodeMinSize(type)).toBeDefined();
     });
 
-    test("技能、生成配置与需要真实结果的插件节点不进创建菜单", () => {
+    test("技能、生成配置与需要真实运行绑定的插件节点不进创建菜单", () => {
         const hidden = ALL_TYPES.filter((type) => !listCreatableNodeDefinitions().some((def) => def.type === type));
-        expect(hidden.sort()).toEqual([CanvasNodeType.Config, CanvasNodeType.Skill, CanvasNodeType.PluginResult].sort());
+        expect(hidden.sort()).toEqual([CanvasNodeType.Config, CanvasNodeType.Skill, CanvasNodeType.PluginResult, CanvasNodeType.PluginInput].sort());
     });
 });
 

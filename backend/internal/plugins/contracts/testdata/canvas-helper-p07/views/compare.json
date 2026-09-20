@@ -1,0 +1,15 @@
+{
+  "id": "compare",
+  "component": "media-compare/v1",
+  "schemaRef": "schemas/result.json",
+  "fields": [
+    {
+      "path": "/before",
+      "label": "原媒体"
+    },
+    {
+      "path": "/after",
+      "label": "替换媒体"
+    }
+  ]
+}

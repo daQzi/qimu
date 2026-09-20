@@ -18,13 +18,14 @@ import (
 )
 
 type pluginProjectionInput struct {
-	RunID        string  `json:"runId"`
-	ResultDigest string  `json:"resultDigest"`
-	BlueprintID  string  `json:"blueprintId"`
-	SnapshotHash string  `json:"snapshotHash"`
-	InstanceKey  string  `json:"instanceKey"`
-	X            float64 `json:"x"`
-	Y            float64 `json:"y"`
+	RunID          string  `json:"runId"`
+	ResultDigest   string  `json:"resultDigest"`
+	InputRequestID string  `json:"inputRequestId,omitempty"`
+	BlueprintID    string  `json:"blueprintId"`
+	SnapshotHash   string  `json:"snapshotHash"`
+	InstanceKey    string  `json:"instanceKey"`
+	X              float64 `json:"x"`
+	Y              float64 `json:"y"`
 }
 
 func pluginProjectionConflict() error {
@@ -40,8 +41,8 @@ func preparePluginCanvasProjection(repo *repository.Repository, userID string, i
 	if err = decodeCloudAgentJSONObject(string(raw), &a); err != nil {
 		return plugins.PreparedOperation{}, err
 	}
-	if ctx.CanvasID == "" || a.RunID == "" || len(a.ResultDigest) != 64 || len(a.SnapshotHash) != 64 || len(a.InstanceKey) < 1 || len(a.InstanceKey) > 80 || strings.TrimSpace(a.InstanceKey) != a.InstanceKey || math.Abs(a.X) > 100000 || math.Abs(a.Y) > 100000 {
-		return plugins.PreparedOperation{}, BadAuthRequest("需要真实结果、画布快照和有效绑定标识")
+	if ctx.CanvasID == "" || a.RunID == "" || (a.InputRequestID == "" && len(a.ResultDigest) != 64) || (a.InputRequestID != "" && a.ResultDigest != "") || len(a.SnapshotHash) != 64 || len(a.InstanceKey) < 1 || len(a.InstanceKey) > 80 || strings.TrimSpace(a.InstanceKey) != a.InstanceKey || math.Abs(a.X) > 100000 || math.Abs(a.Y) > 100000 {
+		return plugins.PreparedOperation{}, BadAuthRequest("需要真实运行输入或结果、画布快照和有效绑定标识")
 	}
 	source, err := repo.PluginRunForUser(userID, a.RunID)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -50,8 +51,24 @@ func preparePluginCanvasProjection(repo *repository.Repository, userID string, i
 	if err != nil {
 		return plugins.PreparedOperation{}, err
 	}
-	if source.Status != "succeeded" || source.ReleaseID != ctx.ReleaseID || creationHashRaw(source.ResultJSON) != a.ResultDigest {
-		return plugins.PreparedOperation{}, BadAuthRequest("必须引用同一发布的成功结果及真实摘要")
+	if source.ReleaseID != ctx.ReleaseID {
+		return plugins.PreparedOperation{}, BadAuthRequest("来源与当前操作必须属于同一发布")
+	}
+	var inputRequest *model.PluginInputRequest
+	if a.InputRequestID != "" {
+		inputRequest, err = repo.PluginInput(source.ID, a.InputRequestID)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return plugins.PreparedOperation{}, BadAuthRequest("输入请求不存在或不属于该运行")
+		}
+		if err != nil {
+			return plugins.PreparedOperation{}, err
+		}
+		if inputRequest.Status != "pending" || (source.Status != "waiting_input" && source.Status != "running" && source.Status != "waiting_approval") {
+			return plugins.PreparedOperation{}, BadAuthRequest("输入已完成或运行已停止，请读取最新运行")
+		}
+		a.ResultDigest = creationHashRaw(source.ID + ":" + inputRequest.ID + ":" + inputRequest.SchemaJSON)
+	} else if source.Status != "succeeded" || creationHashRaw(source.ResultJSON) != a.ResultDigest {
+		return plugins.PreparedOperation{}, BadAuthRequest("必须引用真实成功结果及摘要")
 	}
 	var manifest contracts.Manifest
 	if err = json.Unmarshal(ctx.Files["manifest.json"], &manifest); err != nil {
@@ -67,6 +84,27 @@ func preparePluginCanvasProjection(repo *repository.Repository, userID string, i
 	}
 	if len(blueprint.Nodes) == 0 {
 		return plugins.PreparedOperation{}, BadAuthRequest("发布中不存在该画布蓝图")
+	}
+	if err := contracts.ValidateBlueprint(blueprint, ctx.Files); err != nil {
+		return plugins.PreparedOperation{}, err
+	}
+	if inputRequest != nil {
+		pipeline, err := contracts.LoadPipeline(ctx.Files, source.PipelineID)
+		if err != nil {
+			return plugins.PreparedOperation{}, err
+		}
+		matched := false
+		for _, step := range pipeline.Steps {
+			if step.Key == inputRequest.StepKey {
+				matched, err = contracts.BlueprintMatchesInput(ctx.Files, blueprint, step)
+				if err != nil {
+					return plugins.PreparedOperation{}, err
+				}
+			}
+		}
+		if !matched {
+			return plugins.PreparedOperation{}, BadAuthRequest("输入视图与流程步骤不匹配")
+		}
 	}
 	views := map[string]contracts.ResultView{}
 	for _, ref := range manifest.Contributes.Views {
@@ -84,7 +122,11 @@ func preparePluginCanvasProjection(repo *repository.Repository, userID string, i
 	if err != nil {
 		return plugins.PreparedOperation{}, err
 	}
-	identity, _ := json.Marshal([]string{userID, ctx.CanvasID, source.ID, ctx.ReleaseID, a.BlueprintID, a.InstanceKey})
+	identityParts := []string{userID, ctx.CanvasID, source.ID, ctx.ReleaseID, a.BlueprintID, a.InstanceKey}
+	if inputRequest != nil {
+		identityParts = append(identityParts, inputRequest.ID)
+	}
+	identity, _ := json.Marshal(identityParts)
 	projectionID := creationHashRaw(string(identity))
 	existing, err := repo.PluginCanvasProjection(userID, projectionID)
 	if err != nil {
@@ -101,6 +143,9 @@ func preparePluginCanvasProjection(repo *repository.Repository, userID string, i
 			if index < 0 || pluginProjectionNodeHash(nodes[index]) != pluginProjectionNodeHash(original) {
 				return plugins.PreparedOperation{}, pluginProjectionConflict()
 			}
+		}
+		if !pluginProjectionEdgesIntact(doc, blueprint, existing.BindingsJSON, projectionID) {
+			return plugins.PreparedOperation{}, pluginProjectionConflict()
 		}
 		return plugins.PreparedOperation{Result: json.RawMessage(existing.ResultJSON), SourceDigest: a.ResultDigest, ProjectsToCanvas: true}, nil
 	}
@@ -126,7 +171,10 @@ func preparePluginCanvasProjection(repo *repository.Repository, userID string, i
 	added := []map[string]any{}
 	for _, item := range blueprint.Nodes {
 		view, exists := views[item.View]
-		if !exists || contracts.ValidateData(ctx.Files, view.SchemaRef, []byte(source.ResultJSON)) != nil {
+		if !exists || (item.Binding == "input") != (inputRequest != nil) {
+			return plugins.PreparedOperation{}, BadAuthRequest("蓝图与当前输入/结果绑定不匹配")
+		}
+		if inputRequest == nil && contracts.ValidateData(ctx.Files, view.SchemaRef, []byte(source.ResultJSON)) != nil {
 			return plugins.PreparedOperation{}, BadAuthRequest("结果不符合蓝图视图 Schema")
 		}
 		id := "plugin-" + creationHashRaw(projectionID + ":" + item.Key)[:32]
@@ -134,12 +182,33 @@ func preparePluginCanvasProjection(repo *repository.Repository, userID string, i
 			return plugins.PreparedOperation{}, pluginProjectionConflict()
 		}
 		x, y := a.X+item.Position.X, a.Y+item.Position.Y
-		node := creationAddedNode(CreationCanvasOp{Type: "add_node", ID: id, NodeType: "plugin-result", Title: item.Title, X: &x, Y: &y, Metadata: map[string]any{"status": "success", "pluginResult": map[string]any{"runId": source.ID, "digest": a.ResultDigest, "releaseId": source.ReleaseID, "viewId": item.View, "projectionId": projectionID, "bindingKey": item.Key}}})
+		if math.Abs(x) > 100000 || math.Abs(y) > 100000 {
+			return plugins.PreparedOperation{}, BadAuthRequest("蓝图相对布局超出画布范围")
+		}
+		binding := map[string]any{"runId": source.ID, "digest": a.ResultDigest, "releaseId": source.ReleaseID, "viewId": item.View, "projectionId": projectionID, "bindingKey": item.Key, "canvasId": canvas.ID, "actions": item.Actions}
+		bindingField, status := "pluginResult", "success"
+		if inputRequest != nil {
+			bindingField, status = "pluginInput", "idle"
+			binding["inputRequestId"] = inputRequest.ID
+			binding["stepKey"] = inputRequest.StepKey
+		}
+		node := creationAddedNode(CreationCanvasOp{Type: "add_node", ID: id, NodeType: item.NodeType, Title: item.Title, X: &x, Y: &y, Metadata: map[string]any{"status": status, bindingField: binding}})
 		bindings[item.Key] = id
 		added = append(added, node)
 		nodes = append(nodes, node)
 	}
 	doc["nodes"] = nodes
+	edges := creationMaps(doc["connections"])
+	for _, edge := range blueprint.Connections {
+		addedEdge := pluginProjectionEdge(projectionID, edge.From, edge.To, bindings)
+		for _, existingEdge := range edges {
+			if existingEdge["id"] == addedEdge["id"] {
+				return plugins.PreparedOperation{}, pluginProjectionConflict()
+			}
+		}
+		edges = append(edges, addedEdge)
+	}
+	doc["connections"] = edges
 	result, err := json.Marshal(map[string]any{"canvasId": canvas.ID, "sourceRunId": source.ID, "blueprintId": a.BlueprintID, "projectionId": projectionID, "bindings": bindings})
 	if err != nil {
 		return plugins.PreparedOperation{}, err
@@ -170,7 +239,33 @@ func pluginProjectionNodeHash(node map[string]any) string {
 	}
 	meta, _ := node["metadata"].(map[string]any)
 	value["pluginResult"] = meta["pluginResult"]
+	if input, ok := meta["pluginInput"]; ok {
+		value["pluginInput"] = input
+	}
 	return creationHash(value)
+}
+
+func pluginProjectionEdge(projectionID, from, to string, bindings map[string]string) map[string]any {
+	return map[string]any{"id": "plugin-edge-" + creationHashRaw(projectionID + ":" + from + ":" + to)[:32], "fromNodeId": bindings[from], "toNodeId": bindings[to], "relation": "plugin-flow"}
+}
+func pluginProjectionEdgesIntact(doc map[string]any, bp contracts.CanvasBlueprint, rawBindings, projectionID string) bool {
+	bindings := map[string]string{}
+	if json.Unmarshal([]byte(rawBindings), &bindings) != nil {
+		return false
+	}
+	for _, expected := range bp.Connections {
+		want := pluginProjectionEdge(projectionID, expected.From, expected.To, bindings)
+		found := false
+		for _, edge := range creationMaps(doc["connections"]) {
+			if edge["id"] == want["id"] && edge["fromNodeId"] == want["fromNodeId"] && edge["toNodeId"] == want["toNodeId"] && edge["relation"] == want["relation"] {
+				found = true
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 func creationHashRaw(value string) string {

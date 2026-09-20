@@ -15,9 +15,10 @@ import (
 
 type InputView struct {
 	model.PluginInputRequest
-	Schema    json.RawMessage `json:"schema"`
-	Draft     json.RawMessage `json:"draft,omitempty"`
-	Submitted json.RawMessage `json:"submitted,omitempty"`
+	Schema    json.RawMessage       `json:"schema"`
+	Draft     json.RawMessage       `json:"draft,omitempty"`
+	Submitted json.RawMessage       `json:"submitted,omitempty"`
+	View      *contracts.ResultView `json:"view,omitempty"`
 }
 type PipelineView struct {
 	Batch      *BatchState                 `json:"batch,omitempty"`
@@ -77,7 +78,17 @@ func (s *Service) pipelineView(run *model.PluginRun) (*PipelineView, error) {
 		return nil, err
 	}
 	for _, row := range rows {
-		view.Inputs = append(view.Inputs, InputView{PluginInputRequest: row, Schema: json.RawMessage(row.SchemaJSON), Draft: json.RawMessage(row.DraftJSON), Submitted: json.RawMessage(row.SubmittedJSON)})
+		input := InputView{PluginInputRequest: row, Schema: json.RawMessage(row.SchemaJSON), Draft: json.RawMessage(row.DraftJSON), Submitted: json.RawMessage(row.SubmittedJSON)}
+		for _, step := range p.Steps {
+			if step.Key == row.StepKey && step.View != "" {
+				definition, err := contracts.LoadView(files, step.View)
+				if err != nil {
+					return nil, err
+				}
+				input.View = &definition
+			}
+		}
+		view.Inputs = append(view.Inputs, input)
 	}
 	return view, nil
 }

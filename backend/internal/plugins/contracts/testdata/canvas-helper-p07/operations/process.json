@@ -1,0 +1,20 @@
+{
+  "id": "process",
+  "description": "启动交互流程：填写映射，选择两个已有媒体资源，输出结构化结果。",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/result.json",
+  "requiredPermissions": [],
+  "effects": [
+    "draft_write"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "pipeline",
+    "pipeline": "process",
+    "mode": "task"
+  },
+  "resultView": "table"
+}
