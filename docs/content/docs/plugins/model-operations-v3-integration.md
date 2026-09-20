@@ -46,7 +46,11 @@
 - `json`：一个合法 JSON 文档、不超过 64 KiB，拒绝重复键、过深结构、Markdown 包裹和额外正文，并通过 outputSchemaRef。
 - `video-report/v1`：仅允许 `resources={"resourceId":"video"}`；额外校验来源、覆盖区间、镜头顺序、实体证据、ID/说话人引用和字幕/音轨标识。字段见示例包 schemas/report.json 及 internal/mediaanalysis/report.go。
 
-本期视频报告使用原生视频理解，不等同于精确逐帧分析。source.digest 是存储资源版本指纹，不是视频字节哈希；durationMs 来自资源记录。音轨能力尚未认证，强制 audioAnalyzed=false，只记录可见字幕及未知限制。
+视频报告在 Worker 内先执行本地 ffprobe，source.digest 使用实际文件 SHA-256，durationMs 使用探测时长，流/时基保存到 Task metadata；报价阶段仍显示资源版本指纹。镜头边界是模型推断，按需抽帧不是精确逐帧标定。管理员配置 text.references.videoAudio=true 后才允许音轨对白及 audioEvents（music/ambience/effect），无能力或无音轨时只能报告字幕并说明限制。
+
+声明式输入视图可选 video-report-editor/v1 与 video-plan-editor/v1，分别绑定带 report 的修正表单、带 report/plan/confirmed 的确认表单；仍走统一 Schema、revision、幂等和领域校验。支持人物合并、原片定位、对白编辑、素材选择/上传；不会执行插件脚本。后端须安装 ffmpeg/ffprobe，官方构建镜像已包含。媒体上限 512 MiB、六小时，最多两个并发；工具执行两分钟超时。
+
+宿主登录 API：POST /api/resources/:id/probe 返回 SHA-256/时长/流信息；GET /api/resources/:id/frame?atMs=1000 返回 JPEG，均检查当前账号归属并限流。抽帧请求时间须落在源视频范围内，不接受 URL、命令或本地路径。
 
 输出转换与 Task 终态分离：原 Task 负责 provider/账务，PluginRun 负责结构化结果。后台调度和查询幂等同步结果；取消不被迟到结果覆盖。已有结果的 ResultRef、画布投影、固定版本和历史读取复用旧合同。
 
@@ -78,8 +82,8 @@ video-plan/v1 检查替换项实体/类型、重复映射、提示词、素材�
 ```sh
 mkdir -p .local/artifacts
 cd backend
-go run ./cmd/plugin-contract -dir ../examples/plugins/video-localization -out ../.local/artifacts/video-localization-1.0.0.yingce-plugin
-go run ./cmd/plugin-contract -package ../.local/artifacts/video-localization-1.0.0.yingce-plugin
+go run ./cmd/plugin-contract -dir ../examples/plugins/video-localization -out ../.local/artifacts/video-localization-1.0.1.yingce-plugin
+go run ./cmd/plugin-contract -package ../.local/artifacts/video-localization-1.0.1.yingce-plugin
 ```
 
 工具不覆盖已有包；重新打包时指定新的输出文件。管理员通过原应用插件安装入口上传，账号启用并授权后，在工作台或 Agent 引用对应技能。配置与具体人工验证见 `docs/plans/qimu-workstudio-p11-acceptance.md`。

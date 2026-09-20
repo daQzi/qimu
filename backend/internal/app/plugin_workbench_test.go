@@ -27,12 +27,14 @@ func installWorkbenchSample(t *testing.T, s *Service, name string, changes ...fu
 	if _, err = s.InstallManagedPluginForAdmin(&model.User{ID: "admin", Role: model.UserRoleAdmin}, raw, name+".yingce-plugin"); err != nil {
 		t.Fatal(err)
 	}
-	release, err := s.repo.PluginReleaseByVersion(name, "1.0.0")
+	var manifest contracts.Manifest
+	if err = json.Unmarshal(files["manifest.json"], &manifest); err != nil {
+		t.Fatal(err)
+	}
+	release, err := s.repo.PluginReleaseByVersion(name, manifest.Version)
 	if err != nil || release == nil {
 		t.Fatal("missing release", err)
 	}
-	var manifest contracts.Manifest
-	json.Unmarshal(files["manifest.json"], &manifest)
 	if err = s.ActivateApplicationPlugin(&model.User{ID: "user", Role: model.UserRoleUser}, name, ApplicationPluginActivation{ReleaseID: release.ID, Enabled: true, GrantedPermissions: manifest.Permissions}); err != nil {
 		t.Fatal(err)
 	}

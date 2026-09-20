@@ -1,6 +1,6 @@
 {
   "id": "confirm",
-  "component": "key-value/v1",
+  "component": "video-plan-editor/v1",
   "schemaRef": "schemas/confirm.json",
   "fields": [
     {

@@ -18,6 +18,7 @@ export type TextCapabilityConfig = {
     /** Provider completion/reasoning output ceiling, in tokens. */
     maxOutputTokens: number;
     references: {
+        videoAudio?: boolean;
         promptMaxChars: number;
         maxImages: number;
         maxImageBytes: number;

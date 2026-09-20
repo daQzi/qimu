@@ -72,6 +72,17 @@ export type ResourceUploadMeta = {
     idempotencyKey?: string;
 };
 
+export type MediaProbe = { digest: string; durationMs: number; startTime: string; streams: { index: number; codec_type: string; codec_name: string; time_base: string; avg_frame_rate: string; sample_rate: string; channels: number }[] };
+export function probeResource(id: string, signal?: AbortSignal) {
+    return http.post<MediaProbe>(`/resources/${encodeURIComponent(id)}/probe`, {}, { signal });
+}
+export function getResourceFrame(id: string, atMs: number, signal?: AbortSignal) {
+    return http.raw<Blob>({ method: "GET", url: `/resources/${encodeURIComponent(id)}/frame`, params: { atMs }, responseType: "blob", signal });
+}
+export function listResourceMaterials(signal?: AbortSignal) {
+    return http.get<{ resources: RemoteResource[] }>("/resources", { params: { pageSize: 200 }, signal });
+}
+
 /**
  * 资源直传失败。
  *

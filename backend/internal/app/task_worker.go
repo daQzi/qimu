@@ -209,6 +209,9 @@ func (w *taskWorkerCoordinator) processClaimedTask(task *model.Task, globalSlot 
 		if err := s.validatePluginModelDispatch(*task); err != nil {
 			return terminal.markPreparationFailure(task, "插件模型执行条件已变化", err, false, "插件模型执行前校验失败，未调用上游")
 		}
+		if err := s.preparePluginModelProbe(ctx, task); err != nil {
+			return terminal.markPreparationFailure(task, "视频探测失败", err, false, "本地媒体探测失败，未调用上游")
+		}
 	}
 
 	s.markAgentMemoryCompactRunning(*task)

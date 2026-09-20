@@ -5,7 +5,9 @@ export function PluginModelPreview({ value }: { value: unknown }) {
     return (
         <div className="space-y-2 text-sm">
             <p>系统模型：{typeof preview.model === "string" ? preview.model : "待确认"}</p>
-            <p>渠道：{typeof preview.channel === "string" ? preview.channel : "待确认"} · {typeof preview.targetHost === "string" ? preview.targetHost : "目标待确认"}</p>
+            <p>
+                渠道：{typeof preview.channel === "string" ? preview.channel : "待确认"} · {typeof preview.targetHost === "string" ? preview.targetHost : "目标待确认"}
+            </p>
             <p>
                 本次授权额度：{amount === undefined ? "报价不可用" : `${amount} 积分`}
                 {preview.estimated === true ? "（按 Token 预估，实际结算受此上限约束）" : ""}。
@@ -19,7 +21,8 @@ export function PluginModelPreview({ value }: { value: unknown }) {
                     })}
                 </ul>
             )}
-            <p className="text-muted-foreground">模型已返回但结果校验失败时仍可能产生费用；不会自动重试或切换付费模型。视频音轨尚未核验，本期不生成成片。</p>
+            {resources.length > 0 && <p>视频音轨：{preview.audioAllowed === true ? "所选模型已配置音轨理解，将分析对白和声音事件" : "未配置音轨理解，仅分析画面和可见字幕"}。视频分析前会执行本地媒体探测。</p>}
+            <p className="text-muted-foreground">模型已返回但结果校验失败时仍可能产生费用；不会自动重试或切换付费模型。本期确认分析与方案，不生成成片。</p>
         </div>
     );
 }

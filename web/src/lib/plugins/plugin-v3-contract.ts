@@ -242,7 +242,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                         const entry = contributions.views?.find((r: ObjectValue) => r.id === step.view);
                         const view = entry && docs[entry.ref];
                         if (!view) fail("package_reference_invalid", "input view");
-                        if (view.schemaRef !== step.formSchemaRef || !["key-value/v1", "mapping-editor/v1"].includes(view.component)) fail("contract_invalid", "input view schema/component");
+                        if (view.schemaRef !== step.formSchemaRef || !["key-value/v1", "mapping-editor/v1", "video-report-editor/v1", "video-plan-editor/v1"].includes(view.component)) fail("contract_invalid", "input view schema/component");
                     }
                     requireSchema(step.formSchemaRef);
                     if (Object.keys(step.inputs || {}).length) {
@@ -326,7 +326,7 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
             if (!registry.views.has(node.view)) fail("package_reference_invalid", "blueprint view");
             const view = docs[contributions.views.find((r: ObjectValue) => r.id === node.view).ref];
             if ((node.nodeType === "plugin-input") !== (node.binding === "input")) fail("contract_invalid", "node and binding kinds differ");
-            if (node.binding === "input" && !["key-value/v1", "mapping-editor/v1"].includes(view.component)) fail("contract_invalid", "input component is not editable");
+            if (node.binding === "input" && !["key-value/v1", "mapping-editor/v1", "video-report-editor/v1", "video-plan-editor/v1"].includes(view.component)) fail("contract_invalid", "input component is not editable");
             for (const action of node.actions || []) if (action !== "editor.focus" && !(action === "input.submit" && node.binding === "input") && !(action === "result.continue" && node.binding === "result")) fail("contract_invalid", "node action");
         }
         const edges = new Set<string>();

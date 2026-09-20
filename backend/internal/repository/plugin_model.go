@@ -1,6 +1,20 @@
 package repository
 
-import "infinite-canvas/backend/internal/model"
+import (
+	"infinite-canvas/backend/internal/model"
+	"time"
+)
+
+func (r *Repository) SavePluginModelProbe(task *model.Task) error {
+	result := r.db.Model(&model.Task{}).Where("id=? AND user_id=? AND status=? AND lease_owner=? AND lease_expires_at>?", task.ID, task.UserID, model.TaskStatusRunning, task.LeaseOwner, time.Now()).Updates(map[string]any{"input_json": task.InputJSON, "prompt": task.Prompt})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected != 1 {
+		return ErrTaskStateConflict
+	}
+	return nil
+}
 
 func (r *Repository) PluginModelTaskCount(user, agent string) (int64, error) {
 	var count int64

@@ -1,6 +1,6 @@
 {
   "id": "analyze",
-  "description": "使用所选系统视频理解模型识别镜头、人物、场景、道具和可见字幕；音轨未验证，不声称转写完整对白。",
+  "description": "本地探测原片后使用系统视频理解模型识别镜头、人物、场景、道具和字幕；模型声明音轨能力时分析对白、说话人与声音事件。",
   "inputSchemaRef": "schemas/input.json",
   "outputSchemaRef": "schemas/report.json",
   "requiredPermissions": [

@@ -18,12 +18,16 @@ func LoadView(files PackageFiles, id string) (ResultView, error) {
 	return ResultView{}, invalid("package_reference_invalid", "view not registered")
 }
 
+func editableView(component string) bool {
+	return component == "key-value/v1" || component == "mapping-editor/v1" || component == "video-report-editor/v1" || component == "video-plan-editor/v1"
+}
+
 func ValidateInputView(files PackageFiles, id, schema string) error {
 	v, err := LoadView(files, id)
 	if err != nil {
 		return err
 	}
-	if v.SchemaRef != schema || (v.Component != "key-value/v1" && v.Component != "mapping-editor/v1") {
+	if v.SchemaRef != schema || !editableView(v.Component) {
 		return invalid("contract_invalid", "input view requires matching schema and an editable host component")
 	}
 	return nil
@@ -71,7 +75,7 @@ func ValidateBlueprint(bp CanvasBlueprint, files PackageFiles) error {
 		if (node.NodeType == "plugin-input") != (node.Binding == "input") {
 			return invalid("contract_invalid", "node and binding kinds differ")
 		}
-		if node.Binding == "input" && v.Component != "key-value/v1" && v.Component != "mapping-editor/v1" {
+		if node.Binding == "input" && !editableView(v.Component) {
 			return invalid("contract_invalid", "input component is not editable")
 		}
 		for _, action := range node.Actions {

@@ -5,7 +5,7 @@ description: 从产品功能快速定位主要代码入口
 
 # 代码功能地图
 
-P11：`app/plugin_model.go` 组合系统模型准入、报价、原 Task 创建和结构化结果回写；`repository/plugin_model.go` 提供任务关联与终态扫描。`plugins/pipeline_prefill.go`、`pipeline_input.go`、`pipeline_derive.go` 处理草稿预填/提交与派生；`app/plugin_media_input.go` 调用 `internal/mediaanalysis` 校验来源、实体关系及替换方案。`examples/plugins/video-localization` 声明业务步骤、视图/蓝图/工作台；前端 `plugin-model-preview.tsx` 呈现模型费用和发送范围。未新增 Agent 主循环业务分支或数据库迁移。
+P11：`app/plugin_model.go` 组合模型准入、报价、Task 与结果；`plugin_model_probe.go` 在 Worker 中探测，`media_probe.go` 校验媒体权限，`mediaanalysis/probe.go` 负责受限 ffprobe/ffmpeg。`repository/plugin_model.go` 提供任务关联、租约写入与终态扫描。`plugins/pipeline_prefill.go`、`pipeline_input.go`、`pipeline_derive.go` 处理预填/提交/派生；`app/plugin_media_input.go` 验证来源、实体与素材。`examples/plugins/video-localization` 声明业务步骤；前端 `plugin-media-editor.tsx` 提供报告/方案编辑，`lib/plugins/media-review.ts` 合并人物引用。未增加 Agent 主循环业务分支或数据库迁移。
 
 P10：`internal/objects/brand.go` 管理品牌字段、版本/CAS、保留与派生；`repository/business_object.go` 串行化账号写入并存储不可变版本。`app/business_object.go` 复用 Host Adapter，`handler/business_object.go` 提供受控 HTTP 管理。`plugins/workbench.go` 按声明解析引用，`cloud_agent.go` 冻结事实。前端 `pages/business-objects` 管理资料、`business-object-picker.tsx` 选择固定版本、`business-object-pending.ts` 隔离重试；无第二套执行器。
 

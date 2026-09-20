@@ -33,6 +33,7 @@ type TextCapabilityConfig struct {
 }
 
 type TextReferenceConfig struct {
+	VideoAudio     bool  `json:"videoAudio"`
 	PromptMaxChars int   `json:"promptMaxChars"`
 	MaxImages      int   `json:"maxImages"`
 	MaxImageBytes  int64 `json:"maxImageBytes"`
@@ -545,6 +546,9 @@ func addInputConstraint(inputs map[string]InputConstraint, name string, min int,
 }
 
 func validateTextCapabilityConfig(value *TextCapabilityConfig) error {
+	if value.References.VideoAudio && (value.References.MaxVideos < 1 || value.References.MaxVideoBytes < 1) {
+		return BadAuthRequest("启用视频音轨理解前须配置视频引用数量与大小")
+	}
 	if value.ContextWindowTokens < 4096 || value.ContextWindowTokens > 10000000 {
 		return BadAuthRequest("文本模型上下文窗口必须在 4096-10000000 Token 之间")
 	}

@@ -63,3 +63,27 @@ func TestReportNoImplicitRepair(t *testing.T) {
 		t.Fatal("explicit uncertainty rejected", err)
 	}
 }
+
+func TestAudioEventsRequireActualAnalysisAndBoundedEvidence(t *testing.T) {
+	r := validReport()
+	r.AudioEvents = []AudioEvent{{ID: "music1", Span: Span{0, 5000}, Kind: "music", Description: "背景音乐", Uncertainties: []string{}}}
+	if err := Validate(r, r.Source); err != nil {
+		t.Fatal(err)
+	}
+	r.AudioEvents[0].EndMs = 10001
+	if err := Validate(r, r.Source); err == nil {
+		t.Fatal("out of coverage event accepted")
+	}
+	r.AudioEvents[0].EndMs = 5000
+	r.AudioEvents = append(r.AudioEvents, r.AudioEvents[0])
+	if err := Validate(r, r.Source); err == nil {
+		t.Fatal("duplicate event accepted")
+	}
+	r.AudioEvents = r.AudioEvents[:1]
+	r.AudioAnalyzed = false
+	r.Dialogue = []Utterance{}
+	r.Limitations = []string{"字幕模式"}
+	if err := Validate(r, r.Source); err == nil {
+		t.Fatal("unverified sound accepted")
+	}
+}

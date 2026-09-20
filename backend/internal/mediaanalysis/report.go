@@ -56,14 +56,23 @@ type Utterance struct {
 	Uncertainties []string `json:"uncertainties"`
 }
 type Report struct {
-	SchemaVersion int         `json:"schemaVersion"`
-	Source        Source      `json:"source"`
-	Coverage      Span        `json:"coverage"`
-	AudioAnalyzed bool        `json:"audioAnalyzed"`
-	Shots         []Shot      `json:"shots"`
-	Entities      []Entity    `json:"entities"`
-	Dialogue      []Utterance `json:"dialogue"`
-	Limitations   []string    `json:"limitations"`
+	SchemaVersion int          `json:"schemaVersion"`
+	Source        Source       `json:"source"`
+	Coverage      Span         `json:"coverage"`
+	AudioAnalyzed bool         `json:"audioAnalyzed"`
+	AudioEvents   []AudioEvent `json:"audioEvents,omitempty"`
+	Shots         []Shot       `json:"shots"`
+	Entities      []Entity     `json:"entities"`
+	Dialogue      []Utterance  `json:"dialogue"`
+	Limitations   []string     `json:"limitations"`
+}
+
+type AudioEvent struct {
+	ID string `json:"id"`
+	Span
+	Kind          string   `json:"kind"`
+	Description   string   `json:"description"`
+	Uncertainties []string `json:"uncertainties"`
 }
 
 func text(v string, max int) bool {
@@ -217,6 +226,16 @@ func Validate(report Report, source Source) error {
 	}
 	if !report.AudioAnalyzed && len(report.Limitations) == 0 {
 		return fmt.Errorf("未分析音轨时必须说明分析限制")
+	}
+	if len(report.AudioEvents) > 200 || (!report.AudioAnalyzed && len(report.AudioEvents) > 0) {
+		return fmt.Errorf("声音事件数量超限或音轨未分析")
+	}
+	sounds := map[string]bool{}
+	for _, event := range report.AudioEvents {
+		if !identifier.MatchString(event.ID) || sounds[event.ID] || !within(event.Span, report.Coverage) || (event.Kind != "music" && event.Kind != "ambience" && event.Kind != "effect") || !text(event.Description, 1000) || !notes(event.Uncertainties) {
+			return fmt.Errorf("声音事件的编号、时间、类型或描述无效")
+		}
+		sounds[event.ID] = true
 	}
 	raw, err := json.Marshal(report)
 	if err != nil {

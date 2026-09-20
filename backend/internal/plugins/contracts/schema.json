@@ -498,6 +498,8 @@
             "table/v1",
             "entity-cards/v1",
             "mapping-editor/v1",
+            "video-report-editor/v1",
+            "video-plan-editor/v1",
             "media-compare/v1"
           ]
         },

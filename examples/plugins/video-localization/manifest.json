@@ -2,8 +2,8 @@
   "apiVersion": "yingce.plugin/v3",
   "id": "video-localization",
   "name": "一键出海：分析与替换方案",
-  "version": "1.0.0",
-  "description": "分析原视频的人物、场景、道具和可见字幕，人工修正后生成本地化替换方案。本阶段不配音、不生成或合成成片。",
+  "version": "1.0.1",
+  "description": "探测原片，分析人物、场景、道具、字幕及受支持的音轨对白与声音事件，可视化修正后生成本地化替换方案。本阶段不配音、不生成或合成成片。",
   "publisher": {
     "id": "qimu-examples",
     "displayName": "启幕示例"

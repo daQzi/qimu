@@ -386,6 +386,7 @@ function TextCapabilityEditor({ value, onChange, protocol, disabled, section }: 
                         <NumberField label="单张图片上限 MB" value={bytesToMB(profile.references.maxImageBytes)} min={0} disabled={Boolean(disabled)} onChange={(next) => updateReferences({ maxImageBytes: mbToBytes(next) })} />
                     </ReferenceCard>
                     <ReferenceCard title="视频引用" description="文本模型可接收的视频范围">
+                        <ParameterField label="视频音轨理解" description="仅在该渠道协议与模型均支持原视频声音、对白和说话人分析时启用。" supported={profile.references.videoAudio === true} disabled={Boolean(disabled)} onChange={(videoAudio) => updateReferences({ videoAudio })} />
                         <NumberField label="最大参考视频数" value={profile.references.maxVideos} min={0} max={100} disabled={Boolean(disabled)} onChange={(next) => updateReferences({ maxVideos: next || 0 })} />
                         <NumberField label="单个视频上限 MB" value={bytesToMB(profile.references.maxVideoBytes)} min={0} disabled={Boolean(disabled)} onChange={(next) => updateReferences({ maxVideoBytes: mbToBytes(next) })} />
                     </ReferenceCard>
@@ -416,6 +417,7 @@ function TextCapabilityEditor({ value, onChange, protocol, disabled, section }: 
                 </div>
             </CapabilityGroup>
             <CapabilityGroup title="视频" description="文本模型可接收的视频参考范围">
+                <ParameterField label="视频音轨理解" description="仅在渠道和模型均支持视频声音理解时启用。" supported={profile.references.videoAudio === true} disabled={Boolean(disabled)} onChange={(videoAudio) => updateReferences({ videoAudio })} />
                 <div className="grid gap-3 sm:grid-cols-2">
                     <NumberField label="最大参考视频数" value={profile.references.maxVideos} min={0} max={100} disabled={Boolean(disabled)} onChange={(next) => updateReferences({ maxVideos: next || 0 })} />
                     <NumberField label="单个视频上限 MB" value={bytesToMB(profile.references.maxVideoBytes)} min={0} disabled={Boolean(disabled)} onChange={(next) => updateReferences({ maxVideoBytes: mbToBytes(next) })} />

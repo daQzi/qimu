@@ -157,6 +157,7 @@ type TextCapabilityConfig struct {
 }
 
 type TextReferenceConfig struct {
+	VideoAudio     bool  `json:"videoAudio"`
 	PromptMaxChars int   `json:"promptMaxChars"`
 	MaxImages      int   `json:"maxImages"`
 	MaxImageBytes  int64 `json:"maxImageBytes"`

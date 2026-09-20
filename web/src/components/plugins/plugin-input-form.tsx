@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { updatePluginInput, type PluginInputRequest, type PluginRunView } from "@/services/api/plugin-operations";
 import { useUserStore } from "@/stores/use-user-store";
 import { PluginMappingEditor } from "./plugin-mapping-editor";
+import { PluginMediaEditor } from "./plugin-media-editor";
 
 // Primitive fields have ordinary controls. Structured/ref schemas use explicit
 // JSON, with the same authoritative server validation; no guessed defaults.
@@ -11,6 +12,7 @@ export function PluginInputForm({ run, input, onUpdated }: { run: PluginRunView;
     const [text, setText] = useState(JSON.stringify(input.draft ?? {}, null, 2));
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
+    const [mediaBusy, setMediaBusy] = useState(false);
     const [jsonMode, setJSONMode] = useState(false);
     const attempt = useRef<{ signature: string; key: string } | undefined>(undefined);
     const props = input.schema.properties as Record<string, Record<string, unknown>> | undefined;
@@ -25,6 +27,7 @@ export function PluginInputForm({ run, input, onUpdated }: { run: PluginRunView;
     const objectValue = !!parsedValue && typeof parsedValue === "object" && !Array.isArray(parsedValue);
     const parsed = (objectValue ? parsedValue : {}) as Record<string, unknown>;
     const required = Array.isArray(input.schema.required) ? input.schema.required : [];
+    const mediaMode = input.view?.component === "video-report-editor/v1" ? "report" : input.view?.component === "video-plan-editor/v1" ? "plan" : undefined;
     const field = (name: string, value: unknown) => {
         const next = { ...parsed };
         if (value === undefined) delete next[name];
@@ -32,7 +35,7 @@ export function PluginInputForm({ run, input, onUpdated }: { run: PluginRunView;
         setText(JSON.stringify(next, null, 2));
     };
     const save = async (mode: "draft" | "submit") => {
-        if (busy) return;
+        if (busy || mediaBusy) return;
         setBusy(true);
         setError("");
         try {
@@ -50,12 +53,14 @@ export function PluginInputForm({ run, input, onUpdated }: { run: PluginRunView;
     return (
         <section aria-label="流程输入" className="space-y-2">
             <p>请补充：{input.stepKey}。提交内容后，收费或外部操作仍需单独确认。</p>
-            {input.view?.component === "mapping-editor/v1" && (
-                <Button size="small" aria-pressed={jsonMode} onClick={() => setJSONMode(!jsonMode)}>
+            {(input.view?.component === "mapping-editor/v1" || mediaMode) && (
+                <Button size="small" disabled={busy || mediaBusy} aria-pressed={jsonMode} onClick={() => setJSONMode(!jsonMode)}>
                     {jsonMode ? "表格编辑" : "JSON 编辑"}
                 </Button>
             )}
-            {input.view?.component === "mapping-editor/v1" && !jsonMode ? (
+            {mediaMode && !jsonMode && objectValue ? (
+                <PluginMediaEditor value={parsed} mode={mediaMode} disabled={busy} onBusyChange={setMediaBusy} onChange={(value) => setText(JSON.stringify(value, null, 2))} />
+            ) : input.view?.component === "mapping-editor/v1" && !jsonMode ? (
                 <PluginMappingEditor value={parsedValue} schema={input.schema} view={input.view} disabled={busy} onChange={(value) => setText(JSON.stringify(value, null, 2))} />
             ) : simple && !jsonMode && objectValue ? (
                 Object.entries(props).map(([name, schema]) => (
@@ -95,10 +100,10 @@ export function PluginInputForm({ run, input, onUpdated }: { run: PluginRunView;
                 {!simple && <pre className="max-h-48 overflow-auto whitespace-pre-wrap">{JSON.stringify(run.pipeline?.schemas, null, 2)}</pre>}
             </details>
             <div className="flex gap-2">
-                <Button disabled={busy} onClick={() => void save("draft")}>
+                <Button disabled={busy || mediaBusy} onClick={() => void save("draft")}>
                     保存草稿
                 </Button>
-                <Button type="primary" loading={busy} onClick={() => void save("submit")}>
+                <Button type="primary" loading={busy} disabled={mediaBusy} onClick={() => void save("submit")}>
                     提交并继续
                 </Button>
             </div>

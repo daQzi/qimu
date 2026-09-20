@@ -18,6 +18,46 @@ import (
 )
 
 func RegisterUserDataRoutes(r *gin.RouterGroup, svc *service.Service) {
+	r.POST("/resources/:id/probe", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		policy, available := loadRuntimePolicy(c, svc)
+		if !available || !enforceRateLimit(c, "media-probe:"+user.ID, policy.Request.ResourceImportPerMinute, time.Minute) {
+			return
+		}
+		result, err := svc.ProbeResource(c.Request.Context(), user.ID, c.Param("id"))
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		ok(c, result)
+	})
+	r.GET("/resources/:id/frame", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		policy, available := loadRuntimePolicy(c, svc)
+		if !available || !enforceRateLimit(c, "media-frame:"+user.ID, policy.Request.ResourceImportPerMinute, time.Minute) {
+			return
+		}
+		at, err := strconv.ParseInt(c.Query("atMs"), 10, 64)
+		if err != nil {
+			fail(c, http.StatusBadRequest, err)
+			return
+		}
+		result, err := svc.ResourceFrame(c.Request.Context(), user.ID, c.Param("id"), at)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		c.Header("Cache-Control", "private, no-store")
+		c.Data(http.StatusOK, "image/jpeg", result)
+	})
 	r.POST("/assets/batch", func(c *gin.Context) {
 		user, err := currentUser(c, svc)
 		if err != nil {

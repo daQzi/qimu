@@ -1,6 +1,6 @@
 {
   "id": "review",
-  "component": "key-value/v1",
+  "component": "video-report-editor/v1",
   "schemaRef": "schemas/review.json",
   "fields": [
     {

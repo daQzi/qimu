@@ -49,8 +49,23 @@
       "additionalProperties": false
     },
     "audioAnalyzed": {
-      "type": "boolean",
-      "const": false
+      "type": "boolean"
+    },
+    "audioEvents": {
+      "type": "array", "maxItems": 200,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "minLength": 1, "maxLength": 80},
+          "startMs": {"type": "integer", "minimum": 0},
+          "endMs": {"type": "integer", "minimum": 1},
+          "kind": {"enum": ["music", "ambience", "effect"]},
+          "description": {"type": "string", "minLength": 1, "maxLength": 1000},
+          "uncertainties": {"type": "array", "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 500}}
+        },
+        "required": ["id", "startMs", "endMs", "kind", "description", "uncertainties"],
+        "additionalProperties": false
+      }
     },
     "shots": {
       "type": "array",
@@ -212,6 +227,7 @@
           },
           "evidenceKind": {
             "enum": [
+              "audio",
               "subtitle"
             ]
           },
