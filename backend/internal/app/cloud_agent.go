@@ -23,6 +23,7 @@ const cloudAgentOperation = "cloud_agent"
 // turns reference the previous run, not a mutable in-memory conversation. This
 // reuses transactional billing, worker leases, cancellation and text replay.
 type CloudAgentRequest struct {
+	ThreadID           string   `json:"threadId,omitempty"`
 	HostSurface        string   `json:"hostSurface,omitempty"`
 	PluginToolsVersion int      `json:"pluginToolsVersion,omitempty"`
 	ReasoningMode      string   `json:"reasoningMode,omitempty"`
@@ -317,6 +318,13 @@ func (s *Service) CloudAgentRunIfChanged(userID, id string, revision int64) (*Cl
 // is deterministic per user/key. Competing requests may race, but task creation
 // and credit reservation share a transaction: only one can commit.
 func (s *Service) CreateCloudAgentRun(userID string, req CloudAgentRequest, parentID string) (*CloudAgentRun, error) {
+	if req.ThreadID != "" {
+		return nil, BadAuthRequest("会话轮次请通过会话消息接口提交")
+	}
+	return s.createCloudAgentRun(userID, req, parentID)
+}
+
+func (s *Service) createCloudAgentRun(userID string, req CloudAgentRequest, parentID string) (*CloudAgentRun, error) {
 	if err := validateCloudAgentRequest(&req); err != nil {
 		return nil, err
 	}
@@ -368,15 +376,17 @@ func (s *Service) CreateCloudAgentRun(userID string, req CloudAgentRequest, pare
 		if parentErr != nil {
 			return nil, parentErr
 		}
-		if parent.ProjectID != req.CanvasID {
+		if parent.ProjectID != req.CanvasID && req.ThreadID == "" {
 			return nil, kernel.Forbidden("不能跨画布追加 Agent 消息")
 		}
 		if parent.Status == model.TaskStatusQueued || parent.Status == model.TaskStatusRunning {
 			return nil, kernel.NewAppError(409, "上一轮仍在执行，请等待结束")
 		}
 		superseded := s.cloudAgentParentCanBeSuperseded(userID, parentID)
-		if err := s.advanceCloudAgentByID(userID, parentID); err != nil {
-			return nil, err
+		if req.ThreadID == "" {
+			if err := s.advanceCloudAgentByID(userID, parentID); err != nil {
+				return nil, err
+			}
 		}
 		parentRun, err := s.CloudAgentRun(userID, parentID)
 		if err != nil {

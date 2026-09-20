@@ -965,6 +965,101 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /agent/threads:
+    get:
+      summary: 当前账号的云端会话，每页 50 条
+      parameters:
+        - {name: canvasId, in: query, schema: {type: string}, description: 可选，按历史画布绑定过滤}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 100000}}
+      responses:
+        "200": {description: "data 为 {threads, hasMore}；按更新时间倒序"}
+    post:
+      summary: 幂等创建会话，不创建画布或模型任务
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [clientKey]
+              properties:
+                clientKey: {type: string, minLength: 8, maxLength: 128}
+                title: {type: string, maxLength: 80}
+                canvasId: {type: string, maxLength: 80}
+      responses:
+        "200": {description: "data 为 {thread}，同键异参返回 409"}
+  /agent/threads/{id}:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    get:
+      summary: 读取会话及最近 20 条消息与运行引用
+      parameters:
+        - {name: before, in: query, schema: {type: integer, format: int64, minimum: 0}, description: 使用 nextBefore 读取更早的消息}
+      responses:
+        "200": {description: "data 为 {thread, entries, canvases, nextBefore}；entries 升序，每项含 kind/runId/contextRevision/context/run/references；Run 保留原状态、审批与事件"}
+        "404": {description: 会话不存在或不属于当前账号}
+        "409": {description: 读取时会话发生修改，请重新读取}
+  /agent/threads/{id}/context:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    patch:
+      summary: 修订后续轮次的画布绑定，不修改历史 Run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [revision, canvasId]
+              properties:
+                revision: {type: integer, format: int64, minimum: 1}
+                canvasId: {type: string, maxLength: 80, description: 空字符串表示后续轮次无画布；非空须为本人画布}
+      responses:
+        "200": {description: "data 为 {thread}，更换画布递增 revision 和 contextRevision"}
+        "409": {description: revision 过期}
+  /agent/threads/{id}/messages:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    post:
+      summary: 原子追加不可变 Agent 轮次，复用原任务与计费准入
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [revision, request]
+              properties:
+                revision: {type: integer, format: int64, minimum: 1}
+                request: {$ref: "#/components/schemas/CloudAgentRequest"}
+      responses:
+        "200": {description: "data 为 {thread, run}；同键同请求重试返回同一 Run，即使当前偏好或绑定已变化；父轮次由服务端确定"}
+        "409": {description: revision/画布不匹配、上一轮未结束或同键异参；不得改写请求后使用旧幂等键}
+  /agent/threads/{id}/references:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: string}}
+    post:
+      summary: 关联当前账号已有插件或创作运行，不执行任务或授权
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [revision, clientKey, kind, runId]
+              properties:
+                revision: {type: integer, format: int64, minimum: 1}
+                clientKey: {type: string, maxLength: 128}
+                kind: {type: string, enum: [plugin, creation]}
+                runId: {type: string, maxLength: 80}
+      responses:
+        "200": {description: "data 为 {thread}，同键相同来源幂等；审批/输入仍使用原 Run 接口"}
+        "404": {description: 会话或运行不存在或不属于当前账号}
+        "409": {description: revision 过期或同键不同来源}
   /agent/runs:
     post:
       tags: [agent]
@@ -1494,8 +1589,12 @@ components:
     CloudAgentRequest:
       type: object
       additionalProperties: false
-      required: [canvasId, prompt, permissionMode, contextScope, budget, idempotencyKey]
+      required: [prompt, permissionMode, contextScope, budget, idempotencyKey]
       properties:
+        hostSurface:
+          type: string
+          enum: [canvas, agent-home]
+          description: 无画布必须为 agent-home，contextScope 为空且媒体预算为 0；threadId 为服务端内部字段，客户端禁止提交
         canvasId:
           type: string
           maxLength: 80

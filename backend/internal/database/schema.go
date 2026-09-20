@@ -65,6 +65,7 @@ func Models() []any {
 		&model.PluginRunStep{},
 		&model.PluginRunEvent{},
 		&model.PluginCanvasProjection{},
+		&model.AgentThread{}, &model.AgentThreadEntry{}, &model.AgentThreadCanvas{},
 		&model.PluginConnection{}, &model.PluginConnectionVersion{}, &model.PluginConnectionRate{},
 		&model.PluginOperationPrice{}, &model.PluginRemoteExecution{}, &model.PluginRunResource{},
 		&model.PluginPipelineExecution{}, &model.PluginInputRequest{},

@@ -33,7 +33,7 @@ import { AppModal } from "@/components/ui/product/app-modal";
 import { getNodeSpec } from "@/constant/canvas";
 import { CanvasConfigComposer } from "@/components/canvas/canvas-config-composer";
 import { CanvasConfigNodePanel } from "@/components/canvas/canvas-config-node-panel";
-import { CanvasCloudAgentPanel } from "@/components/canvas/canvas-cloud-agent-panel";
+import { AgentThreadWorkspace as CanvasCloudAgentPanel } from "@/components/canvas/agent-thread-workspace";
 import { pluginActionNode, type PluginEditorEvent } from "@/lib/plugins/plugin-editor-actions";
 import { CanvasActiveTaskPanel } from "@/components/canvas/canvas-active-task-panel";
 import { CanvasAssetTray } from "@/components/canvas/canvas-asset-tray";

@@ -569,14 +569,20 @@ func TestCloudAgentToolLoopPersistsApprovalAndAppliesCanvasWrite(t *testing.T) {
 func TestCloudAgentNodeTypesExposeExecutableAllowList(t *testing.T) {
 	result := cloudAgentNodeTypes()
 	nodes, ok := result["nodes"].([]map[string]any)
-	if !ok || len(nodes) != 9 {
+	expected := map[string]bool{"text": true, "markdown": true, "frame": true, "batch-table": true, "script": true, "image": true, "audio": true, "video": true, "plugin-result": true, "plugin-input": true}
+	if !ok || len(nodes) != len(expected) {
 		t.Fatalf("unexpected node registry: %#v", result)
 	}
 	for _, node := range nodes {
+		typeName, _ := node["type"].(string)
+		if !expected[typeName] {
+			t.Fatalf("unexpected or duplicate node type %q", typeName)
+		}
+		delete(expected, typeName)
 		if node["type"] == "panorama" {
 			t.Fatal("UI-only node must not be exposed")
 		}
-		if node["type"] == "plugin-result" && (node["requiresPluginResult"] != true || node["canSource"] != false || node["canTarget"] != false) {
+		if (node["type"] == "plugin-result" || node["type"] == "plugin-input") && (node["requiresPluginResult"] != true || node["canSource"] != false || node["canTarget"] != false) {
 			t.Fatal("result nodes must require a plugin binding and cannot act as media inputs")
 		}
 	}

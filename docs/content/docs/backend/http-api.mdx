@@ -5,6 +5,8 @@ description: 信封、错误码与 OpenAPI
 
 # HTTP API 合同
 
+P08 新增 `/agent/threads` 创建/列表、`/agent/threads/:id` 分页读取、`/:id/context` 画布绑定、`/:id/messages` 原子追加 Agent 轮次、`/:id/references` 关联本人已有 PluginRun/CreationRun。所有接口按登录账号隔离；写入使用 revision，消息完整请求与幂等键需在发送前持久保存。无画布要求 hostSurface=agent-home、空 contextScope 与零媒体预算。旧 Agent/插件审批、SSE 和计费接口不变。字段与示例见 OpenAPI 和 `docs/plans/qimu-plugin-p08-acceptance.md`。
+
 插件 P06 新增 `GET /plugin-runs/:id/batch-quote`、`POST /plugin-runs/:id/batch-approval`、`POST /plugin-runs/:id/derive`、`GET /plugin-batch-diagnostics`，均按登录用户隔离。批准绑定精确任务/额度/有效期，供应商独立计费需显式接受；派生使用 Idempotency-Key，默认不复用随机结果，不覆盖历史。`plugin_budget_exceeded` 为平台余额或 Agent 剩余预算不足，`quote_changed` 为批次/资源/连接/报价变化或过期。字段见 OpenAPI 与 `docs/plans/qimu-plugin-p06-acceptance.md`。
 
 路径前缀是 `/api`。前后端一起发布，不按 `/api/v1`、`/api/v2` 做路径版本。不兼容变更随版本一起改接口和调用方。

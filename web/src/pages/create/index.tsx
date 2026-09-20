@@ -3,7 +3,7 @@ import { App, Spin } from "antd";
 import { Tooltip } from "@/components/ui/base/tooltip";
 import { History, Sparkles, Maximize2 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import type { AssetLibraryPickerItem } from "@/components/assets/asset-library-picker-modal";
 import { generationErrorCode, generationErrorMessage } from "@/lib/generation-error";
@@ -58,7 +58,9 @@ function writeComposerPref(key: string, value: boolean) {
 }
 
 export default function CreatePage() {
-    const [agentMode, setAgentMode] = useState(false);
+    const [searchParams] = useSearchParams();
+    const [agentMode, setAgentMode] = useState(() => searchParams.get("agent") === "1" || searchParams.has("thread"));
+    useEffect(() => { if (searchParams.get("agent") === "1" || searchParams.has("thread")) setAgentMode(true); }, [searchParams]);
     const { message: toast, modal } = App.useApp();
     const navigate = useNavigate();
     const [openingCanvas, setOpeningCanvas] = useState(false);

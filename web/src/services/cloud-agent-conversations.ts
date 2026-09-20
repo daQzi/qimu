@@ -32,6 +32,7 @@ type CloudAgentConversationDocument = {
 };
 
 export type CloudAgentPendingSubmission = {
+    threadRevision?: number;
     fingerprint: string;
     key: string;
     request?: import("@/services/api/agent").CreateAgentRunInput;

@@ -223,7 +223,7 @@ function ProfileWorkspace({ props, theme }: { props: AgentSettingsProps; theme: 
         }
     };
 
-    const disabled = profileUnavailable || props.profileSaving || (scope === "project" && !props.projectId);
+    const disabled = profileUnavailable || props.profileSaving || (scope === "project" && !props.projectId) || (scope === "canvas" && !props.canvasId);
     return (
         <div className="canvas-agent-settings-scroll thin-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
             <div className="rounded-xl p-4" style={{ background: theme.node.fill }}>
@@ -236,6 +236,7 @@ function ProfileWorkspace({ props, theme }: { props: AgentSettingsProps; theme: 
                 <TabButton theme={theme} active={scope === "canvas"} label="画布" onClick={() => setScope("canvas")} />
             </div>
             {scope === "project" && !props.projectId ? <p className="mt-3 text-xs leading-5" style={{ color: theme.node.muted }}>当前画布尚未关联项目，项目偏好暂不可用。</p> : null}
+            {scope === "canvas" && !props.canvasId ? <p className="mt-3 text-xs leading-5" style={{ color: theme.node.muted }}>当前会话尚未绑定画布，可以先编辑用户偏好。</p> : null}
             {props.profileLoading ? <p className="mt-4 text-xs" style={{ color: theme.node.muted }}>正在读取偏好快照…</p> : null}
             {props.profileError ? <ProfileError message={props.profileError} onRetry={props.onReloadProfile} theme={theme} /> : null}
             <label className="mt-4 block">
@@ -302,10 +303,12 @@ function McpWorkspace({ theme }: { theme: CanvasTheme }) {
 }
 
 function ContextWorkspace({ props, theme }: { props: AgentSettingsProps; theme: CanvasTheme }) {
+    if (!props.canvasId) return <p className="p-5 text-sm" style={{ color: theme.node.muted }}>当前是无画布对话。用户偏好和已选技能仍然生效；打开画布后可选择画布上下文。</p>;
     return <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5"><div className="rounded-xl p-4" style={{ background: theme.node.fill }}><div className="text-sm font-semibold">Agent 可以读取什么</div><div className="mt-1 text-[11px] opacity-45">只影响本次新运行的上下文范围</div></div><div className="mt-4 space-y-1">{contextOptions.map((option) => { const active = props.contextScope.includes(option.value); return <button key={option.value} type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left" style={{ background: active ? theme.accent.primarySoft : theme.node.fill }} onClick={() => props.onContextToggle(option.value)} aria-pressed={active}><span className="grid size-5 shrink-0 place-items-center rounded" style={{ background: active ? theme.accent.primary : theme.node.panel, color: active ? theme.accent.onPrimary : theme.node.muted }}>{active ? <Check className="size-3" /> : null}</span><span className="min-w-0 flex-1"><span className="block text-xs font-medium">{option.label}</span><span className="mt-0.5 block text-[10px] opacity-45">{option.description}</span></span></button>; })}</div></div>;
 }
 
 function BudgetWorkspace({ props, theme }: { props: AgentSettingsProps; theme: CanvasTheme }) {
+    if (!props.canvasId) return <div className="space-y-5 p-5"><p className="text-xs" style={{ color: theme.node.muted }}>当前无画布，不执行画布媒体生成；本轮仍受积分上限和插件授权约束。</p><BudgetInput label="积分上限" hint="必填且大于 0；所有步骤累计" value={props.maxCredits} onChange={props.onMaxCreditsChange} theme={theme} /></div>;
     return <div className="thin-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5"><div className="rounded-xl p-4" style={{ background: theme.node.fill }}><div className="text-sm font-semibold">本轮累计预算</div><p className="mt-2 text-xs opacity-60">积分预算用于费用保护；生成任务和视频秒数填 0 表示不设该项上限。模型循环由预算和运行状态控制，不再用固定次数截断。</p></div><BudgetInput label="积分上限" hint="必填且大于 0；所有步骤累计" value={props.maxCredits} onChange={props.onMaxCreditsChange} theme={theme} /><BudgetInput label="生成任务上限" hint="0 表示不限；只读模式不执行生成" value={props.maxGenerationTasks} onChange={props.onMaxGenerationTasksChange} theme={theme} /><BudgetInput label="视频秒数上限" hint="0 表示不限；按请求时长累计" value={props.maxVideoSeconds} onChange={props.onMaxVideoSecondsChange} theme={theme} /></div>;
 }
 

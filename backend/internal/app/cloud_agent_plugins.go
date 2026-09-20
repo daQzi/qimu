@@ -55,7 +55,7 @@ func (s *Service) advanceCloudAgentPluginTool(run *model.CloudAgentExecution, st
 }
 func (s *Service) executeCloudAgentPluginTool(run *model.CloudAgentExecution, state *cloudAgentRuntime, call cloudAgentCall) (any, error) {
 	service := s.applicationPlugins()
-	ctx := contracts.InvocationContext{HostSurface: "agent-home"}
+	ctx := contracts.InvocationContext{HostSurface: "agent-home", ThreadID: state.Request.ThreadID}
 	if state.Request.CanvasID != "" {
 		ctx.HostSurface = "canvas"
 		ctx.CanvasID = state.Request.CanvasID

@@ -1,6 +1,6 @@
 # Qimu 应用插件平台 v3：需求与整体架构设计
 
-> 状态：P00–P06 已验收；P07 实现持久输入的画布节点、标准组件、受控蓝图和在线编辑器动作，待验收。精确已实施合同见 [P07 验收](../plans/qimu-plugin-p07-acceptance.md)；统一会话/工作台等仍按后续阶段推进，真实供应商待联调。
+> 状态：P00–P07 已验收；P08 已实现持久会话、首页与画布共享消费层，待用户验收。精确合同见 [P08 验收](../plans/qimu-plugin-p08-acceptance.md)；工作台/Recipe 为 P09，业务对象为 P10，真实供应商待联调。
 > 设计起始代码基线：qimu `4eaa28b8`；P02 开始前已同步 main v1.5.4。旧 v1/v2 保留；v3 尚未部署到实际业务环境。
 
 配套文档：[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)、[改造实施设计](../plans/qimu-plugin-platform-v3-implementation.md)。目标合同以本文件和接入指南为准，实施顺序以实施设计为准。

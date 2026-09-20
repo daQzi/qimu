@@ -1,6 +1,6 @@
 # Qimu 应用插件 v3：能力提升改造实施设计
 
-> 状态：起始基线 qimu `4eaa28b8`。P00–P06 已验收。P07 基于完整集成分支和最新 fork main，在独立 worktree 增加输入节点、标准组件、交互蓝图及在线动作，沿用 schema 35，无新迁移。当前边界与验收见 [P07 接入与验收](qimu-plugin-p07-acceptance.md)。只合入插件集成分支，不合入 main；真实供应商待接入，未部署或迁移业务环境。
+> 状态：起始基线 qimu `4eaa28b8`。P00–P07 已验收。P08 增加持久 Thread、首页原地对话和跨画布继续，追加 schema 36，复用原 Agent/PluginRun/CreationRun 及账务。当前边界与验收见 [P08 接入与验收](qimu-plugin-p08-acceptance.md)。只合入插件集成分支，不合入 main；未部署或迁移业务环境。
 > 配套：[需求与整体架构](../design/qimu-plugin-platform-v3-design.md)、[插件开发接入指南](../content/docs/plugins/application-plugin-v3-integration.md)。本文回答改哪里、如何迁移、如何验证、什么条件才算完成。
 
 实际分批执行统一使用[分阶段实施手册](qimu-agent-plugin-platform-execution-runbook.md)的 P00–P14 编号。本文 M0–M7 保留为设计模块映射；最小画布闭环已前移到 P03，多工作台与出海的分支依赖以手册为准，不重复执行多套计划。

@@ -5,6 +5,8 @@ description: 影策后端核心持久化表与状态边界
 
 # 后端数据库
 
+P08 追加 schema 36 `agent_threads`：`agent_threads` 保存账号/clientKey 唯一键、创建请求摘要、两类 revision、当前画布和最新 Agent Run；`agent_thread_entries` 以 Thread/sequence 为主键，Thread/clientKey 唯一，保存不可变运行引用与上下文；`agent_thread_canvases` 保存历史画布绑定。消息追加、Task 与费用预留同事务提交，Thread 不保存第二套执行或账务状态。SQLite→PostgreSQL 搬迁清单已包含三张表。保留 35 及以前迁移历史，只迁移隔离测试库。迁移和回退边界见 `docs/plans/qimu-plugin-p08-acceptance.md`。
+
 P06 追加 schema 35 `application_plugin_batches`，不改历史迁移校验和：
 
 - plugin_runs 增加 derived_from_run_id 和 attempt；parent_run_id 仍表示编排父节点，两种关系独立。旧记录 attempt 默认 1。
