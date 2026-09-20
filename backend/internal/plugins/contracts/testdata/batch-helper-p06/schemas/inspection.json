@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "resourceId": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "resourceId"
+  ],
+  "additionalProperties": true
+}

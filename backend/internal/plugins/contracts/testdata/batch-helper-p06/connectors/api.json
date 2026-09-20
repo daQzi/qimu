@@ -1,0 +1,30 @@
+{
+  "id": "api",
+  "transport": "http",
+  "baseUrl": "https://example.invalid",
+  "auth": {
+    "type": "bearer"
+  },
+  "actions": {
+    "echo": {
+      "submit": {
+        "method": "POST",
+        "path": "/echo",
+        "body": {
+          "prompt": {
+            "from": "input.prompt"
+          }
+        }
+      },
+      "outputs": {
+        "message": "/message"
+      },
+      "idempotency": {
+        "mode": "unsupported"
+      },
+      "cancellation": {
+        "mode": "unsupported"
+      }
+    }
+  }
+}

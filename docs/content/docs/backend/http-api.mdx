@@ -5,6 +5,8 @@ description: 信封、错误码与 OpenAPI
 
 # HTTP API 合同
 
+插件 P06 新增 `GET /plugin-runs/:id/batch-quote`、`POST /plugin-runs/:id/batch-approval`、`POST /plugin-runs/:id/derive`、`GET /plugin-batch-diagnostics`，均按登录用户隔离。批准绑定精确任务/额度/有效期，供应商独立计费需显式接受；派生使用 Idempotency-Key，默认不复用随机结果，不覆盖历史。`plugin_budget_exceeded` 为平台余额或 Agent 剩余预算不足，`quote_changed` 为批次/资源/连接/报价变化或过期。字段见 OpenAPI 与 `docs/plans/qimu-plugin-p06-acceptance.md`。
+
 路径前缀是 `/api`。前后端一起发布，不按 `/api/v1`、`/api/v2` 做路径版本。不兼容变更随版本一起改接口和调用方。
 
 机器可读规范：运行中的 `GET /api/openapi.yaml`，源文件 `backend/internal/handler/openapi.yaml`。前端 TypeScript 仍走 `web/src/services/api` 的 `http`，不从 OpenAPI 生成客户端。

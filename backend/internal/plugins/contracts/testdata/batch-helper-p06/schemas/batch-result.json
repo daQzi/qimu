@@ -1,0 +1,1 @@
+{"type":"object","properties":{"items":{"type":"array","maxItems":250,"items":{"properties":{"message":{"type":"string"}},"required":["message"],"additionalProperties":false}}},"required":["items"],"additionalProperties":false}

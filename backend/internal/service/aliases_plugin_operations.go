@@ -8,5 +8,7 @@ type PluginOperationDescription = app.PluginOperationDescription
 type PluginInvocationOutput = app.PluginInvocationOutput
 type PluginRunView = app.PluginRunView
 type PluginInputUpdate = app.PluginInputUpdate
+type PluginBatchApproveRequest = app.PluginBatchApproveRequest
+type PluginDeriveRequest = app.PluginDeriveRequest
 type PluginConnectionInput = app.PluginConnectionInput
 type PluginOperationPriceInput = app.PluginOperationPriceInput

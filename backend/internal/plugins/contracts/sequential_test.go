@@ -31,7 +31,6 @@ func TestP05SequentialContract(t *testing.T) {
 		func(p *Pipeline) { p.Steps[2].Operation = "pipeline-helper.process" },
 		func(p *Pipeline) { p.Steps[2].Operation = "foreign.echo" },
 		func(p *Pipeline) { p.Steps[2].Inputs["prompt"] = Binding{From: "steps/inspect#/name"} },
-		func(p *Pipeline) { p.Steps[2].When = json.RawMessage(`{"exists":"steps/choose#/prompt"}`) },
 		func(p *Pipeline) { p.Steps[1].FormSchemaRef = "schemas/missing.json" },
 	} {
 		var p Pipeline

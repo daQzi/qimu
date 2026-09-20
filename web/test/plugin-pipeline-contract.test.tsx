@@ -36,9 +36,6 @@ test("P05 sequential package accepts chain and rejects unsupported or weaker con
             p.steps[2].inputs.prompt.from = "steps/inspect#/name";
         },
         (p: any) => {
-            p.steps[2].when = { exists: "steps/choose#/prompt" };
-        },
-        (p: any) => {
             p.steps[1].formSchemaRef = "schemas/missing.json";
         },
     ]) {

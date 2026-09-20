@@ -11,6 +11,71 @@ import (
 )
 
 func registerPluginPipelineRoutes(api *gin.RouterGroup, svc *service.Service) {
+	api.GET("/plugin-batch-diagnostics", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		result, err := svc.PluginBatchDiagnostics(user.ID)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		ok(c, result)
+	})
+	api.GET("/plugin-runs/:id/batch-quote", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		result, err := svc.PluginBatchQuote(user.ID, c.Param("id"))
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		c.Header("Cache-Control", "private, no-store")
+		ok(c, result)
+	})
+	api.POST("/plugin-runs/:id/batch-approval", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8<<10)
+		var req service.PluginBatchApproveRequest
+		if err = bindApplicationJSON(c, &req, []string{"digest", "count", "amountMicrocredits", "expiresAt", "acceptExternalBilling"}); err != nil {
+			fail(c, 400, err)
+			return
+		}
+		result, err := svc.ApprovePluginBatch(user.ID, c.Param("id"), req)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		ok(c, result)
+	})
+	api.POST("/plugin-runs/:id/derive", func(c *gin.Context) {
+		user, err := currentUser(c, svc)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 128<<10)
+		var req service.PluginDeriveRequest
+		if err = bindApplicationJSON(c, &req, []string{}); err != nil {
+			fail(c, 400, err)
+			return
+		}
+		result, err := svc.DerivePluginRun(user.ID, c.Param("id"), c.GetHeader("Idempotency-Key"), req)
+		if err != nil {
+			failService(c, err)
+			return
+		}
+		ok(c, result)
+	})
 	api.GET("/plugin-runs", func(c *gin.Context) {
 		user, err := currentUser(c, svc)
 		if err != nil {

@@ -5,10 +5,10 @@ description: 启幕 Agent 应用插件的包合同、操作、技能、远程 AP
 
 # 应用插件 v3 开发与接入指南
 
-> 状态：P00–P04 已验收；P05 开放顺序 Pipeline 与持久输入卡片，待验收。并行、画布输入节点和任意代码运行未开放；真实供应商待联调。
+> 状态：P00–P05 已验收；P06 增加受控 DAG/when/foreach、精确批次批准与派生运行，待用户验收。画布输入节点和任意代码运行未开放；真实供应商待联调。
 > 本文示例不包含真实服务或密钥。带 `example.invalid` 的地址只说明协议结构；真实模型选择和质量验证属于应用接入工作。
 
-P00 实现离线合同校验，P01 提供安装版本，P02/P03 开放三个可信 Host Adapter，P04 开放 HTTP 单任务，P05 开放顺序 pipelines。具体当前合同见 [P05 接入与验收](../../../plans/qimu-plugin-p05-acceptance.md)，下文并行/高级画布设计仍为后续目标。旧协议解析器不直接接收 v3，应用包由独立领域服务处理。
+P00 实现离线合同校验，P01 提供安装版本，P02/P03 开放三个可信 Host Adapter，P04 开放 HTTP 单任务，P05 开放顺序 pipelines，P06 开放受控批次。当前已实施合同、限制与示例见 [P06 接入与验收](../../../plans/qimu-plugin-p06-acceptance.md)；下文超出其范围的高级画布与扩展贡献仍为后续目标。旧协议解析器不直接接收 v3，应用包由独立领域服务处理。
 
 P03 开放第三个可信 Host Adapter `canvas.blueprint.instantiate`，见[P03 验收说明](../../../plans/qimu-plugin-p03-acceptance.md)。插件作者通过声明操作、视图、蓝图及技能使用该能力，不需要修改 Agent 主循环。只有新增宿主执行类别时才需要实现并注册新的可信 Adapter。
 

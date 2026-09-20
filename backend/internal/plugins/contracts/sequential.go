@@ -2,12 +2,10 @@ package contracts
 
 import (
 	"encoding/json"
-	"slices"
 	"strings"
 )
 
-// P05 admits a single explicit chain. Fan-out, conditions, nested pipelines and
-// cross-package steps stay closed until their authorization contracts exist.
+// Pipelines remain local and declarative; nested execution is not admitted.
 func LoadPipeline(files PackageFiles, id string) (Pipeline, error) {
 	var manifest Manifest
 	if err := json.Unmarshal(files["manifest.json"], &manifest); err != nil {
@@ -59,10 +57,7 @@ func validateSequentialPackage(files PackageFiles, doc map[string]any) error {
 	}
 	effects := map[string]bool{"draft_write": true}
 	required := map[string]bool{}
-	for i, step := range p.Steps {
-		if len(step.When) > 0 || len(step.Foreach) > 0 || (i == 0 && len(step.DependsOn) != 0) || (i > 0 && !slices.Contains(step.DependsOn, p.Steps[i-1].Key)) {
-			return invalid("operation_unavailable", "P05 requires an explicit sequential chain")
-		}
+	for _, step := range p.Steps {
 		if step.Type == "wait_input" {
 			if step.View != "" {
 				return invalid("operation_unavailable", "custom input views require P07")
@@ -74,7 +69,7 @@ func validateSequentialPackage(files PackageFiles, doc map[string]any) error {
 		}
 		child, ok := ops[step.Operation]
 		if !ok || child.Execution.Kind == "pipeline" {
-			return invalid("operation_unavailable", "P05 steps must reference local non-pipeline operations")
+			return invalid("operation_unavailable", "steps must reference local non-pipeline operations")
 		}
 		for _, e := range child.Effects {
 			effects[e] = true

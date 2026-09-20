@@ -338,6 +338,78 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /plugin-batch-diagnostics:
+    get:
+      tags: [agent]
+      summary: 当前用户的排队、活动槽、未知提交、导入积压和预算冲突计数
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+  /plugin-runs/{id}/batch-quote:
+    get:
+      tags: [agent]
+      summary: 读取当前已展开远程任务的精确批次报价
+      description: 返回任务清单、作用域摘要、平台微积分总额、供应商费用是否已知和五分钟有效期。不授权未展开的未来任务。
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugin-runs/{id}/batch-approval:
+    post:
+      tags: [agent]
+      summary: 批准精确任务清单并原子预留平台费用
+      description: 绑定发布、合同、所有输入（含模型参数）、连接、资源摘要、任务数量、总额和有效期。任一项变化、余额不足或 Agent 预算不足，整批回滚；重复批准不重复预留。供应商 BYOK 金额未知，必须单独接受，不受平台微积分额度覆盖。
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [digest, count, amountMicrocredits, expiresAt, acceptExternalBilling]
+              properties:
+                digest: {type: string}
+                count: {type: integer, minimum: 1, maximum: 8}
+                amountMicrocredits: {type: integer, minimum: 0}
+                expiresAt: {type: string, format: date-time}
+                acceptExternalBilling: {type: boolean}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "400":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /plugin-runs/{id}/derive:
+    post:
+      tags: [agent]
+      summary: 从已结束流程创建派生运行，不覆盖历史
+      description: 只允许已结束且没有未决外部提交的流程；input 可替换入口输入，inputs 按 wait_input 步骤键覆盖表单。forceSteps 计算依赖闭包；reuseCompleted 默认 false，明确选择后仅复用输入、版本和资源摘要匹配的远程成功结果。新任务需重新批准。
+      parameters:
+        - $ref: "#/components/parameters/AgentRunID"
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 8, maxLength: 160}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                input: {type: object, additionalProperties: true}
+                inputs: {type: object, additionalProperties: true}
+                forceSteps: {type: array, items: {type: string}}
+                reuseCompleted: {type: boolean, default: false}
+      responses:
+        "200":
+          $ref: "#/components/responses/Envelope"
+        "409":
+          $ref: "#/components/responses/Error"
   /plugin-runs/{id}/events:
     get:
       tags: [agent]

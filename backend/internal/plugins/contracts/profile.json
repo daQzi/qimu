@@ -64,6 +64,7 @@
     "scope_forbidden",
     "approval_required",
     "quote_changed",
+    "plugin_budget_exceeded",
     "upstream_submission_unknown",
     "upstream_output_invalid",
     "projection_conflict",

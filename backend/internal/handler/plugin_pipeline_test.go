@@ -66,6 +66,9 @@ func TestP05RoutesBackgroundWorkerAndReplay(t *testing.T) {
 		req := httptest.NewRequest(method, "/api"+path, bytes.NewReader(raw))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Idempotency-Key", "p05-route-stable")
+		if strings.HasSuffix(path, "/derive") {
+			req.Header.Set("Idempotency-Key", "p06-route-derive")
+		}
 		if user != "" {
 			req.AddCookie(&http.Cookie{Name: service.SessionCookieName, Value: user + ".p05-session"})
 		}
@@ -113,12 +116,22 @@ func TestP05RoutesBackgroundWorkerAndReplay(t *testing.T) {
 	request("PUT", inputPath, "alice", map[string]any{"revision": 1, "mode": "submit", "value": map[string]any{"prompt": "stale"}}, 409)
 	request("PUT", inputPath, "alice", map[string]any{"revision": 2, "mode": "submit", "value": map[string]any{"prompt": "confirmed"}}, 200)
 	approved := wait("waiting_approval")
+	quote := request("GET", "/plugin-runs/"+id+"/batch-quote", "alice", nil, 200)
+	request("GET", "/plugin-runs/"+id+"/batch-quote", "bob", nil, 404)
+	request("POST", "/plugin-runs/"+id+"/batch-approval", "alice", map[string]any{"digest": quote["digest"], "count": 1, "amountMicrocredits": quote["amountMicrocredits"], "expiresAt": quote["expiresAt"], "acceptExternalBilling": false}, 400)
+	request("POST", "/plugin-runs/"+id+"/batch-approval", "alice", map[string]any{"digest": quote["digest"], "count": 1, "amountMicrocredits": quote["amountMicrocredits"], "expiresAt": quote["expiresAt"], "acceptExternalBilling": true}, 200)
 	childID := approved["pipeline"].(map[string]any)["childRunId"].(string)
 	child := request("GET", "/plugin-runs/"+childID, "alice", nil, 200)
 	request("POST", fmt.Sprintf("/plugin-runs/%s/approvals/%s", childID, child["approvalId"]), "alice", map[string]any{"decision": "approve", "revision": child["revision"]}, 200)
 	done := wait("succeeded")
 	if done["result"].(map[string]any)["message"] != "route lifecycle" {
 		t.Fatal(done)
+	}
+	request("GET", "/plugin-batch-diagnostics", "alice", nil, 200)
+	request("POST", "/plugin-runs/"+id+"/derive", "bob", map[string]any{}, 404)
+	derived := request("POST", "/plugin-runs/"+id+"/derive", "alice", map[string]any{"inputs": map[string]any{}, "forceSteps": []string{}, "reuseCompleted": false}, 200)
+	if derived["derivedFromRunId"] != id {
+		t.Fatal("missing derivation relationship", derived)
 	}
 	request("GET", "/plugin-runs/"+id+"/events?after=0", "bob", nil, 404)
 	request("GET", "/plugin-runs/"+id+"/events?after=bad", "alice", nil, 400)

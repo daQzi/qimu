@@ -20,13 +20,15 @@ type InputView struct {
 	Submitted json.RawMessage `json:"submitted,omitempty"`
 }
 type PipelineView struct {
-	Cursor     int                        `json:"cursor"`
-	Steps      []contracts.PipelineStep   `json:"steps"`
-	ChildRunID string                     `json:"childRunId,omitempty"`
-	Inputs     []InputView                `json:"inputs"`
-	Outputs    map[string]json.RawMessage `json:"outputs"`
-	StepRuns   []model.PluginRun          `json:"stepRuns"`
-	Schemas    map[string]json.RawMessage `json:"schemas"`
+	Batch      *BatchState                 `json:"batch,omitempty"`
+	Approvals  []model.PluginBatchApproval `json:"approvals,omitempty"`
+	Cursor     int                         `json:"cursor"`
+	Steps      []contracts.PipelineStep    `json:"steps"`
+	ChildRunID string                      `json:"childRunId,omitempty"`
+	Inputs     []InputView                 `json:"inputs"`
+	Outputs    map[string]json.RawMessage  `json:"outputs"`
+	StepRuns   []model.PluginRun           `json:"stepRuns"`
+	Schemas    map[string]json.RawMessage  `json:"schemas"`
 }
 
 func (s *Service) pipelineView(run *model.PluginRun) (*PipelineView, error) {
@@ -47,6 +49,16 @@ func (s *Service) pipelineView(run *model.PluginRun) (*PipelineView, error) {
 		return nil, err
 	}
 	view := &PipelineView{Cursor: state.Cursor, Steps: p.Steps, ChildRunID: state.ChildRunID, Inputs: []InputView{}}
+	if state.BatchJSON != "" {
+		view.Batch = &BatchState{}
+		if err = json.Unmarshal([]byte(state.BatchJSON), view.Batch); err != nil {
+			return nil, err
+		}
+	}
+	view.Approvals, err = s.repo.PluginBatchApprovals(run.UserID, run.ID)
+	if err != nil {
+		return nil, err
+	}
 	view.Schemas = map[string]json.RawMessage{}
 	for path, raw := range files {
 		if strings.HasPrefix(path, "schemas/") {
@@ -115,7 +127,7 @@ func (s *Service) UpdateInput(user, runID, id, key string, req InputUpdate) (Run
 			}
 			return nil
 		}
-		if row.Status != "pending" || row.Revision != req.Revision || run.Status != "waiting_input" {
+		if row.Status != "pending" || row.Revision != req.Revision || !contains([]string{"waiting_input", "running", "waiting_approval"}, run.Status) {
 			return issue(409, "run_revision_conflict", "输入已提交、运行已停止或页面已过期")
 		}
 		var invocation contracts.Invocation

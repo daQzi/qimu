@@ -1,0 +1,21 @@
+{
+  "id": "inspect",
+  "description": "读取视频元数据",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/inspection.json",
+  "requiredPermissions": [
+    "media.read"
+  ],
+  "effects": [
+    "read"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "host",
+    "adapter": "resource.inspect",
+    "mode": "inline"
+  }
+}

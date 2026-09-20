@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -58,6 +59,18 @@ func (w *taskWorkerCoordinator) processPluginOperation(task *model.Task, ctx con
 	if err != nil {
 		return w.pausePluginState(task, "configuration_unavailable", "固定版本配置暂不可用，请修复配置后恢复原任务")
 	}
+	acquired, err := w.service.acquirePluginSlot(task, runtime)
+	if err != nil {
+		return err
+	}
+	if !acquired {
+		return w.deferPluginTask(task, "等待插件并发槽", runtime.Remote.State, time.Second, nil)
+	}
+	defer func() {
+		if err := w.service.repo.ReleasePluginExecutionSlot(task.ID, task.LeaseOwner); err != nil {
+			log.Printf("plugin slot release failed: task=%s error=%v", task.ID, err)
+		}
+	}()
 	if runtime.Remote.CancelRequested {
 		return w.cancelPluginRemote(task, ctx, runtime)
 	}

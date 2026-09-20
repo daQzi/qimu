@@ -133,7 +133,7 @@ func (h pluginRemoteHost) enqueue(repo *repository.Repository, userID string, ru
 			return err
 		}
 		if fee > remaining {
-			return BadAuthRequest("Agent 剩余预算不足以批准此插件任务")
+			return &kernel.AppError{Status: 400, Code: 400, Reason: "plugin_budget_exceeded", Message: "Agent 剩余预算不足以批准此插件任务"}
 		}
 	}
 	payload, _ := json.Marshal(map[string]any{"runId": run.ID})
@@ -155,7 +155,7 @@ func (h pluginRemoteHost) enqueue(repo *repository.Repository, userID string, ru
 	}
 	if err = createTaskWithStorageQuotaRepository(repo, task, order, runtime); err != nil {
 		if errors.Is(err, repository.ErrInsufficientCredits) {
-			return BadAuthRequest("积分不足，请先使用兑换码充值")
+			return &kernel.AppError{Status: 400, Code: 400, Reason: "plugin_budget_exceeded", Message: "积分不足，请先使用兑换码充值"}
 		}
 		return err
 	}
@@ -164,7 +164,7 @@ func (h pluginRemoteHost) enqueue(repo *repository.Repository, userID string, ru
 	if err != nil {
 		return err
 	}
-	execution := &model.PluginRemoteExecution{TaskID: task.ID, RunID: run.ID, UserID: userID, ConnectionVersionID: run.ConnectionVersionID, SubmissionKey: "plugin-" + run.ID, Attempt: 1, State: "prepared", PreparedCipher: cipher, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
+	execution := &model.PluginRemoteExecution{TaskID: task.ID, RunID: run.ID, UserID: userID, ConnectionVersionID: run.ConnectionVersionID, SubmissionKey: "plugin-" + run.ID, Attempt: max(1, run.Attempt), State: "prepared", PreparedCipher: cipher, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC()}
 	if err = repo.CreatePluginRemote(execution); err != nil {
 		return err
 	}

@@ -54,6 +54,9 @@ func validatePipeline(doc map[string]any) error {
 		}
 		_, hasItems := s["foreach"]
 		if loop, ok := s["foreach"].(map[string]any); ok {
+			if err := check("item#"+loop["itemKey"].(string), allowed, true); err != nil {
+				return err
+			}
 			if err := check(loop["from"].(string), allowed, false); err != nil {
 				return err
 			}

@@ -1,6 +1,6 @@
 # P05：持久流程与用户输入
 
-状态：代码完成待用户验收。P04 已验收；本阶段从含 P00–P04 的集成提交 `98fc867a` 创建独立 worktree，分支 `codex/plugin-p05-pipelines`。开始前 fetch origin 并同步 main `cb68476e`；提交前发现本地 main 追加 v1.5.5（`b9d60f98`），通过 `7bc6489d` 合入并保留其媒体/画布更新。此时 origin/main 仍为 `cb68476e`，本地 main 已包含远端全部提交，未覆盖其他任务的新提交。完成后只合入 `codex/codex-plugin`，不合入 main、不自动推送、不自动部署、不操作业务数据库。
+状态：用户已确认 P05 验收通过。P04 已验收；本阶段从含 P00–P04 的集成提交 `98fc867a` 创建独立 worktree，分支 `codex/plugin-p05-pipelines`。开始前 fetch origin 并同步 main `cb68476e`；提交前发现本地 main 追加 v1.5.5（`b9d60f98`），通过 `7bc6489d` 合入并保留其媒体/画布更新。此时 origin/main 仍为 `cb68476e`，本地 main 已包含远端全部提交，未覆盖其他任务的新提交。完成后只合入 `codex/codex-plugin`，不合入 main、不自动推送、不自动部署、不操作业务数据库。
 
 ## 1. 本次能力
 

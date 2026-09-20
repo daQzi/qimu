@@ -37,7 +37,7 @@ func cloudAgentPluginDescriptionReceipt(result any) any {
 
 func isCloudAgentPluginTool(name string) bool {
 	switch name {
-	case "operation_search", "operation_describe", "operation_invoke", "plugin_run_get", "plugin_run_resume", "plugin_run_cancel", "plugin_input_submit", "result_read":
+	case "operation_search", "operation_describe", "operation_invoke", "plugin_run_get", "plugin_run_resume", "plugin_run_cancel", "plugin_input_submit", "plugin_run_derive", "result_read":
 		return true
 	}
 	return false
@@ -62,6 +62,54 @@ func (s *Service) executeCloudAgentPluginTool(run *model.CloudAgentExecution, st
 	}
 	policy := plugins.InvocationPolicy{PermissionMode: state.Request.PermissionMode, AgentRunID: run.ID, AgentRevision: run.Revision}
 	switch call.Function.Name {
+	case "plugin_run_derive":
+		if state.Request.PermissionMode == "read_only" {
+			return nil, Forbidden("只读模式不能派生运行")
+		}
+		var args struct {
+			RunID      string                     `json:"runId"`
+			Inputs     map[string]json.RawMessage `json:"inputs"`
+			ForceSteps []string                   `json:"forceSteps"`
+		}
+		if err := decodeCloudAgentJSONObject(call.Function.Arguments, &args); err != nil {
+			return nil, err
+		}
+		digest := sha256.Sum256([]byte(run.ID + "\x00" + call.ID))
+		key := "agent-derive:" + hex.EncodeToString(digest[:])
+		var result plugins.RunView
+		err := s.repo.WithPluginCatalog(func(repo *repository.Repository) error {
+			if err := repo.LockActivePluginAgent(run.UserID, run.ID, run.Revision); err != nil {
+				return creationConflict("Agent 已停止或检查点已变化")
+			}
+			if state.PendingExecution != nil {
+				pending, err := repo.PluginRunForUser(run.UserID, state.PendingExecution.ID)
+				if err != nil {
+					return err
+				}
+				existing, err := repo.PluginRunByKey(run.UserID, key)
+				if err != nil {
+					return err
+				}
+				if pending.Status != "succeeded" && pending.Status != "failed" && pending.Status != "cancelled" && (existing == nil || existing.ID != pending.ID) {
+					return creationConflict("已有未结束的插件运行，请先完成或停止")
+				}
+			}
+			local := &Service{repo: repo, dataDir: s.dataDir}
+			var err error
+			result, err = local.DerivePluginRun(run.UserID, args.RunID, key, PluginDeriveRequest{Inputs: args.Inputs, ForceSteps: args.ForceSteps})
+			if err != nil {
+				return err
+			}
+			if err = repo.BindPluginDerivedAgent(run.UserID, result.ID, run.ID); err != nil {
+				return err
+			}
+			result.AgentRunID = run.ID
+			return nil
+		})
+		if err == nil {
+			state.PendingExecution = &cloudAgentExecutionRef{Kind: "plugin_run", ID: result.ID}
+		}
+		return result, err
 	case "plugin_input_submit":
 		if state.Request.PermissionMode == "read_only" {
 			return nil, Forbidden("只读模式不能提交用户输入")

@@ -1,0 +1,46 @@
+{
+  "id": "process",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/batch-result.json",
+  "steps": [
+    {
+      "key": "inspect",
+      "type": "operation",
+      "operation": "batch-helper.inspect",
+      "dependsOn": [],
+      "inputs": {
+        "resourceId": {
+          "from": "input#/resourceId"
+        }
+      }
+    },
+    {
+      "key": "choose",
+      "type": "wait_input",
+      "dependsOn": [
+        "inspect"
+      ],
+      "formSchemaRef": "schemas/mapping.json"
+    },
+    {
+      "key": "remote",
+      "type": "operation",
+      "operation": "batch-helper.echo",
+      "foreach": {"from":"steps/choose#/items","itemKey":"/id","maxConcurrency":2},
+      "when": {"equals":[{"from":"item#/enabled"},{"literal":true}]},
+      "dependsOn": [
+        "choose"
+      ],
+      "inputs": {
+        "prompt": {
+          "from": "item#/prompt"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "items": {
+      "from": "steps/remote#"
+    }
+  }
+}

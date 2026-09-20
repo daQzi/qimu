@@ -22,7 +22,7 @@ import (
 	"infinite-canvas/backend/internal/repository"
 )
 
-func p05Fixture(t *testing.T, driver string, handler http.HandlerFunc) (*Service, *gorm.DB, string, *atomic.Int32) {
+func p05Fixture(t *testing.T, driver string, handler http.HandlerFunc, variant ...string) (*Service, *gorm.DB, string, *atomic.Int32) {
 	t.Helper()
 	t.Setenv("CANVAS_ALLOWED_PRIVATE_UPSTREAM_HOSTS", "127.0.0.1")
 	counter := &atomic.Int32{}
@@ -44,6 +44,11 @@ func p05Fixture(t *testing.T, driver string, handler http.HandlerFunc) (*Service
 	s = New(s.repo, s.dataDir)
 	t.Cleanup(func() { s.Close() })
 	root := "../plugins/contracts/testdata/pipeline-helper-p05"
+	pluginID := "pipeline-helper"
+	if len(variant) > 0 {
+		root = "../plugins/contracts/testdata/batch-helper-p06"
+		pluginID = "batch-helper"
+	}
 	var buf bytes.Buffer
 	w := zip.NewWriter(&buf)
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -70,14 +75,14 @@ func p05Fixture(t *testing.T, driver string, handler http.HandlerFunc) (*Service
 	if _, err = s.InstallManagedPluginForAdmin(&model.User{ID: "admin", Role: model.UserRoleAdmin}, buf.Bytes(), "pipeline.yingce-plugin"); err != nil {
 		t.Fatal(err)
 	}
-	release, err := s.repo.PluginReleaseByVersion("pipeline-helper", "1.0.0")
+	release, err := s.repo.PluginReleaseByVersion(pluginID, "1.0.0")
 	if err != nil || release == nil {
 		t.Fatal(err)
 	}
-	if err = s.ActivateApplicationPlugin(&model.User{ID: "user", Role: model.UserRoleUser}, "pipeline-helper", ApplicationPluginActivation{ReleaseID: release.ID, Enabled: true, GrantedPermissions: []string{"media.read", "connection.use"}}); err != nil {
+	if err = s.ActivateApplicationPlugin(&model.User{ID: "user", Role: model.UserRoleUser}, pluginID, ApplicationPluginActivation{ReleaseID: release.ID, Enabled: true, GrantedPermissions: []string{"media.read", "connection.use"}}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.SaveApplicationPluginConnection("user", PluginConnectionInput{PluginID: "pipeline-helper", ConnectorID: "api", Name: "test", BaseURL: upstream.URL, Credential: "test-secret", Enabled: true}); err != nil {
+	if _, err = s.SaveApplicationPluginConnection("user", PluginConnectionInput{PluginID: pluginID, ConnectorID: "api", Name: "test", BaseURL: upstream.URL, Credential: "test-secret", Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 	return s, db, release.ID, counter

@@ -16,6 +16,8 @@ type PluginRun struct {
 	PipelineID          string    `json:"pipelineId,omitempty" gorm:"size:80;index"`
 	ParentRunID         string    `json:"parentRunId,omitempty" gorm:"size:36;index"`
 	ParentStepKey       string    `json:"parentStepKey,omitempty" gorm:"size:80"`
+	DerivedFromRunID    string    `json:"derivedFromRunId,omitempty" gorm:"size:36;index"`
+	Attempt             int       `json:"attempt" gorm:"not null;default:1"`
 	ContractHash        string    `json:"contractHash" gorm:"size:64;not null"`
 	RequestJSON         string    `json:"-" gorm:"type:text;not null"`
 	PlanJSON            string    `json:"-" gorm:"type:text;not null"`

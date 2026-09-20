@@ -199,7 +199,7 @@ func (s *Service) GetRun(userID, id string, viewID ...string) (RunView, error) {
 	view := RunView{PluginRun: *run, Preview: json.RawMessage(run.PlanJSON)}
 	if run.Status == "succeeded" {
 		view.Result = json.RawMessage(run.ResultJSON)
-		view.ResultRef = &contracts.ResultRef{RunID: run.ID, StepKey: "invoke", Attempt: 1, OutputKey: "result", SchemaID: run.Operation + "/result", SchemaVersion: run.ReleaseVersion, Digest: hashBytes([]byte(run.ResultJSON))}
+		view.ResultRef = &contracts.ResultRef{RunID: run.ID, StepKey: "invoke", Attempt: max(1, run.Attempt), OutputKey: "result", SchemaID: run.Operation + "/result", SchemaVersion: run.ReleaseVersion, Digest: hashBytes([]byte(run.ResultJSON))}
 	}
 	if err := s.decorateRunView(&view, viewID...); err != nil {
 		return RunView{}, err
@@ -242,6 +242,15 @@ func (s *Service) Decide(userID, id, approvalID, decision string, revision int64
 			return issue(409, "run_revision_conflict", "运行状态已变化")
 		}
 		if decision == "approve" {
+			if run.ParentRunID != "" {
+				parent, err := repo.PluginRunForUser(userID, run.ParentRunID)
+				if err != nil {
+					return err
+				}
+				if !contains([]string{"queued", "running", "waiting_input", "waiting_approval"}, parent.Status) {
+					return issue(409, "run_revision_conflict", "父流程已停止，不能批准新任务")
+				}
+			}
 			var request contracts.Invocation
 			if err = json.Unmarshal([]byte(run.RequestJSON), &request); err != nil {
 				return err

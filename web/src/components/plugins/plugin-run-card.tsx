@@ -6,6 +6,7 @@ import { PluginResultValues } from "./plugin-result-values";
 import { PluginCanvasSave } from "./plugin-canvas-save";
 import { PluginRemoteStatus } from "./plugin-remote-status";
 import { PluginInputForm } from "./plugin-input-form";
+import { PluginBatchControls } from "./plugin-batch-controls";
 import { resumePluginRun } from "@/services/api/plugin-remote";
 import { apiBaseURL } from "@/services/api/request";
 import { refreshCanvasAfterAgent, saveRemoteUserDataNow } from "@/services/user-data-sync";
@@ -21,7 +22,9 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
     const [refresh, setRefresh] = useState(0);
     const [projection, setProjection] = useState<{ scope: string; id: string }>();
     const run = loaded?.scope === scope ? loaded.run : undefined;
-    useEffect(() => { setBusy(false); }, [scope]);
+    useEffect(() => {
+        setBusy(false);
+    }, [scope]);
     const active = !!run && !["succeeded", "failed", "cancelled"].includes(run.status);
     useEffect(() => {
         if (!active || busy) return;
@@ -99,17 +102,33 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
                     )}
                     {run.pipeline && (
                         <>
+                            <PluginBatchControls
+                                key={scope}
+                                run={run}
+                                onUpdated={(value) => {
+                                    if (currentScope.current === scope) setLoaded({ scope, run: value });
+                                }}
+                                onDerived={(id) => {
+                                    if (currentScope.current === scope) setProjection({ scope, id });
+                                }}
+                            />
                             <p>
                                 已完成 {run.pipeline.cursor} / {run.pipeline.steps.length} 步
                             </p>
                             <ol className="list-inside list-decimal">
                                 {run.pipeline.steps.map((step, i) => (
                                     <li key={step.key}>
-                                        {step.key}：{i < run.pipeline!.cursor ? "已完成" : i === run.pipeline!.cursor ? "当前步骤" : "待执行"}
+                                        {step.key}：{run.pipeline!.batch ? (run.pipeline!.batch.steps[step.key]?.done ? "已完成" : "待完成") : i < run.pipeline!.cursor ? "已完成" : i === run.pipeline!.cursor ? "当前步骤" : "待执行"}
+                                        {run.pipeline!.batch?.steps[step.key]?.items.map((item, index) => (
+                                            <div key={item.itemKey || index} className="ml-3 text-xs">
+                                                {item.itemKey || step.key} · {item.status}
+                                                {item.reusedFrom ? " · 已复用历史结果" : ""}
+                                            </div>
+                                        ))}
                                     </li>
                                 ))}
                             </ol>
-                            {run.status === "waiting_input" &&
+                            {["waiting_input", "running", "waiting_approval"].includes(run.status) &&
                                 run.pipeline.inputs
                                     .filter((i) => i.status === "pending")
                                     .map((input) => (
@@ -123,6 +142,7 @@ export function PluginRunCard({ runId, canvasId, expectedDigest, viewId }: { run
                                         />
                                     ))}
                             {run.pipeline.childRunId && <PluginRunCard key={run.pipeline.childRunId} runId={run.pipeline.childRunId} canvasId={canvasId} />}
+                            {run.pipeline.batch && run.pipeline.stepRuns?.filter((child) => !["succeeded", "cancelled", "failed"].includes(child.status)).map((child) => <PluginRunCard key={child.id} runId={child.id} canvasId={canvasId} />)}
                             {run.status === "paused" && (
                                 <Button
                                     onClick={() => {

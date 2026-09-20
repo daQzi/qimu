@@ -5,6 +5,19 @@ description: 影策后端核心持久化表与状态边界
 
 # 后端数据库
 
+P06 追加 schema 35 `application_plugin_batches`，不改历史迁移校验和：
+
+- plugin_runs 增加 derived_from_run_id 和 attempt；parent_run_id 仍表示编排父节点，两种关系独立。旧记录 attempt 默认 1。
+- plugin_pipeline_executions 增加 batch_json，保存按 stepKey/itemKey 展开的有序实例、状态、输出及复用来源；P05 cursor/child_run_id 继续有效。
+- plugin_batch_approvals 保存精确报价摘要、任务范围、数量、额度和有效期；与原 Task/账务预留同事务提交，不是新钱包。
+- plugin_execution_slots 保存 Task 与 owner 及用户/连接/模型/插件作用域；有效性关联 Task 租约，过期槽不计数，旧 owner 无法释放新槽。
+- plugin_batch_metrics 按用户聚合报价/预算冲突计数，不保存参数、密钥或供应商响应。运行诊断另统计未知提交、导入积压与活动槽。
+- plugin_remote_executions.cancel_status 扩为 64 字符，容纳“外部可能继续执行”的完整状态，修复 PostgreSQL 在未知提交取消收束时的长度错误。
+
+SQLite→PostgreSQL 搬迁工具的表清单已同步 P01–P06 全部插件表，继续执行主键排序、逐字段核对和未知表拒绝，不跳过插件历史或审批数据。
+
+迁移及回退边界见 [P06 验收说明](../../../plans/qimu-plugin-p06-acceptance.md)。业务库尚未迁移；部署前备份数据库、资源、包与加密密钥，不能仅用旧二进制读取新批次状态。
+
 P05 追加 schema 34 `application_plugin_pipelines`，保留 v33 及各历史谱系：
 
 - plugin_runs 增加 pipeline_id、parent_run_id、parent_step_key，追溯流程、步骤、固定发布和原 Agent。

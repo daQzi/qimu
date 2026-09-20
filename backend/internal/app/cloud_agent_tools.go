@@ -132,6 +132,7 @@ func compileCloudAgentTools(req CloudAgentRequest, includeProfileTool bool) []ma
 		add("plugin_run_get", "读取当前用户的插件运行状态和待审批引用。", map[string]any{"runId": str("真实插件运行ID")}, "runId")
 		if req.PermissionMode != "read_only" {
 			add("plugin_input_submit", "提交用户明确提供的流程输入。先读取 plugin_run_get 中的待填 Schema、输入请求 ID 和 revision；缺少字段必须询问用户，禁止猜测。提交输入不授权外部写入或收费，后续仍需用户审批。", map[string]any{"runId": str("流程ID"), "inputRequestId": str("输入请求ID"), "revision": map[string]any{"type": "integer", "minimum": 1}, "value": map[string]any{"type": "object", "additionalProperties": true}}, "runId", "inputRequestId", "revision", "value")
+			add("plugin_run_derive", "用户要求重新执行时，为已结束流程创建新运行。先读取原运行，inputs 按表单步骤键提供用户明确给出的内容；forceSteps 指定重做步骤。不会自动复用随机生成结果，收费仍需用户确认。", map[string]any{"runId": str("原流程ID"), "inputs": map[string]any{"type": "object", "additionalProperties": true}, "forceSteps": map[string]any{"type": "array", "items": map[string]any{"type": "string"}}}, "runId", "inputs", "forceSteps")
 		}
 		add("plugin_run_resume", "核对插件运行是否已获用户批准并完成。不能跳过审批；短操作由审批接口原子完成，未批准时仍返回等待状态。", map[string]any{"runId": str("真实插件运行ID")}, "runId")
 		add("result_read", "读取当前用户已成功插件运行的结构化结果，不返回媒体二进制或凭据。", map[string]any{"runId": str("真实插件运行ID")}, "runId")
@@ -324,7 +325,7 @@ func cloudAgentToolAllowed(req CloudAgentRequest, name string) bool {
 func cloudAgentWrite(name string) bool {
 	// Generic invocation is conservatively a potential write. Its specialized
 	// bridge resolves actual effects before the legacy canvas approval branch.
-	return name == "operation_invoke" || name == "plugin_input_submit" || name == "plugin_run_cancel" || name == "canvas_apply_ops" || name == "generate_media" || name == "image_layer_split" || name == "canvas_create_storyboard" || name == "canvas_edit_storyboard" || name == "canvas_edit_batch_table"
+	return name == "operation_invoke" || name == "plugin_input_submit" || name == "plugin_run_derive" || name == "plugin_run_cancel" || name == "canvas_apply_ops" || name == "generate_media" || name == "image_layer_split" || name == "canvas_create_storyboard" || name == "canvas_edit_storyboard" || name == "canvas_edit_batch_table"
 }
 
 func cloudAgentReadTool(repo *repository.Repository, userID string, state *cloudAgentRuntime, call cloudAgentCall, services ...*Service) (any, error) {

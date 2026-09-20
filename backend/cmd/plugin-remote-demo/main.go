@@ -29,6 +29,7 @@ func main() {
 	jobs := map[string]*job{}
 	keys := map[string]string{}
 	submits := 0
+	echoRequests := 0
 	var pngData bytes.Buffer
 	preview := image.NewRGBA(image.Rect(0, 0, 32, 32))
 	for y := 0; y < 32; y++ {
@@ -49,7 +50,17 @@ func main() {
 		_, _ = w.Write(pngData.Bytes())
 	})
 	mux.HandleFunc("POST /echo", func(w http.ResponseWriter, r *http.Request) {
-		write(w, map[string]any{"message": "P04 同步测试完成（未调用模型）"})
+		var input struct {
+			Prompt string `json:"prompt"`
+		}
+		if json.NewDecoder(http.MaxBytesReader(w, r.Body, 256<<10)).Decode(&input) != nil {
+			http.Error(w, "invalid JSON", 400)
+			return
+		}
+		mu.Lock()
+		echoRequests++
+		mu.Unlock()
+		write(w, map[string]any{"message": input.Prompt})
 	})
 	mux.HandleFunc("POST /jobs", func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
@@ -127,8 +138,9 @@ func main() {
 	mux.HandleFunc("GET /stats", func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
 		count := submits
+		echoCount := echoRequests
 		mu.Unlock()
-		write(w, map[string]any{"uniqueSubmissions": count, "demo": true})
+		write(w, map[string]any{"uniqueSubmissions": count, "echoRequests": echoCount, "demo": true})
 	})
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/image.png" && r.Header.Get("Authorization") != "Bearer demo-key" {

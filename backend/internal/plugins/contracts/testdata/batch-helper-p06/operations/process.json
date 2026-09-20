@@ -1,0 +1,24 @@
+{
+  "id": "process",
+  "description": "检查视频 → 用户选择 → 远程处理",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/batch-result.json",
+  "requiredPermissions": [
+    "media.read",
+    "connection.use"
+  ],
+  "effects": [
+    "read",
+    "draft_write",
+    "external_write"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "pipeline",
+    "pipeline": "process",
+    "mode": "task"
+  }
+}

@@ -23,7 +23,11 @@ func (s *Service) createPipeline(repo *repository.Repository, user, key, digest 
 	if err = repo.CreatePluginRun(&run, &step); err != nil {
 		return InvocationOutput{}, err
 	}
-	if err = repo.CreatePluginPipeline(&model.PluginPipelineExecution{RunID: run.ID, OutputsJSON: "{}"}); err != nil {
+	batch := ""
+	if batchPipeline(p) {
+		batch = encode(newBatchState())
+	}
+	if err = repo.CreatePluginPipeline(&model.PluginPipelineExecution{RunID: run.ID, OutputsJSON: "{}", BatchJSON: batch}); err != nil {
 		return InvocationOutput{}, err
 	}
 	if err = SaveRunTransition(repo, &run, "pipeline.created"); err != nil {
@@ -41,7 +45,7 @@ func (s *Service) AdvancePipeline(user, id string) error {
 		if err != nil {
 			return err
 		}
-		if run.PipelineID == "" || !contains([]string{"queued", "running", "waiting_approval", "cancelling"}, run.Status) {
+		if run.PipelineID == "" || !contains([]string{"queued", "running", "waiting_input", "waiting_approval", "cancelling"}, run.Status) {
 			return nil
 		}
 		owner := kernel.NewID()
@@ -64,6 +68,16 @@ func (s *Service) AdvancePipeline(user, id string) error {
 			}
 			run.Status = "paused"
 			run.FailureMessage = appErr.Message
+			if state.BatchJSON != "" {
+				var batch BatchState
+				if e := json.Unmarshal([]byte(state.BatchJSON), &batch); e != nil {
+					return e
+				}
+				batch.StopStatus = "failed"
+				batch.BlockedReason = appErr.Message
+				state.BatchJSON = encode(batch)
+				run.Status = "cancelling"
+			}
 			changed = true
 		}
 		if changed || before != run.Status {
@@ -76,6 +90,9 @@ func (s *Service) AdvancePipeline(user, id string) error {
 }
 
 func (s *Service) advancePipelineStep(repo *repository.Repository, run *model.PluginRun, state *model.PluginPipelineExecution) (bool, error) {
+	if state.BatchJSON != "" {
+		return s.advanceBatch(repo, run, state)
+	}
 	if state.ChildRunID != "" {
 		child, err := repo.PluginRunForUser(run.UserID, state.ChildRunID)
 		if err != nil {
@@ -262,6 +279,8 @@ func resolveBindings(bindings map[string]contracts.Binding, input map[string]jso
 		var raw []byte
 		if parts[0] == "input" {
 			raw = []byte(encode(input))
+		} else if parts[0] == "item" {
+			raw = outputs["$item"]
 		} else {
 			raw = outputs[strings.TrimPrefix(parts[0], "steps/")]
 		}
@@ -302,6 +321,10 @@ func (s *Service) cancelPipeline(repo *repository.Repository, run *model.PluginR
 	state, err := repo.PluginPipeline(run.ID)
 	if err != nil {
 		return err
+	}
+	if state.BatchJSON != "" {
+		run.Status = "cancelling"
+		return SaveRunTransition(repo, run, "pipeline.cancel.requested")
 	}
 	run.Status = "cancelled"
 	if state.ChildRunID != "" {

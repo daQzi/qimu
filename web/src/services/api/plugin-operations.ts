@@ -25,9 +25,30 @@ export type PluginRunView = {
     projectionStatus?: string;
     failureMessage?: string;
     taskId?: string;
-    pipeline?: { cursor: number; steps: { key: string; type: string }[]; childRunId?: string; inputs: PluginInputRequest[]; outputs: Record<string, unknown>; schemas?: Record<string, unknown> };
+    derivedFromRunId?: string;
+    attempt?: number;
+    pipeline?: {
+        cursor: number;
+        steps: { key: string; type: string }[];
+        childRunId?: string;
+        inputs: PluginInputRequest[];
+        outputs: Record<string, unknown>;
+        schemas?: Record<string, unknown>;
+        batch?: { steps: Record<string, { done: boolean; items: { itemKey: string; status: string; childRunId?: string; reusedFrom?: string }[] }>; blockedReason?: string };
+        stepRuns?: PluginRunView[];
+    };
     remote?: { taskId: string; submissionState: string; providerJobId?: string; cancelStatus?: string; cancelRequested: boolean; failureReason?: string; failureMessage?: string; importAttempts: number };
 };
+export type PluginBatchQuote = { digest: string; items: { runId: string; operation: string; feeMicrocredits: number }[]; amountMicrocredits: number; vendorCostKnown: boolean; expiresAt: string };
+export function getPluginBatchQuote(id: string) {
+    return http.get<PluginBatchQuote>(`/plugin-runs/${encodeURIComponent(id)}/batch-quote`);
+}
+export function approvePluginBatch(id: string, quote: PluginBatchQuote, acceptExternalBilling: boolean) {
+    return http.post<PluginRunView>(`/plugin-runs/${encodeURIComponent(id)}/batch-approval`, { digest: quote.digest, count: quote.items.length, amountMicrocredits: quote.amountMicrocredits, expiresAt: quote.expiresAt, acceptExternalBilling });
+}
+export function derivePluginRun(id: string, request: { input?: Record<string, unknown>; inputs: Record<string, unknown>; forceSteps: string[]; reuseCompleted: boolean }, key: string) {
+    return http.post<PluginRunView>(`/plugin-runs/${encodeURIComponent(id)}/derive`, request, { headers: { "Idempotency-Key": key } });
+}
 export function listPluginRuns(offset = 0, signal?: AbortSignal) {
     return http.get<PluginRunView[]>("/plugin-runs", { params: { offset }, signal });
 }

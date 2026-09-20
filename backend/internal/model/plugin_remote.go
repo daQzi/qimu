@@ -61,7 +61,7 @@ type PluginRemoteExecution struct {
 	ProviderJobID       string     `json:"providerJobId,omitempty" gorm:"size:160"`
 	CancelRequested     bool       `json:"cancelRequested"`
 	CancelSent          bool       `json:"-"`
-	CancelStatus        string     `json:"cancelStatus,omitempty" gorm:"size:32"`
+	CancelStatus        string     `json:"cancelStatus,omitempty" gorm:"size:64"`
 	FailureReason       string     `json:"failureReason,omitempty" gorm:"size:80"`
 	FailureMessage      string     `json:"failureMessage,omitempty" gorm:"type:text"`
 	PollFailures        int        `json:"-"`

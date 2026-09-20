@@ -216,15 +216,19 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
         for (const p of op.requiredPermissions) if (!manifest.permissions.includes(p)) fail("scope_forbidden", "permission exceeds manifest");
         if (op.resultView && !registry.views.has(op.resultView)) fail("package_reference_invalid", op.resultView);
         if (op.execution.kind === "pipeline") {
-            if (Object.entries(files).filter(([path]) => path.startsWith("schemas/")).reduce((total, [, raw]) => total + encoder.encode(raw).length, 0) > 24000) fail("operation_unavailable", "pipeline schema description exceeds 24000 bytes");
+            if (
+                Object.entries(files)
+                    .filter(([path]) => path.startsWith("schemas/"))
+                    .reduce((total, [, raw]) => total + encoder.encode(raw).length, 0) > 24000
+            )
+                fail("operation_unavailable", "pipeline schema description exceeds 24000 bytes");
             const ref = contributions.pipelines?.find((r: ObjectValue) => r.id === op.execution.pipeline);
             if (!ref) fail("package_reference_invalid", "pipeline not registered");
             const p = docs[ref.ref];
             if (p.inputSchemaRef !== op.inputSchemaRef || p.outputSchemaRef !== op.outputSchemaRef) fail("contract_invalid", "pipeline entry schemas differ");
             const effects = new Set<string>(["draft_write"]);
             const permissions = new Set<string>();
-            p.steps.forEach((step: ObjectValue, i: number) => {
-                if (step.when || step.foreach || (i === 0 ? step.dependsOn.length !== 0 : !step.dependsOn.includes(p.steps[i - 1].key))) fail("operation_unavailable", "P05 requires an explicit sequential chain");
+            p.steps.forEach((step: ObjectValue) => {
                 if (step.type === "wait_input") {
                     if (step.view) fail("operation_unavailable", "custom input views require P07");
                     requireSchema(step.formSchemaRef);
@@ -370,7 +374,10 @@ function validatePipeline(doc: ObjectValue): void {
     for (const step of Object.values(steps)) {
         const allowed = new Set<string>(step.dependsOn),
             hasItems = !!step.foreach;
-        if (step.foreach) check(step.foreach.from, allowed, false);
+        if (step.foreach) {
+            check(step.foreach.from, allowed, false);
+            check("item#" + step.foreach.itemKey, allowed, true);
+        }
         const bindings: ObjectValue[] = Object.values(step.inputs ?? {});
         if (step.when?.exists) check(step.when.exists, allowed, hasItems);
         for (const binding of step.when?.equals ?? []) bindings.push(binding);
