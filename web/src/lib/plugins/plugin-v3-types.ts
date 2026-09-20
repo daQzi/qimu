@@ -26,7 +26,7 @@ export type PluginManifestV3 = {
     version: string;
     description: string;
     publisher: { id: string; displayName: string };
-    requires: { hostApi: "^3.0.0" | "^3.1.0" };
+    requires: { hostApi: "^3.0.0" | "^3.1.0" | "^3.2.0" };
     permissions: PluginV3Permission[];
     dependencies: Array<{ id: string; version: string; optional: boolean }>;
     contributes: { skills?: PluginV3Skill[]; operations?: PluginContributionRef[]; views?: PluginContributionRef[]; canvasBlueprints?: PluginContributionRef[]; connectors?: PluginContributionRef[]; pipelines?: PluginContributionRef[]; workbenches?: PluginContributionRef[]; recipes?: PluginContributionRef[] };

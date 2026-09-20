@@ -12,17 +12,18 @@ var composerFieldName = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_]{0,79}$`)
 
 // Workbench configures existing entry points; it never grants execution authority.
 type Workbench struct {
-	ID               string         `json:"id"`
-	Name             string         `json:"name"`
-	Description      string         `json:"description"`
-	HostSurfaces     []string       `json:"hostSurfaces"`
-	ContextSchemaRef string         `json:"contextSchemaRef"`
-	Operation        string         `json:"operation,omitempty"`
-	Skill            string         `json:"skill,omitempty"`
-	Recipes          []string       `json:"recipes"`
-	Defaults         map[string]any `json:"defaults"`
-	Output           string         `json:"output"`
-	Prompt           string         `json:"prompt,omitempty"`
+	ObjectInputs     map[string]string `json:"objectInputs,omitempty"`
+	ID               string            `json:"id"`
+	Name             string            `json:"name"`
+	Description      string            `json:"description"`
+	HostSurfaces     []string          `json:"hostSurfaces"`
+	ContextSchemaRef string            `json:"contextSchemaRef"`
+	Operation        string            `json:"operation,omitempty"`
+	Skill            string            `json:"skill,omitempty"`
+	Recipes          []string          `json:"recipes"`
+	Defaults         map[string]any    `json:"defaults"`
+	Output           string            `json:"output"`
+	Prompt           string            `json:"prompt,omitempty"`
 }
 type Recipe struct {
 	ID           string         `json:"id"`
@@ -102,7 +103,7 @@ func ValidateWorkbenches(files PackageFiles) error {
 			}
 		}
 	}
-	if extended && manifest.Requires.HostAPI != "^3.1.0" {
+	if extended && manifest.Requires.HostAPI != "^3.1.0" && manifest.Requires.HostAPI != "^3.2.0" {
 		return invalid("contract_invalid", "workbench requires hostApi ^3.1.0")
 	}
 	for _, board := range boards {
@@ -141,6 +142,30 @@ func ValidateWorkbenches(files PackageFiles) error {
 			return invalid("contract_invalid", "workbench requires object schema")
 		}
 		properties, _ := schema["properties"].(map[string]any)
+		if len(board.ObjectInputs) > 0 {
+			if manifest.Requires.HostAPI != "^3.2.0" {
+				return invalid("contract_invalid", "object inputs require hostApi ^3.2.0")
+			}
+			allowed := false
+			for _, p := range manifest.Permissions {
+				allowed = allowed || p == "asset.read"
+			}
+			if !allowed {
+				return invalid("scope_forbidden", "object inputs require asset.read")
+			}
+			for key := range board.ObjectInputs {
+				if properties[key] == nil {
+					return invalid("package_reference_invalid", "object input field")
+				}
+				required := false
+				for _, field := range asArray(schema["required"]) {
+					required = required || field == key
+				}
+				if !required {
+					return invalid("contract_invalid", "object input must be required")
+				}
+			}
+		}
 		if len(properties) > 32 {
 			return invalid("contract_invalid", "workbench exceeds 32 fields")
 		}

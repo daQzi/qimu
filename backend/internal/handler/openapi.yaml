@@ -26,6 +26,75 @@ tags:
   - name: agent
   - name: admin
 paths:
+  /business-objects:
+    get:
+      tags: [assets]
+      summary: 检索当前账号的品牌对象
+      description: 仅品牌文本对象；每页最多 30 项，按最近更新排序。返回对象索引数组（objectId/type/title/version/archived/createdAt/updatedAt），不含用户 ID。private/no-store。
+      parameters:
+        - {name: q, in: query, schema: {type: string, maxLength: 120}}
+        - {name: archived, in: query, schema: {type: boolean, default: false}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, maximum: 1000, default: 0}}
+      responses:
+        "200": {$ref: "#/components/responses/Envelope"}
+        "400": {$ref: "#/components/responses/Error"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+    post:
+      tags: [assets]
+      summary: 明确保存品牌新版本
+      description: 最多 32 KiB；品牌内容最多 16 KiB。新建 expectedVersion=0，不带 objectId；修改必须带当前 objectId 和预期版本。clientKey 在对象内绑定原始正文，网络失败应原样重试。每账号最多 100 个对象（含归档）、每对象最多 100 版。返回 BusinessObjectView 信封。此为用户直接管理入口，插件必须走 object.save 宿主审批。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/BusinessObjectWrite"}
+      responses:
+        "200": {$ref: "#/components/responses/Envelope"}
+        "400": {$ref: "#/components/responses/Error"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /business-objects/{id}/versions/{version}:
+    get:
+      tags: [assets]
+      summary: 读取当前账号品牌的固定版本（包括归档历史）
+      description: 返回 BusinessObjectView 信封；版本内容不可变，archived/currentVersion 为当前索引信息。private/no-store。不存在和非当前账号统一返回 404。
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, minLength: 1, maxLength: 80}}
+        - {name: version, in: path, required: true, schema: {type: integer, minimum: 1, maximum: 100}}
+      responses:
+        "200": {$ref: "#/components/responses/Envelope"}
+        "400": {$ref: "#/components/responses/Error"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /business-objects/{id}/archive:
+    patch:
+      tags: [assets]
+      summary: 归档或恢复品牌，不删除历史
+      description: 最多 1 KiB。按当前版本校验；归档是幂等状态设置，不创建内容版本。归档阻止新插件读取/工作台调用，历史任务输入保留；响应 data 为 archived 布尔值对象。
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expectedVersion, archived]
+              properties:
+                expectedVersion: {type: integer, minimum: 1, maximum: 100}
+                archived: {type: boolean}
+      responses:
+        "200": {$ref: "#/components/responses/Envelope"}
+        "400": {$ref: "#/components/responses/Error"}
+        "401": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
   /plugin-workbenches:
     get:
       tags: [agent]
@@ -53,7 +122,7 @@ paths:
     post:
       tags: [agent]
       summary: 合并工作台和配方，预览最终输入
-      description: 最多 64 KiB。返回 input、prompts、conflicts、valid、selection 和可选 validationMessage。业务冲突或字段缺失时 valid=false；只有有效预览可交给插件操作或 Agent。预览不执行操作、不选择模型、不授权、不收费。
+      description: 最多 64 KiB。返回 input、prompts、conflicts、valid、selection 、可选 validationMessage 和 objects（按 objectInputs 解析的当前账号固定版本事实；引用不兼容/已归档/未授权则失败）。业务冲突或字段缺失时 valid=false；只有有效预览可交给插件操作或 Agent。预览不执行操作、不选择模型、不授权、不收费。
       requestBody:
         required: true
         content:
@@ -1580,6 +1649,45 @@ components:
       in: cookie
       name: open_ai_canvas_session
   schemas:
+    BusinessObjectReference:
+      type: object
+      additionalProperties: false
+      required: [objectId, version, type, schemaVersion]
+      properties:
+        objectId: {type: string, minLength: 1, maxLength: 80}
+        version: {type: integer, minimum: 1, maximum: 100}
+        type: {type: string, enum: [brand]}
+        schemaVersion: {type: integer, enum: [1]}
+    Brand:
+      type: object
+      additionalProperties: false
+      required: [name, audience, positioning, claims, restrictions]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 160}
+        audience: {type: string, minLength: 1, maxLength: 1000}
+        positioning: {type: string, minLength: 1, maxLength: 2000}
+        claims: {type: array, maxItems: 20, items: {type: string, minLength: 1, maxLength: 500}}
+        restrictions: {type: array, maxItems: 20, items: {type: string, minLength: 1, maxLength: 500}}
+    BusinessObjectWrite:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, clientKey, brand]
+      properties:
+        objectId: {type: string, minLength: 1, maxLength: 80}
+        expectedVersion: {type: integer, minimum: 0, maximum: 100}
+        clientKey: {type: string, minLength: 8, maxLength: 128}
+        brand: {$ref: "#/components/schemas/Brand"}
+        source: {$ref: "#/components/schemas/BusinessObjectReference"}
+    BusinessObjectView:
+      type: object
+      required: [reference, brand, digest, archived, currentVersion]
+      properties:
+        reference: {$ref: "#/components/schemas/BusinessObjectReference"}
+        brand: {$ref: "#/components/schemas/Brand"}
+        digest: {type: string, pattern: "^[a-f0-9]{64}$"}
+        source: {$ref: "#/components/schemas/BusinessObjectReference"}
+        archived: {type: boolean}
+        currentVersion: {type: integer, minimum: 1, maximum: 100}
     ModelRequestIntent:
       type: object
       required: [capability]

@@ -1,5 +1,6 @@
 import { Button, Input, Select } from "antd";
 import { useEffect, useRef, useState } from "react";
+import { BusinessObjectPicker } from "./business-object-picker";
 
 // The input contract comes from the operation; no duplicate Skill form schema.
 export function WorkbenchFields({
@@ -9,7 +10,9 @@ export function WorkbenchFields({
     disabled,
     onChange,
     onValidityChange,
+    objectInputs,
 }: {
+    objectInputs?: Record<string, "brand/v1">;
     schema: Record<string, unknown>;
     value: Record<string, unknown>;
     suggested: Record<string, unknown>;
@@ -30,12 +33,14 @@ export function WorkbenchFields({
                 const change = (next: unknown) => onChange({ ...value, [name]: next });
                 const label = String(field.title || name);
                 return (
-                    <label key={name} className="block space-y-1">
+                    <div key={name} className="block space-y-1">
                         <span>
                             {label}
                             {required.includes(name) ? " *" : ""}
                         </span>
-                        {Array.isArray(field.enum) || field.type === "boolean" ? (
+                        {objectInputs?.[name] === "brand/v1" ? (
+                            <BusinessObjectPicker value={current} disabled={disabled} onChange={change} />
+                        ) : Array.isArray(field.enum) || field.type === "boolean" ? (
                             <Select
                                 aria-label={label}
                                 className="w-full"
@@ -73,7 +78,7 @@ export function WorkbenchFields({
                             </Button>
                         ) : null}
                         {typeof field.description === "string" ? <span className="block text-xs text-muted-foreground">{field.description}</span> : null}
-                    </label>
+                    </div>
                 );
             })}
         </div>

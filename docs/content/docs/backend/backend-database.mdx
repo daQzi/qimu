@@ -5,6 +5,8 @@ description: 影策后端核心持久化表与状态边界
 
 # 后端数据库
 
+P10 追加 schema 37 `business_objects`：`business_objects` 保存账号归属、类型、标题、当前版本与归档状态；`business_object_versions` 以 object_id/version 为复合主键，object_id/client_key 唯一，保存不可变 brand/v1 内容、摘要、派生来源与幂等请求摘要。同账号写事务使用用户行锁串行化版本与配额，CAS 冲突拒绝写入。归档不删除任何版本；既有 Run/Agent 输入保留版本引用和事实，不新增执行/账务表。SQLite→PostgreSQL 搬迁清单增加两表。保留 36 及之前的迁移记录；不提供物理删除或自动 down。迁移/回退规则见 `docs/plans/qimu-workstudio-p10-acceptance.md`；本阶段只操作隔离测试库。
+
 P08 追加 schema 36 `agent_threads`：`agent_threads` 保存账号/clientKey 唯一键、创建请求摘要、两类 revision、当前画布和最新 Agent Run；`agent_thread_entries` 以 Thread/sequence 为主键，Thread/clientKey 唯一，保存不可变运行引用与上下文；`agent_thread_canvases` 保存历史画布绑定。消息追加、Task 与费用预留同事务提交，Thread 不保存第二套执行或账务状态。SQLite→PostgreSQL 搬迁清单已包含三张表。保留 35 及以前迁移历史，只迁移隔离测试库。迁移和回退边界见 `docs/plans/qimu-plugin-p08-acceptance.md`。
 
 P06 追加 schema 35 `application_plugin_batches`，不改历史迁移校验和：

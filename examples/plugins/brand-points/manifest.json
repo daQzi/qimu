@@ -1,0 +1,56 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "brand-points",
+  "name": "品牌卖点整理",
+  "version": "1.0.0",
+  "description": "基于宿主解析的固定品牌版本，整理卖点、受众和表达限制。只使用已确认事实，不推测功效、价格或认证。",
+  "publisher": {
+    "id": "sample-studio",
+    "displayName": "工作台示例"
+  },
+  "requires": {
+    "hostApi": "^3.2.0"
+  },
+  "permissions": [
+    "asset.read",
+    "asset.search",
+    "asset.import"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "assist",
+        "name": "assist",
+        "description": "基于宿主解析的固定品牌版本，整理卖点、受众和表达限制。只使用已确认事实，不推测功效、价格或认证。",
+        "entry": "skills/assist/SKILL.md",
+        "activation": "explicit",
+        "operations": [
+          "brand-points.read",
+          "brand-points.search",
+          "brand-points.save"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "read",
+        "ref": "operations/read.json"
+      },
+      {
+        "id": "search",
+        "ref": "operations/search.json"
+      },
+      {
+        "id": "save",
+        "ref": "operations/save.json"
+      }
+    ],
+    "workbenches": [
+      {
+        "id": "compose",
+        "ref": "workbenches/compose.json"
+      }
+    ]
+  }
+}

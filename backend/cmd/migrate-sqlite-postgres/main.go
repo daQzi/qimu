@@ -323,6 +323,8 @@ func migrations() []tableMigration {
 		migrateTable[model.AgentThread]("agent_threads"),
 		migrateTable[model.AgentThreadEntry]("agent_thread_entries"),
 		migrateTable[model.AgentThreadCanvas]("agent_thread_canvases"),
+		migrateTable[model.BusinessObject]("business_objects"),
+		migrateTable[model.BusinessObjectVersion]("business_object_versions"),
 		migrateTable[model.AgentProfile]("agent_profiles"),
 		migrateTable[model.AgentLesson]("agent_lessons"),
 		migrateTable[model.AgentMemorySetting]("agent_memory_settings"),

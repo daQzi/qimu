@@ -132,6 +132,7 @@ function OwnedWorkbench({ user, id, release, canvas }: { user: string; id: strin
             <div className="flex flex-wrap items-center gap-4">
                 <h1 className="text-xl font-semibold">{view?.definition.name || "插件工作台"}</h1>
                 <Link to="/plugins">应用插件</Link>
+                <Link to="/business-objects">品牌资料</Link>
                 {id ? <Link to={canvas ? `/workbenches?canvasId=${encodeURIComponent(canvas)}` : "/workbenches"}>切换工作台</Link> : null}
             </div>
             <p className="text-sm text-muted-foreground">由插件提供流程和输入建议。模型、费用及写入授权由你确认。切换工作台前请保存草稿，切换不会停止已提交任务。</p>
@@ -181,7 +182,15 @@ function OwnedWorkbench({ user, id, release, canvas }: { user: string; id: strin
                                 onChange={(recipes) => edit({ ...draft, recipes })}
                             />
                         </label>
-                        <WorkbenchFields schema={view.schema} value={draft.input} suggested={preview?.input || view.definition.defaults} disabled={locked} onChange={(input) => edit({ ...draft, input })} onValidityChange={setFieldsValid} />
+                        <WorkbenchFields
+                            schema={view.schema}
+                            objectInputs={view.definition.objectInputs}
+                            value={draft.input}
+                            suggested={preview?.input || view.definition.defaults}
+                            disabled={locked}
+                            onChange={(input) => edit({ ...draft, input })}
+                            onValidityChange={setFieldsValid}
+                        />
                         <label className="block space-y-1">
                             <span>给 Agent 的目标（可选）</span>
                             <Input.TextArea aria-label="给 Agent 的目标" value={draft.goal} disabled={locked} onChange={(e) => edit({ ...draft, goal: e.target.value })} />
@@ -221,6 +230,14 @@ function OwnedWorkbench({ user, id, release, canvas }: { user: string; id: strin
                                     </p>
                                 ))}
                                 {preview.validationMessage ? <p role="alert">{preview.validationMessage}</p> : null}
+                                {Object.entries(preview.objects || {}).map(([field, object]) => (
+                                    <details key={field}>
+                                        <summary>
+                                            {object.brand.name} · 固定版本 {object.reference.version}
+                                        </summary>
+                                        <PluginResultValues value={object.brand} />
+                                    </details>
+                                ))}
                                 {preview.prompts.map((text, i) => (
                                     <p key={i} className="whitespace-pre-wrap text-sm">
                                         {text}

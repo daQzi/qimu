@@ -1,0 +1,21 @@
+{
+  "id": "read",
+  "description": "读取当前账号品牌的指定版本",
+  "inputSchemaRef": "schemas/read-input.json",
+  "outputSchemaRef": "schemas/output.json",
+  "requiredPermissions": [
+    "asset.read"
+  ],
+  "effects": [
+    "read"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "host",
+    "adapter": "object.read",
+    "mode": "inline"
+  }
+}

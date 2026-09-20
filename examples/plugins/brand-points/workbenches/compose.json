@@ -1,0 +1,18 @@
+{
+  "id": "compose",
+  "name": "品牌卖点整理",
+  "description": "基于宿主解析的固定品牌版本，整理卖点、受众和表达限制。只使用已确认事实，不推测功效、价格或认证。",
+  "hostSurfaces": [
+    "agent-home",
+    "canvas"
+  ],
+  "contextSchemaRef": "schemas/read-input.json",
+  "skill": "assist",
+  "objectInputs": {
+    "reference": "brand/v1"
+  },
+  "recipes": [],
+  "defaults": {},
+  "output": "result",
+  "prompt": "基于宿主解析的固定品牌版本，整理卖点、受众和表达限制。只使用已确认事实，不推测功效、价格或认证。"
+}

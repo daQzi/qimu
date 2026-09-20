@@ -360,6 +360,25 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 		}
 		// Installation validates the admitted host contract, never permissions
 		// invented by a package. Execution repeats the host minimum checks.
+		adapter, _ := execution["adapter"].(string)
+		if permission, ok := map[string]string{"object.read": "asset.read", "object.search": "asset.search", "object.save": "asset.import"}[adapter]; ok {
+			if execution["kind"] != "host" || execution["mode"] != "inline" || manifest["requires"].(map[string]any)["hostApi"] != "^3.2.0" {
+				return invalid("operation_unavailable", "object host contract")
+			}
+			found := false
+			for _, p := range asArray(op["requiredPermissions"]) {
+				found = found || p == permission
+			}
+			effect := "read"
+			if execution["adapter"] == "object.save" {
+				effect = "draft_write"
+			}
+			effects := asArray(op["effects"])
+			if !found || len(effects) != 1 || effects[0] != effect {
+				return invalid("scope_forbidden", "object minimum contract")
+			}
+			continue
+		}
 		if execution["kind"] != "host" || (execution["adapter"] != "resource.inspect" && execution["adapter"] != "resource.snapshot" && execution["adapter"] != "canvas.blueprint.instantiate") || execution["mode"] != "inline" {
 			return invalid("operation_unavailable", "host adapter profile")
 		}

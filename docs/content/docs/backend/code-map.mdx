@@ -5,6 +5,8 @@ description: 从产品功能快速定位主要代码入口
 
 # 代码功能地图
 
+P10：`internal/objects/brand.go` 管理品牌字段、版本/CAS、保留与派生；`repository/business_object.go` 串行化账号写入并存储不可变版本。`app/business_object.go` 复用 Host Adapter，`handler/business_object.go` 提供受控 HTTP 管理。`plugins/workbench.go` 按声明解析引用，`cloud_agent.go` 冻结事实。前端 `pages/business-objects` 管理资料、`business-object-picker.tsx` 选择固定版本、`business-object-pending.ts` 隔离重试；无第二套执行器。
+
 P09：`plugins/contracts/workbench.go` 与共享 schema 校验 Workbench/Recipe、合并建议和冲突；`plugins/workbench.go` 处理用户发布/入口/画布权限、预览摘要和调用核验；`app/plugin_workbench.go` 为组合根，`handler/plugin_workbench.go` 提供目录/配置/预览。原 `cloud_agent.go` 接入固定选择和本发布技能，原 `invocation.go` 保存与返回快照。前端 `pages/workbenches` 共用 Shell，`workbench-fields.tsx` 根据 Schema 渲染，`workbench-drafts.ts` 隔离草稿/原样重试；复用 `AgentThreadWorkspace`、`PluginRunCard`。三个声明式样例在 `examples/plugins/`，无新表或业务专属执行器。
 
 插件作者交付：`backend/cmd/plugin-contract` 处理 CLI 参数；`internal/plugins/authoring` 提供受限读取、模板与打包，复用 `contracts` 和 `protocol.ReadPluginPackageEnvelope`。真实宿主验证在 `internal/app/plugin_authoring_test.go`，指南在 `docs/content/docs/plugins/application-plugin-v3-integration.md`。不新增 HTTP、数据库或 Agent 执行分支。

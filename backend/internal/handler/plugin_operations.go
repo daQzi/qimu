@@ -9,6 +9,7 @@ import (
 )
 
 func registerPluginOperationRoutes(api *gin.RouterGroup, svc *service.Service) {
+	registerBusinessObjectRoutes(api, svc)
 	registerPluginWorkbenchRoutes(api, svc)
 	registerPluginRemoteRoutes(api, svc)
 	registerPluginPipelineRoutes(api, svc)

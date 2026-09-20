@@ -222,7 +222,8 @@
             "hostApi": {
               "enum": [
                 "^3.0.0",
-                "^3.1.0"
+                "^3.1.0",
+                "^3.2.0"
               ]
             }
           },
@@ -1586,6 +1587,16 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 2000
+        },
+        "objectInputs": {
+          "type": "object",
+          "maxProperties": 8,
+          "propertyNames": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,79}$"
+          },
+          "additionalProperties": {
+            "const": "brand/v1"
+          }
         }
       },
       "required": [
@@ -1687,6 +1698,34 @@
         "recipeIds",
         "input",
         "digest"
+      ],
+      "additionalProperties": false
+    },
+    "objectReference": {
+      "type": "object",
+      "properties": {
+        "objectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "type": {
+          "const": "brand"
+        },
+        "schemaVersion": {
+          "const": 1
+        }
+      },
+      "required": [
+        "objectId",
+        "version",
+        "type",
+        "schemaVersion"
       ],
       "additionalProperties": false
     }

@@ -80,3 +80,41 @@ description: hostApi 3.1 的通用工作台、动态表单、配方冲突和 Age
 纯 Markdown Skill 仍可独立使用。只读 inline 结果不创建持久 Run；刷新后重新检查即可。草稿按账号、工作台、发布、画布保存在本机浏览器，不等于云端保存；JSON 尚未合法时的中间文本不保证跨页面恢复。
 
 跨包工作台组合、objectTypes、外部开放鉴权、Webhook 和公开市场仍未实现。关闭入口不能代替在途任务的取消/费用结算；旧后端不认识 hostApi 3.1，不能直接混跑处理这些任务。
+
+## P10 品牌对象：hostApi 3.2
+
+要求 `requires.hostApi: "^3.2.0"`。仍用同一包和宿主，不声明 objectTypes。完整样例见 `examples/plugins/brand-points` 和 `brand-script`；边界、配额和验收见 [P10 清单](../../../plans/qimu-workstudio-p10-acceptance.md)。
+
+工作台增加 `"objectInputs": {"reference": "brand/v1"}`。reference 必须是 contextSchemaRef 根 properties 中的必填字段，最多声明 8 个对象字段；Manifest 必须申请 asset.read，运行时用户也必须实际授权。输入合同如下，可放在本包 Schema 的对应 property 中：
+
+```json
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["objectId", "version", "type", "schemaVersion"],
+  "properties": {
+    "objectId": {"type": "string", "minLength": 1, "maxLength": 80},
+    "version": {"type": "integer", "minimum": 1, "maximum": 100},
+    "type": {"const": "brand"},
+    "schemaVersion": {"const": 1}
+  }
+}
+```
+
+表单展示当前账号的品牌选择器；选择固定版本，不自动跟随最新版。预览除原有 selection 外新增 `objects: {reference: {reference, brand, digest, source?, archived, currentVersion}}`。这些事实由服务器读出，不接受浏览器传入同名资料覆盖。交给 Agent 时把资料冻结在既有任务模型请求中；对象文本仅为数据，不授予操作权限。归档阻止新调用，已提交任务保留其快照。
+
+可复用的 Host 操作：
+
+| adapter | 输入 | 权限 / effects |
+| --- | --- | --- |
+| object.read | reference 完整引用 | asset.read / read |
+| object.search | query 字符串、offset 整数 | asset.search / read |
+| object.save | objectId?、expectedVersion、clientKey、brand、source? | asset.import / draft_write |
+
+三者均为 `execution.kind: "host", mode: "inline"`。read/save 返回 ObjectView；search 返回 `{objects: [...]}` 索引列表。品牌字段为 name、audience、positioning、claims、restrictions，具体约束直接参考示例 Schema。除已有 Schema 校验，Adapter 会强校验领域值、归属、版本和大小；放宽包 Schema 不能放宽宿主权限。read 拒绝已归档对象；管理接口可读取归档历史。
+
+save 不代表立即保存：经原插件审批后才提交对象版本。新建不带 objectId、expectedVersion=0；更新必须携带读到的版本。clientKey 标识一份不可变写入意图，不能复用来提交不同内容；调用层还需保留 plugin-invocations 的幂等键。审批期间版本或状态变化会失败，不用新版替换用户批准的旧输入。纯查询/整理请求不能触发 save。
+
+API 管理入口为 `GET/POST /api/business-objects`、`GET /api/business-objects/:id/versions/:version`、`PATCH /api/business-objects/:id/archive`，仅面向已登录的当前账号，详见 OpenAPI。不是对外开放鉴权平台。没有 DELETE，所有历史版本保留；source 派生来源记录在新对象 v1。不同 type/schemaVersion 显式拒绝，本轮无跨 Schema 转换器。
+
+两个示例工作台仅绑定 Skill，点击“交给 Agent”启动现有模型流程；其 read/search/save 可通过技能和现有操作入口使用，不把只读操作假装成生成任务。品牌资料不含媒体，后续媒体引用和自定义对象贡献需独立设计资源保护。

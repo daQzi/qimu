@@ -274,6 +274,9 @@ func (s *Service) Decide(userID, id, approvalID, decision string, revision int64
 			if resolved.ContractHash != run.ContractHash {
 				return issue(409, "plugin_version_conflict", "合同摘要已变化")
 			}
+			if err = s.validateWorkbenchInvocation(repo, userID, request, ctx); err != nil {
+				return err
+			}
 			if resolved.Definition.Execution.Kind == "http" {
 				prepared, err := s.remote.Prepare(repo, userID, request, HostOperationContext{InvocationContext: ctx, ReleaseID: resolved.Release.ID, Files: resolved.Files}, InvocationPolicy{PermissionMode: "request_approval", AgentRunID: run.AgentRunID})
 				if err != nil {

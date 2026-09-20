@@ -482,7 +482,7 @@ func (s *Service) createCloudAgentRun(userID string, req CloudAgentRequest, pare
 				skillIDs = append(skillIDs, board.SkillID)
 			}
 		}
-		raw, e := json.Marshal(map[string]any{"workbench": req.Workbench, "suggestions": preview.Prompts, "operation": board.Definition.Operation, "output": board.Definition.Output})
+		raw, e := json.Marshal(map[string]any{"workbench": req.Workbench, "objects": preview.Objects, "suggestions": preview.Prompts, "operation": board.Definition.Operation, "output": board.Definition.Output})
 		if e != nil {
 			return nil, e
 		}

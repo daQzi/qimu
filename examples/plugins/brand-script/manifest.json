@@ -1,0 +1,44 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "brand-script",
+  "name": "品牌广告脚本",
+  "version": "1.0.0",
+  "description": "基于宿主解析的固定品牌版本，编写三镜广告脚本，列出画面、旁白和行动建议，严格遵守品牌表达限制。",
+  "publisher": {
+    "id": "sample-studio",
+    "displayName": "工作台示例"
+  },
+  "requires": {
+    "hostApi": "^3.2.0"
+  },
+  "permissions": [
+    "asset.read"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "assist",
+        "name": "assist",
+        "description": "基于宿主解析的固定品牌版本，编写三镜广告脚本，列出画面、旁白和行动建议，严格遵守品牌表达限制。",
+        "entry": "skills/assist/SKILL.md",
+        "activation": "explicit",
+        "operations": [
+          "brand-script.read"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "read",
+        "ref": "operations/read.json"
+      }
+    ],
+    "workbenches": [
+      {
+        "id": "compose",
+        "ref": "workbenches/compose.json"
+      }
+    ]
+  }
+}

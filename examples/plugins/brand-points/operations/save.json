@@ -1,0 +1,21 @@
+{
+  "id": "save",
+  "description": "经审批保存品牌新版本",
+  "inputSchemaRef": "schemas/save-input.json",
+  "outputSchemaRef": "schemas/output.json",
+  "requiredPermissions": [
+    "asset.import"
+  ],
+  "effects": [
+    "draft_write"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "host",
+    "adapter": "object.save",
+    "mode": "inline"
+  }
+}

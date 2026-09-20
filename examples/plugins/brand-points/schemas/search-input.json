@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    }
+  },
+  "required": [
+    "query",
+    "offset"
+  ],
+  "additionalProperties": false
+}

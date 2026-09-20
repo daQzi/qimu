@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"infinite-canvas/backend/internal/model"
+	"infinite-canvas/backend/internal/objects"
 	"infinite-canvas/backend/internal/plugins/contracts"
 	"infinite-canvas/backend/internal/repository"
 )
@@ -29,6 +30,7 @@ type WorkbenchComposeRequest struct {
 	Context   contracts.InvocationContext `json:"context"`
 }
 type WorkbenchPreview struct {
+	Objects map[string]objects.View `json:"objects,omitempty"`
 	contracts.WorkbenchComposition
 	Selection         contracts.WorkbenchSelection `json:"selection"`
 	Valid             bool                         `json:"valid"`
@@ -78,6 +80,15 @@ func (s *Service) workbench(repo *repository.Repository, user, address, releaseI
 	board, ok := boards[parts[1]]
 	if !ok {
 		return view, nil, issue(404, "operation_unavailable", "工作台不存在")
+	}
+	if len(board.ObjectInputs) > 0 {
+		var grants []string
+		if err = json.Unmarshal([]byte(state.GrantedPermissionsJSON), &grants); err != nil {
+			return view, nil, err
+		}
+		if !contains(grants, "asset.read") {
+			return view, nil, issue(403, "scope_forbidden", "品牌工作台需要 asset.read 授权")
+		}
 	}
 	if !contains(board.HostSurfaces, ctx.HostSurface) {
 		return view, nil, issue(400, "operation_input_invalid", "此工作台不支持当前入口")
@@ -189,6 +200,12 @@ func (s *Service) composeWorkbench(repo *repository.Repository, user string, req
 	if err = contracts.Validate("workbenchSelection", []byte(encode(candidate))); err != nil {
 		return view, preview, issue(400, "operation_input_invalid", "工作台输入格式无效")
 	}
+	// Go domain references and decoded HTTP maps must produce the same digest.
+	normalized, err := contracts.Decode([]byte(encode(req.Input)))
+	if err != nil {
+		return view, preview, err
+	}
+	req.Input = normalized.(map[string]any)
 	preview.WorkbenchComposition, err = contracts.ComposeWorkbench(view.Definition, view.Recipes, req.RecipeIDs, req.Input)
 	if err != nil {
 		return view, preview, issue(400, "operation_input_invalid", err.Error())
@@ -202,6 +219,22 @@ func (s *Service) composeWorkbench(repo *repository.Repository, user string, req
 		return view, preview, nil
 	}
 	preview.Valid = true
+	preview.Objects = map[string]objects.View{}
+	for field := range view.Definition.ObjectInputs {
+		raw, e := json.Marshal(preview.Input[field])
+		if e != nil {
+			return view, preview, e
+		}
+		ref, e := objects.DecodeReference(raw)
+		if e != nil {
+			return view, preview, e
+		}
+		object, e := objects.Read(repo, user, ref, false)
+		if e != nil {
+			return view, preview, e
+		}
+		preview.Objects[field] = object
+	}
 	preview.Selection = contracts.WorkbenchSelection{ID: req.ID, ReleaseID: view.ReleaseID, RecipeIDs: append([]string{}, req.RecipeIDs...), Input: preview.Input}
 	preview.Selection.Digest = strings.Repeat("0", 64)
 	if err = contracts.Validate("workbenchSelection", []byte(encode(preview.Selection))); err != nil {

@@ -1,0 +1,21 @@
+{
+  "id": "search",
+  "description": "检索当前账号未归档品牌",
+  "inputSchemaRef": "schemas/search-input.json",
+  "outputSchemaRef": "schemas/output.json",
+  "requiredPermissions": [
+    "asset.search"
+  ],
+  "effects": [
+    "read"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "host",
+    "adapter": "object.search",
+    "mode": "inline"
+  }
+}

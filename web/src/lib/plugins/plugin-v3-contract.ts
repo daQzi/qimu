@@ -201,7 +201,10 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                 if (!target.endsWith("/SKILL.md") || !files[target]) fail("contract_invalid", "skill entry");
                 continue;
             }
-            validatePluginContract(({ operations: "operation", views: "view", canvasBlueprints: "blueprint", connectors: "httpConnector", pipelines: "pipeline", workbenches: "workbench", recipes: "recipe" } as Record<string, string>)[kind], files[target]);
+            validatePluginContract(
+                ({ operations: "operation", views: "view", canvasBlueprints: "blueprint", connectors: "httpConnector", pipelines: "pipeline", workbenches: "workbench", recipes: "recipe" } as Record<string, string>)[kind],
+                files[target],
+            );
             if (kind === "connectors") validateHTTPConnector(docs[target]);
             if (docs[target].id !== entry.id) fail("contract_invalid", "contribution id mismatch");
         }
@@ -265,6 +268,13 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
                 fail("scope_forbidden", "HTTP operation effects and permissions");
             continue;
         }
+        const objectPermissions: Record<string, string> = { "object.read": "asset.read", "object.search": "asset.search", "object.save": "asset.import" };
+        const objectPermission = Object.hasOwn(objectPermissions, op.execution.adapter) ? objectPermissions[op.execution.adapter] : undefined;
+        if (objectPermission) {
+            if (op.execution.kind !== "host" || op.execution.mode !== "inline" || manifest.requires.hostApi !== "^3.2.0") fail("operation_unavailable", "object host contract");
+            if (!op.requiredPermissions.includes(objectPermission) || op.effects.length !== 1 || op.effects[0] !== (op.execution.adapter === "object.save" ? "draft_write" : "read")) fail("scope_forbidden", "object minimum contract");
+            continue;
+        }
         if (op.execution.kind !== "host" || !["resource.inspect", "resource.snapshot", "canvas.blueprint.instantiate"].includes(op.execution.adapter) || op.execution.mode !== "inline") fail("operation_unavailable", "host adapter profile");
         const snapshot = op.execution.adapter === "resource.snapshot";
         const projection = op.execution.adapter === "canvas.blueprint.instantiate";
@@ -306,21 +316,30 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
     const skills = contributions.skills || [];
     const boards = contributions.workbenches || [];
     const recipes = contributions.recipes || [];
-    if ((boards.length || recipes.length || skills.some((s: ObjectValue) => s.launchOperation)) && manifest.requires.hostApi !== "^3.1.0") fail("contract_invalid", "workbench requires hostApi ^3.1.0");
+    if ((boards.length || recipes.length || skills.some((s: ObjectValue) => s.launchOperation)) && !["^3.1.0", "^3.2.0"].includes(manifest.requires.hostApi)) fail("contract_invalid", "workbench requires hostApi ^3.1.0");
     const operation = (address: string) => {
         const ref = (contributions.operations || []).find((r: ObjectValue) => address === pluginID + "." + r.id);
         return ref ? docs[ref.ref] : undefined;
     };
-    for (const skill of skills) if (skill.launchOperation) {
-        if (!operation(skill.launchOperation)) fail("package_reference_invalid", "skill launch operation");
-        if (!skill.operations.includes(skill.launchOperation)) fail("scope_forbidden", "skill launch must be declared");
-    }
+    for (const skill of skills)
+        if (skill.launchOperation) {
+            if (!operation(skill.launchOperation)) fail("package_reference_invalid", "skill launch operation");
+            if (!skill.operations.includes(skill.launchOperation)) fail("scope_forbidden", "skill launch must be declared");
+        }
     for (const ref of boards) {
         const board = docs[ref.ref];
         requireSchema(board.contextSchemaRef);
         const schema = docs[board.contextSchemaRef];
         if (schema.type !== "object" || schema.$ref) fail("contract_invalid", "workbench requires object schema");
-        if (Object.keys(schema.properties || {}).length > 32 || Object.keys(schema.properties || {}).some(key => !/^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(key))) fail("contract_invalid", "workbench fields");
+        if (Object.keys(board.objectInputs || {}).length) {
+            if (manifest.requires.hostApi !== "^3.2.0") fail("contract_invalid", "object inputs require hostApi ^3.2.0");
+            if (!manifest.permissions.includes("asset.read")) fail("scope_forbidden", "object inputs require asset.read");
+            for (const key of Object.keys(board.objectInputs)) {
+                if (!Object.hasOwn(schema.properties || {}, key)) fail("package_reference_invalid", "object input field");
+                if (!schema.required?.includes(key)) fail("contract_invalid", "object input must be required");
+            }
+        }
+        if (Object.keys(schema.properties || {}).length > 32 || Object.keys(schema.properties || {}).some((key) => !/^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(key))) fail("contract_invalid", "workbench fields");
         if (board.operation && operation(board.operation)?.inputSchemaRef !== board.contextSchemaRef) fail("package_reference_invalid", "workbench input schema");
         if (board.skill) {
             const skill = skills.find((s: ObjectValue) => s.id === board.skill);
@@ -333,11 +352,12 @@ export function validatePluginTextPackage(files: PluginTextPackage, reservedIDs:
             if (!recipe) fail("package_reference_invalid", "workbench recipe");
             suggestions.push(docs[recipe.ref].defaults, docs[recipe.ref].requirements);
         }
-        for (const values of suggestions) for (const [key,value] of Object.entries(values)) {
-            if (!Object.hasOwn(schema.properties || {},key)) fail("contract_invalid", "unknown recipe field");
-            const validate = compiler.getSchema(`https://qimu.invalid/package/${board.contextSchemaRef}#/properties/${key}`);
-            if (!validate || !validate(value)) fail("contract_invalid","recipe field: "+key);
-        }
+        for (const values of suggestions)
+            for (const [key, value] of Object.entries(values)) {
+                if (!Object.hasOwn(schema.properties || {}, key)) fail("contract_invalid", "unknown recipe field");
+                const validate = compiler.getSchema(`https://qimu.invalid/package/${board.contextSchemaRef}#/properties/${key}`);
+                if (!validate || !validate(value)) fail("contract_invalid", "recipe field: " + key);
+            }
     }
 }
 

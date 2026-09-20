@@ -1,0 +1,100 @@
+{
+  "type": "object",
+  "properties": {
+    "objectId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "expectedVersion": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "clientKey": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "audience": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "positioning": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "claims": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "restrictions": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "required": [
+        "name",
+        "audience",
+        "positioning",
+        "claims",
+        "restrictions"
+      ],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "objectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "type": {
+          "const": "brand"
+        },
+        "schemaVersion": {
+          "const": 1
+        }
+      },
+      "required": [
+        "objectId",
+        "version",
+        "type",
+        "schemaVersion"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "expectedVersion",
+    "clientKey",
+    "brand"
+  ],
+  "additionalProperties": false
+}

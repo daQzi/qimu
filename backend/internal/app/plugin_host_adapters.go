@@ -54,11 +54,11 @@ func pluginHostAdapters() []plugins.ShortHostAdapter {
 		digest := sha256.Sum256(append(append([]byte{}, raw...), []byte(resource.UpdatedAt.UTC().Format(time.RFC3339Nano))...))
 		return plugins.PreparedOperation{Result: raw, SourceResourceID: resource.ID, SourceDigest: hex.EncodeToString(digest[:])}, nil
 	}
-	return []plugins.ShortHostAdapter{
+	return append(businessObjectAdapters(), []plugins.ShortHostAdapter{
 		{ID: "resource.inspect", Permissions: []string{"media.read"}, Effects: []string{"read"}, Prepare: prepare},
 		{ID: "resource.snapshot", Permissions: []string{"media.read", "resource.create"}, Effects: []string{"draft_write"}, Prepare: prepare},
 		{ID: "canvas.blueprint.instantiate", Permissions: []string{"canvas.read", "canvas.write"}, Effects: []string{"draft_write"}, Prepare: preparePluginCanvasProjection},
-	}
+	}...)
 }
 func (s *Service) pluginOperationAccess(userID string) error {
 	if userID == "" {

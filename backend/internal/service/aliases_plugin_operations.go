@@ -2,6 +2,10 @@ package service
 
 import "infinite-canvas/backend/internal/app"
 
+type BusinessObjectWrite = app.BusinessObjectWrite
+type BusinessObjectReference = app.BusinessObjectReference
+type BusinessObjectView = app.BusinessObjectView
+
 type PluginWorkbenchComposeRequest = app.PluginWorkbenchComposeRequest
 type PluginWorkbenchPreview = app.PluginWorkbenchPreview
 type PluginWorkbenchView = app.PluginWorkbenchView

@@ -1,0 +1,18 @@
+{
+  "id": "compose",
+  "name": "品牌广告脚本",
+  "description": "基于宿主解析的固定品牌版本，编写三镜广告脚本，列出画面、旁白和行动建议，严格遵守品牌表达限制。",
+  "hostSurfaces": [
+    "agent-home",
+    "canvas"
+  ],
+  "contextSchemaRef": "schemas/read-input.json",
+  "skill": "assist",
+  "objectInputs": {
+    "reference": "brand/v1"
+  },
+  "recipes": [],
+  "defaults": {},
+  "output": "result",
+  "prompt": "基于宿主解析的固定品牌版本，编写三镜广告脚本，列出画面、旁白和行动建议，严格遵守品牌表达限制。"
+}
