@@ -21,7 +21,7 @@ func TestP06MigrationPreservesPipelineState(t *testing.T) {
 				t.Fatal(err)
 			}
 			var previous schemaMigration
-			db.First(&previous, "version=?", 34)
+			db.First(&previous, "name=?", "application_plugin_pipelines")
 			for _, table := range []any{&model.PluginBatchApproval{}, &model.PluginExecutionSlot{}, &model.PluginBatchMetric{}} {
 				if err := db.Migrator().DropTable(table); err != nil {
 					t.Fatal(err)
@@ -40,7 +40,7 @@ func TestP06MigrationPreservesPipelineState(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if err := db.Delete(&schemaMigration{}, "version=?", 35).Error; err != nil {
+			if err := db.Delete(&schemaMigration{}, "name=?", "application_plugin_batches").Error; err != nil {
 				t.Fatal(err)
 			}
 			for i := 0; i < 2; i++ {
@@ -49,7 +49,7 @@ func TestP06MigrationPreservesPipelineState(t *testing.T) {
 				}
 			}
 			var after schemaMigration
-			db.First(&after, "version=?", 34)
+			db.First(&after, "name=?", "application_plugin_pipelines")
 			if previous.Checksum != after.Checksum || !previous.AppliedAt.Equal(after.AppliedAt) {
 				t.Fatal("P05 migration changed")
 			}

@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"encoding/json"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -114,6 +116,23 @@ func (r *Repository) ResourceReferenceSnapshot(userID string, excludingAssetID s
 		snapshot.Direct = append(snapshot.Direct, ResourceDirectReference{Kind: "插件任务", ID: ref.RunID, Title: "插件输入/结果", ResourceID: ref.ResourceID})
 	}
 
+	var toolRecords []model.Tool
+	if err := r.db.Where("owner_id = ?", userID).Find(&toolRecords).Error; err != nil {
+		return snapshot, err
+	}
+	for _, tool := range toolRecords {
+		var extra []string
+		if tool.ExtraInfoJSON != "" {
+			if err := json.Unmarshal([]byte(tool.ExtraInfoJSON), &extra); err != nil {
+				return snapshot, err
+			}
+		}
+		payload, err := json.Marshal(map[string]any{"coverUrl": tool.Cover, "url": tool.MediaURL, "referenceUrls": extra})
+		if err != nil {
+			return snapshot, err
+		}
+		snapshot.Documents = append(snapshot.Documents, ResourceReferenceDocument{Kind: "工具", ID: strconv.FormatInt(tool.ID, 10), Title: tool.Label, PrimaryJSON: string(payload)})
+	}
 	var assets []model.Asset
 	assetQuery := r.db.Where("user_id = ? AND id <> ?", userID, excludingAssetID)
 	if err := assetQuery.Find(&assets).Error; err != nil {

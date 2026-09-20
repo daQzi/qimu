@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000,
+      "title": "任务目标"
+    },
+    "model": {
+      "$ref": "schemas/model.json"
+    }
+  },
+  "required": [
+    "goal",
+    "model"
+  ],
+  "additionalProperties": false
+}

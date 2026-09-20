@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const CurrentSchemaVersion int64 = 37
+const CurrentSchemaVersion int64 = 39
 
 const baselineSchemaChecksum = "sha256:open-ai-canvas-schema-v1-20260830"
 const schemaMigrationAppliedAtIndexChecksum = "sha256:schema-migrations-applied-at-index-v2-20260830"
@@ -99,26 +99,32 @@ var schemaMigrations = []migration{
 	{version: 29, name: "agent_resource_leases", checksum: "sha256:agent-resource-leases-v29-20260919", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.CloudAgentResourceLease{})
 	}},
-	{version: 30, name: "application_plugin_releases", checksum: "sha256:application-plugin-releases-v28", apply: migrateApplicationPlugins},
-	{version: 31, name: "application_plugin_invocations", checksum: "sha256:application-plugin-invocations-v29", apply: func(tx *gorm.DB) error {
+	{version: 30, name: "builtin_tools", checksum: "sha256:builtin-tools-v30", apply: func(tx *gorm.DB) error {
+		return tx.AutoMigrate(&model.Tool{})
+	}},
+	{version: 31, name: "tool_favorites", checksum: "sha256:tool-favorites-v31", apply: func(tx *gorm.DB) error {
+		return tx.AutoMigrate(&model.ToolFavorite{})
+	}},
+	{version: 32, name: "application_plugin_releases", checksum: "sha256:application-plugin-releases-v28", apply: migrateApplicationPlugins},
+	{version: 33, name: "application_plugin_invocations", checksum: "sha256:application-plugin-invocations-v29", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.PluginRun{}, &model.PluginRunStep{}, &model.PluginRunEvent{})
 	}},
-	{version: 32, name: "application_plugin_projections", checksum: "sha256:application-plugin-projections-v30", apply: func(tx *gorm.DB) error {
+	{version: 34, name: "application_plugin_projections", checksum: "sha256:application-plugin-projections-v30", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.PluginRun{}, &model.PluginCanvasProjection{})
 	}},
-	{version: 33, name: "application_plugin_remote_tasks", checksum: "sha256:application-plugin-remote-tasks-v33", apply: func(tx *gorm.DB) error {
+	{version: 35, name: "application_plugin_remote_tasks", checksum: "sha256:application-plugin-remote-tasks-v33", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.Task{}, &model.PluginRun{}, &model.PluginConnection{}, &model.PluginConnectionVersion{}, &model.PluginConnectionRate{}, &model.PluginOperationPrice{}, &model.PluginRemoteExecution{}, &model.PluginRunResource{})
 	}},
-	{version: 34, name: "application_plugin_pipelines", checksum: "sha256:application-plugin-pipelines-v34", apply: func(tx *gorm.DB) error {
+	{version: 36, name: "application_plugin_pipelines", checksum: "sha256:application-plugin-pipelines-v34", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.PluginRun{}, &model.PluginPipelineExecution{}, &model.PluginInputRequest{})
 	}},
-	{version: 35, name: "application_plugin_batches", checksum: "sha256:application-plugin-batches-v35", apply: func(tx *gorm.DB) error {
+	{version: 37, name: "application_plugin_batches", checksum: "sha256:application-plugin-batches-v35", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.PluginRun{}, &model.PluginPipelineExecution{}, &model.PluginBatchApproval{}, &model.PluginExecutionSlot{}, &model.PluginBatchMetric{}, &model.PluginRemoteExecution{})
 	}},
-	{version: 36, name: "agent_threads", checksum: "sha256:agent-threads-v36", apply: func(tx *gorm.DB) error {
+	{version: 38, name: "agent_threads", checksum: "sha256:agent-threads-v36", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.AgentThread{}, &model.AgentThreadEntry{}, &model.AgentThreadCanvas{})
 	}},
-	{version: 37, name: "business_objects", checksum: "sha256:business-objects-v37", apply: func(tx *gorm.DB) error {
+	{version: 39, name: "business_objects", checksum: "sha256:business-objects-v37", apply: func(tx *gorm.DB) error {
 		return tx.AutoMigrate(&model.BusinessObject{}, &model.BusinessObjectVersion{})
 	}},
 }
@@ -239,11 +245,17 @@ func migrationsForDatabase(db *gorm.DB) ([]migration, error) {
 		return nil, err
 	}
 	var records []schemaMigration
-	if err = db.Where("version IN ?", []int64{27, 28}).Find(&records).Error; err != nil {
+	if err = db.Where("version IN ?", []int64{27, 28, 30}).Find(&records).Error; err != nil {
 		return nil, err
 	}
-	p01, p03 := false, false
+	p01, p03, workstudio := false, false, false
 	for _, row := range records {
+		if row.Version == 30 && row.Name == "application_plugin_releases" {
+			if row.Checksum != "sha256:application-plugin-releases-v28" {
+				return nil, fmt.Errorf("unknown workstudio migration checksum")
+			}
+			workstudio = true
+		}
 		if row.Version == 27 && row.Name == "application_plugin_releases" {
 			if row.Checksum != "sha256:application-plugin-releases-v27" {
 				return nil, fmt.Errorf("unknown P01 migration checksum")
@@ -257,7 +269,7 @@ func migrationsForDatabase(db *gorm.DB) ([]migration, error) {
 			p03 = true
 		}
 	}
-	if !p01 && !p03 {
+	if !p01 && !p03 && !workstudio {
 		return plan, nil
 	}
 	byName := map[string]migration{}
@@ -265,6 +277,14 @@ func migrationsForDatabase(db *gorm.DB) ([]migration, error) {
 		byName[item.name] = item
 	}
 	names := map[int64]string{27: "channel_credit_cost", 28: "application_plugin_releases", 29: "application_plugin_invocations", 30: "application_plugin_projections", 31: "agent_execution_journal", 32: "agent_resource_leases"}
+	if workstudio {
+		names = map[int64]string{30: "application_plugin_releases", 31: "application_plugin_invocations", 32: "application_plugin_projections"}
+	}
+	// Keep historical branch ledgers intact. Fresh/main databases retain the
+	// upstream tool versions 30/31; existing plugin databases append them.
+	for version, name := range map[int64]string{33: "application_plugin_remote_tasks", 34: "application_plugin_pipelines", 35: "application_plugin_batches", 36: "agent_threads", 37: "business_objects", 38: "builtin_tools", 39: "tool_favorites"} {
+		names[version] = name
+	}
 	if p01 {
 		names[27] = "application_plugin_releases"
 		names[28] = "channel_credit_cost"

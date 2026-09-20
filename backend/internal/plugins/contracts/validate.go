@@ -34,6 +34,13 @@ type ContractError struct {
 func (e *ContractError) Error() string      { return e.Reason + ": " + e.Location }
 func invalid(reason, location string) error { return &ContractError{reason, location} }
 
+func fileError(name string, err error) error {
+	if contract, ok := err.(*ContractError); ok {
+		return &ContractError{Reason: contract.Reason, Location: name + ": " + contract.Location}
+	}
+	return err
+}
+
 type Profile struct {
 	APIVersion     string `json:"apiVersion"`
 	RuntimeEnabled bool   `json:"runtimeEnabled"`
@@ -221,7 +228,7 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 		if strings.HasSuffix(name, ".json") {
 			v, err := Decode(raw)
 			if err != nil {
-				return err
+				return fileError(name, err)
 			}
 			o, ok := v.(map[string]any)
 			if !ok {
@@ -291,7 +298,7 @@ func ValidatePackage(files PackageFiles, policy Policy) error {
 			}
 			typ := map[string]string{"operations": "operation", "views": "view", "canvasBlueprints": "blueprint", "connectors": "httpConnector", "pipelines": "pipeline", "workbenches": "workbench", "recipes": "recipe"}[kind]
 			if err := Validate(typ, raw); err != nil {
-				return err
+				return fileError(p, err)
 			}
 			if docs[p]["id"] != id {
 				return invalid("contract_invalid", "contribution id mismatch")

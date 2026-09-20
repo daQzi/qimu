@@ -1,0 +1,61 @@
+{
+  "apiVersion": "yingce.plugin/v3",
+  "id": "__PLUGIN_ID__",
+  "name": "通用模型审核助手",
+  "version": "1.0.0",
+  "description": "系统模型生成结构化草稿，人工修改确认；可从 Agent 或工作台启动，不依赖视频或画布。",
+  "publisher": {
+    "id": "__PUBLISHER_ID__",
+    "displayName": "插件作者"
+  },
+  "requires": {
+    "hostApi": "^3.3.0"
+  },
+  "permissions": [
+    "generation.run"
+  ],
+  "dependencies": [],
+  "contributes": {
+    "skills": [
+      {
+        "id": "review",
+        "name": "review",
+        "description": "根据目标创建可人工修改确认的草稿。",
+        "entry": "skills/review/SKILL.md",
+        "activation": "explicit",
+        "operations": [
+          "__PLUGIN_ID__.process"
+        ],
+        "launchOperation": "__PLUGIN_ID__.process"
+      }
+    ],
+    "operations": [
+      {
+        "id": "generate",
+        "ref": "operations/generate.json"
+      },
+      {
+        "id": "process",
+        "ref": "operations/process.json"
+      }
+    ],
+    "views": [
+      {
+        "id": "review",
+        "ref": "views/review.json"
+      }
+    ],
+    "pipelines": [
+      {
+        "id": "review",
+        "ref": "pipelines/review.json"
+      }
+    ],
+    "workbenches": [
+      {
+        "id": "review",
+        "ref": "workbenches/review.json"
+      }
+    ]
+  }
+}

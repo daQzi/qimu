@@ -1,0 +1,15 @@
+{
+  "id": "review",
+  "name": "通用草稿审核",
+  "description": "可用于文案、营销方案或其他文本任务，由用户最终确认。",
+  "hostSurfaces": [
+    "agent-home",
+    "canvas"
+  ],
+  "contextSchemaRef": "schemas/input.json",
+  "operation": "__PLUGIN_ID__.process",
+  "skill": "review",
+  "recipes": [],
+  "defaults": {},
+  "output": "result"
+}

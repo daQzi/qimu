@@ -1,0 +1,43 @@
+{
+  "id": "review",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/review.json",
+  "steps": [
+    {
+      "key": "generate",
+      "type": "operation",
+      "operation": "__PLUGIN_ID__.generate",
+      "dependsOn": [],
+      "inputs": {
+        "goal": {
+          "from": "input#/goal"
+        },
+        "model": {
+          "from": "input#/model"
+        }
+      }
+    },
+    {
+      "key": "review",
+      "type": "wait_input",
+      "dependsOn": [
+        "generate"
+      ],
+      "formSchemaRef": "schemas/review.json",
+      "view": "review",
+      "inputs": {
+        "text": {
+          "from": "steps/generate#/text"
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "text": {
+      "from": "steps/review#/text"
+    },
+    "approved": {
+      "from": "steps/review#/approved"
+    }
+  }
+}

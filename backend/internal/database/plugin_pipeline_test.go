@@ -17,7 +17,7 @@ func TestP05MigrationPreservesRemoteHistory(t *testing.T) {
 				t.Fatal(err)
 			}
 			var before schemaMigration
-			if err := db.First(&before, "version=?", 33).Error; err != nil {
+			if err := db.First(&before, "name=?", "application_plugin_remote_tasks").Error; err != nil {
 				t.Fatal(err)
 			}
 			for _, table := range []any{&model.PluginPipelineExecution{}, &model.PluginInputRequest{}} {
@@ -30,7 +30,7 @@ func TestP05MigrationPreservesRemoteHistory(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if err := db.Delete(&schemaMigration{}, "version=?", 34).Error; err != nil {
+			if err := db.Delete(&schemaMigration{}, "name=?", "application_plugin_pipelines").Error; err != nil {
 				t.Fatal(err)
 			}
 			for i := 0; i < 2; i++ {
@@ -39,7 +39,7 @@ func TestP05MigrationPreservesRemoteHistory(t *testing.T) {
 				}
 			}
 			var after schemaMigration
-			db.First(&after, "version=?", 33)
+			db.First(&after, "name=?", "application_plugin_remote_tasks")
 			if before.Checksum != after.Checksum || !before.AppliedAt.Equal(after.AppliedAt) {
 				t.Fatal("P04 migration rewritten")
 			}

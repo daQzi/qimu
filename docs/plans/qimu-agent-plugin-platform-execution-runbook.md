@@ -1,5 +1,7 @@
 # Qimu Agent + 画布 + 插件 + 技能：分阶段实施手册
 
+> 最新安排：P10 已验收，P11 代码完成待用户统一验证。用户要求优先通用插件平台，暂停 P12/P13。P14B 开发者接入增强与主线兼容已完成待验收，见 [P14B 交付说明](qimu-plugin-platform-p14b-acceptance.md)；验收后继续平台接入/故障/灰度演练，不自动恢复出海业务开发。以下早期阶段状态保留作历史，不覆盖本条安排。
+
 > 状态：P00–P07 已由用户验收；P08/P14A 原手工验收记录保留。插件已独立提交 PR，用户随后授权继续工作台 P09。P09 已由用户验收；P10 代码完成待验收，见 [P10 验收清单](qimu-workstudio-p10-acceptance.md)，P11–P13 与 P14 剩余项暂不继续。从 P09 起使用 `codex-workstudio` 集成分支，每阶段独立 worktree；开始前与提交前 fetch fork origin，使本地 main 与 origin/main 一致并合入阶段分支。冲突以 fork 主线功能为准，兼容保留插件能力。完成后仅合入 `codex-workstudio`，不合入 main、不自动推送或更新原插件 PR，暂停等待验收。
 > 设计基线：qimu `4eaa28b8`；每次实施先核实当前代码，不假设此基线永远不变。
 

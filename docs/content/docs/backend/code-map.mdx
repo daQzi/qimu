@@ -5,6 +5,8 @@ description: 从产品功能快速定位主要代码入口
 
 # 代码功能地图
 
+P14B：`plugins/authoring/inspect.go` 从已校验的合同生成离线接入报告；`authoring/templates/model-review` 组合模型任务、人工审核与工作台；CLI 提供 `-capabilities`/`-inspect`。`app/plugin_model_template_test.go` 验证真实宿主执行链；`database/plugin_platform_upgrade_test.go` 验证主线与历史插件谱系汇合到 schema 39，不改写已有迁移记录。
+
 P11：`app/plugin_model.go` 组合模型准入、报价、Task 与结果；`plugin_model_probe.go` 在 Worker 中探测，`media_probe.go` 校验媒体权限，`mediaanalysis/probe.go` 负责受限 ffprobe/ffmpeg。`repository/plugin_model.go` 提供任务关联、租约写入与终态扫描。`plugins/pipeline_prefill.go`、`pipeline_input.go`、`pipeline_derive.go` 处理预填/提交/派生；`app/plugin_media_input.go` 验证来源、实体与素材。`examples/plugins/video-localization` 声明业务步骤；前端 `plugin-media-editor.tsx` 提供报告/方案编辑，`lib/plugins/media-review.ts` 合并人物引用。未增加 Agent 主循环业务分支或数据库迁移。
 
 P10：`internal/objects/brand.go` 管理品牌字段、版本/CAS、保留与派生；`repository/business_object.go` 串行化账号写入并存储不可变版本。`app/business_object.go` 复用 Host Adapter，`handler/business_object.go` 提供受控 HTTP 管理。`plugins/workbench.go` 按声明解析引用，`cloud_agent.go` 冻结事实。前端 `pages/business-objects` 管理资料、`business-object-picker.tsx` 选择固定版本、`business-object-pending.ts` 隔离重试；无第二套执行器。
@@ -161,3 +163,11 @@ HTTP 请求 -> handler -> service（稳定导入面 / 别名）-> app（组合�
 - HTTP 参数与响应只在 handler 处理，业务规则进入 service。
 - 页面保留流程协调；可独立理解和测试的算法进入同业务域的 `lib`。
 - 新增功能时只更新本页的主要入口，不增加逐文件清单。
+
+## 画布工具链路
+
+- `backend/internal/handler/tools.go`：登录态工具列表、详情、收藏、创建与删除。
+- `internal/service` 别名 → `internal/app/tools_bridge.go`（资源归属校验）→ `internal/tools`（可见性策略、输入合同、token 展开和内置种子）→ `internal/repository/tools.go`。
+- 任务入队 `internal/app/task_creation.go` 与生成执行 `internal/app/provider.go` 共用严格 token 解析。
+- 前端 `canvas-tool-presentation.ts` 共享轻量展示配置，`canvas-resource-references.ts` 统一 token；节点提示词与工具面板共用同一持久状态，不复制到 metadata 风格字段。
+- `canvas-workspace-panel.tsx` 提供常驻左侧菜单，按需挂载节点、资产、工具、任务和历史面板；资产面板复用素材分页服务与画布插入合同；主分支项目章节侧栏与工作区互斥。

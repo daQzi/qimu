@@ -18,8 +18,8 @@ var templates embed.FS
 var authorID = regexp.MustCompile(`^[a-z][a-z0-9-]{0,63}$`)
 
 func Template(kind, id, publisher string, policy contracts.Policy) (contracts.PackageFiles, error) {
-	if kind != "skill" && kind != "resource" {
-		return nil, fmt.Errorf("template must be skill or resource")
+	if kind != "skill" && kind != "resource" && kind != "model-review" {
+		return nil, fmt.Errorf("template must be skill, resource or model-review")
 	}
 	if !authorID.MatchString(id) || !authorID.MatchString(publisher) {
 		return nil, fmt.Errorf("id and publisher must be lowercase IDs (1-64 characters, starting with a letter)")

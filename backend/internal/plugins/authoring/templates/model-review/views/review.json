@@ -1,0 +1,15 @@
+{
+  "id": "review",
+  "component": "key-value/v1",
+  "schemaRef": "schemas/review.json",
+  "fields": [
+    {
+      "path": "/text",
+      "label": "草稿"
+    },
+    {
+      "path": "/approved",
+      "label": "用户确认"
+    }
+  ]
+}

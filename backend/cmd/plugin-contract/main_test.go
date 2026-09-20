@@ -46,3 +46,37 @@ func TestCLIWorkflow(t *testing.T) {
 		}
 	}
 }
+
+func TestCapabilityAndInspectionCLI(t *testing.T) {
+	var output bytes.Buffer
+	if err := run([]string{"-capabilities"}, &output, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	var capabilities map[string]any
+	if err := json.Unmarshal(output.Bytes(), &capabilities); err != nil || capabilities["runtimeVerified"] != false {
+		t.Fatal(output.String(), err)
+	}
+	root := t.TempDir()
+	dir := filepath.Join(root, "review")
+	if err := run([]string{"-init", dir, "-template", "model-review", "-id", "custom-review", "-publisher", "studio"}, io.Discard, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	output.Reset()
+	if err := run([]string{"-dir", dir, "-inspect"}, &output, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		ID                    string
+		RuntimeVerified       bool
+		Operations            []any
+		RequiredRuntimeChecks []string
+	}
+	if err := json.Unmarshal(output.Bytes(), &report); err != nil || report.ID != "custom-review" || report.RuntimeVerified || len(report.Operations) != 2 || len(report.RequiredRuntimeChecks) < 4 {
+		t.Fatal(output.String(), err)
+	}
+	for _, args := range [][]string{{"-capabilities", "-dir", dir}, {"-capabilities", "extra"}, {"-dir", dir, "-inspect", "-out", filepath.Join(root, "unused.zip")}, {"-init", filepath.Join(root, "unused"), "-inspect", "-id", "custom", "-publisher", "studio"}} {
+		if err := run(args, io.Discard, io.Discard); err == nil {
+			t.Fatal("invalid combination accepted", args)
+		}
+	}
+}

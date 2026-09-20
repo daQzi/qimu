@@ -27,6 +27,7 @@ func newProjectSettingsTestService(t *testing.T) (*Service, *gorm.DB) {
 		&model.PluginRun{},
 		&model.CloudAgentResourceLease{},
 		&model.PluginRunResource{},
+		&model.Tool{},
 		&model.Announcement{}, &model.AnnouncementImageDraft{},
 	); err != nil {
 		t.Fatal(err)

@@ -9,6 +9,26 @@ description: 当前可用的插件模板、打包校验、Agent 操作、远程�
 
 ## 1. 插件负责什么，宿主负责什么
 
+### P14B：离线能力清单与通用模型审核模板
+
+以下命令从 `backend/` 执行；示例父目录须存在，初始化和打包都拒绝覆盖已有文件。命令只读取/生成插件文件，不安装插件、不调用模型、不验证线上权限。
+
+```sh
+go run ./cmd/plugin-contract -capabilities
+go run ./cmd/plugin-contract -init ../.local/my-review -template model-review -id my-review -publisher my-team
+go run ./cmd/plugin-contract -dir ../.local/my-review -inspect
+go run ./cmd/plugin-contract -dir ../.local/my-review -out ../.local/my-review.yingce-plugin
+go run ./cmd/plugin-contract -package ../.local/my-review.yingce-plugin -inspect
+```
+
+`-capabilities` 列出当前编译版本支持的贡献类型、执行方式、Host Adapter 和明确不支持的能力。`-inspect` 先校验完整包，再输出权限、贡献数量、操作地址、Schema 引用、摘要及运行前置检查。`runtimeVerified: false` 表示未验证部署，不表示服务端运行时被禁用。诊断不返回模型 instruction；插件声明仍属于不可信输入，不可作为授权依据。
+
+`model-review` 是第三种模板，另两种为 `skill`、`resource`。它包含 Skill、模型 Operation、Pipeline、审核 Schema/View 和 Workbench；流程为文本目标 → 受管模型草稿 → 人工修改并明确批准 → 最终结果。无需视频、媒体工具或画布，可从首页工作台运行，也可从画布打开。它不自动创建画布节点，节点投影使用已有 Blueprint 合同。
+
+接入步骤：修改 Skill 和输入/输出 Schema；从当前模型目录选取真实 `logicalModelId`，或有效 `channelId`/`model`，不要填写虚构默认模型；按既有管理员入口安装包，用户启用并授予 `generation.run`；工作台输入 `goal` 与模型配置；确认报价后生成；在审核步骤修改 `text` 并勾选 `approved`。拒绝/不提交审核不会产生已确认结果。模型配置、定价、余额、Worker 与用户权限须在实际部署单独检查。
+
+该模板复用原 Task、审批和费用系统，不增加任意脚本或自定义前端代码执行。真实模型效果与费用需由用户测试；宿主测试使用本地模拟服务。阶段验收和后续平台边界见 [P14B 交付说明](../../../plans/qimu-plugin-platform-p14b-acceptance.md)。
+
 插件是安装与版本单位，Skill 是 Agent 的方法说明，Operation 是有输入输出约束的动作。启幕负责权限、批准、任务、资源、费用和画布落盘；技能正文不能授予权限，Agent 不能代替用户批准。
 
 | 需求 | 当前接入方式 |

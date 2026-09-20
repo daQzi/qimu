@@ -1,0 +1,23 @@
+{
+  "id": "process",
+  "description": "生成草稿后等待用户修正和确认，不执行任何外部发布。",
+  "inputSchemaRef": "schemas/input.json",
+  "outputSchemaRef": "schemas/review.json",
+  "requiredPermissions": [
+    "generation.run"
+  ],
+  "effects": [
+    "draft_write",
+    "generation"
+  ],
+  "context": {
+    "requiresCanvas": false,
+    "requiresProject": false
+  },
+  "execution": {
+    "kind": "pipeline",
+    "mode": "task",
+    "pipeline": "review"
+  },
+  "resultView": "review"
+}

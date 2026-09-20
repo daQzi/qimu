@@ -26,7 +26,9 @@ func run(args []string, stdout, stderr io.Writer) error {
 	dir := flags.String("dir", "", "validate an extracted UTF-8 plugin directory")
 	archive := flags.String("package", "", "validate a finished .yingce-plugin archive")
 	initDir := flags.String("init", "", "create a template in a new directory (parent must exist)")
-	template := flags.String("template", "skill", "template: skill or resource")
+	template := flags.String("template", "skill", "template: skill, resource or model-review")
+	capabilities := flags.Bool("capabilities", false, "list compiled authoring capabilities; offline, no runtime authorization")
+	inspect := flags.Bool("inspect", false, "describe permissions, contributions and runtime prerequisites with -dir or -package")
 	id := flags.String("id", "", "new plugin ID, required with -init")
 	publisher := flags.String("publisher", "", "publisher ID, required with -init")
 	reserved := flags.String("reserved-ids", "", "comma-separated IDs reserved by the trusted catalog")
@@ -34,6 +36,17 @@ func run(args []string, stdout, stderr io.Writer) error {
 	version := flags.String("version", "", "package version override with -dir; source unchanged")
 	if err := flags.Parse(args); err != nil {
 		return err
+	}
+	if *capabilities {
+		count := 0
+		flags.Visit(func(*flag.Flag) { count++ })
+		if count != 1 || flags.NArg() != 0 {
+			return fmt.Errorf("-capabilities cannot be combined with other arguments")
+		}
+		return json.NewEncoder(stdout).Encode(authoring.Capabilities())
+	}
+	if *inspect && (*initDir != "" || *output != "" || *version != "") {
+		return fmt.Errorf("-inspect requires read-only -dir or -package")
 	}
 	modes := 0
 	for _, value := range []string{*dir, *archive, *initDir} {
@@ -90,6 +103,13 @@ func run(args []string, stdout, stderr io.Writer) error {
 	}
 	if err != nil {
 		return err
+	}
+	if *inspect {
+		report, err := authoring.Inspect(files, policy)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(stdout).Encode(report)
 	}
 	return json.NewEncoder(stdout).Encode(map[string]any{
 		"valid": true, "apiVersion": "yingce.plugin/v3", "profile": "p00-contract/1",

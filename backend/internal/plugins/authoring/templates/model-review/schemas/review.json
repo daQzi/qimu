@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000,
+      "title": "修改草稿"
+    },
+    "approved": {
+      "type": "boolean",
+      "const": true,
+      "title": "确认内容"
+    }
+  },
+  "required": [
+    "text",
+    "approved"
+  ],
+  "additionalProperties": false
+}

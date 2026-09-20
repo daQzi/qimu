@@ -13,7 +13,7 @@ func TestP08MigrationPreservesPluginState(t *testing.T) {
 				t.Fatal(err)
 			}
 			previous := schemaMigration{}
-			if err := db.First(&previous, "version = ?", 35).Error; err != nil {
+			if err := db.First(&previous, "name = ?", "application_plugin_batches").Error; err != nil {
 				t.Fatal(err)
 			}
 			run := model.PluginRun{ID: "p08-kept-run", UserID: "user", IdempotencyKey: "keep", Status: "waiting_input", Revision: 8}
@@ -25,7 +25,7 @@ func TestP08MigrationPreservesPluginState(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if err := db.Delete(&schemaMigration{}, "version = ?", 36).Error; err != nil {
+			if err := db.Delete(&schemaMigration{}, "name = ?", "agent_threads").Error; err != nil {
 				t.Fatal(err)
 			}
 			for i := 0; i < 2; i++ {
@@ -34,7 +34,7 @@ func TestP08MigrationPreservesPluginState(t *testing.T) {
 				}
 			}
 			var after schemaMigration
-			if err := db.First(&after, "version = ?", 35).Error; err != nil {
+			if err := db.First(&after, "name = ?", "application_plugin_batches").Error; err != nil {
 				t.Fatal(err)
 			}
 			if previous.Checksum != after.Checksum || !previous.AppliedAt.Equal(after.AppliedAt) {

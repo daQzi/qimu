@@ -5,6 +5,8 @@ description: 当前项目已实现的核心工作台能力与使用入口
 
 # 功能清单
 
+P14B（待验收）：插件 CLI 新增离线能力清单与包接入检查；新增通用“模型草稿→人工修改确认”模板，可在首页/画布工作台复用，沿用原任务与审批。同步主线工具库并解决历史插件库迁移冲突，schema 39。P12/P13 暂停，优先通用平台；公网市场/任意代码执行尚未开放。见 `docs/plans/qimu-plugin-platform-p14b-acceptance.md`。
+
 P11（待统一验收）：hostApi 3.3 系统模型操作、报价审批、原 Task/钱包、人工预填/校验与派生复用；video-localization 1.0.1 提供原片 SHA-256/流时基探测、按需抽帧、可配置音轨理解、人物合并/对白修正/素材选择、替换方案和画布蓝图。真实识别质量待用户验证，成片仍属 P12/P13，见 `docs/plans/qimu-workstudio-p11-acceptance.md`。
 
 P10（已验收）：品牌资料管理、固定对象版本、归档保留与显式派生；hostApi 3.2 的 object.read/search/save 复用原权限和审批。工作台 objectInputs 使用通用选择器，服务端解析品牌事实并冻结到 Agent，两个独立插件复用同版资料。仅文本品牌，未开放 objectTypes 或媒体绑定，见 `docs/plans/qimu-workstudio-p10-acceptance.md`。
@@ -434,3 +436,7 @@ SEO 标题、描述、可选关键词会投影到浏览器 metadata、Open Graph
 - `web/src/services/api/timeline-tasks.ts`：转写与渲染任务客户端。
 - `backend/internal/service/task_timeline.go`、`task_render.go`、`timeline_render_plan.go`、`transcription_whisper.go`：后端转写、渲染与渲染计划任务。
 - `backend/internal/repository/project_workbench_read.go`：项目概览指标聚合（含成片完成度计数）。
+
+## 画布生成工具（待本地验收）
+
+画布支持风格、运镜、九宫格提示词工具及自定义特效工具，提供收藏和私有自定义工具。工具仅加入提示词或创建待生成子节点，选择工具不自动发起生成。画布左侧提供主页、折叠、节点、资产、任务和历史菜单，不再提供独立工具菜单，展开面板沿用主分支主题。资产支持分类、搜索、分页和直接插入，复用现有素材服务及插入合同；任务和历史独立，历史明确展示最近 30 条。图片节点直接展示风格和预设，不再展示提示词模板入口；其他节点的提示词模板保持不变。

@@ -11,7 +11,7 @@ import (
 )
 
 func TestTemplatesDeliverInstallableArchives(t *testing.T) {
-	for _, kind := range []string{"skill", "resource"} {
+	for _, kind := range []string{"skill", "resource", "model-review"} {
 		t.Run(kind, func(t *testing.T) {
 			files, err := Template(kind, "delivery-check", "studio", contracts.Policy{})
 			if err != nil {

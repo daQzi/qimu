@@ -13,7 +13,7 @@ func TestP10MigrationPreservesWorkbenchState(t *testing.T) {
 				t.Fatal(err)
 			}
 			previous := schemaMigration{}
-			if err := db.First(&previous, "version = ?", 36).Error; err != nil {
+			if err := db.First(&previous, "name = ?", "agent_threads").Error; err != nil {
 				t.Fatal(err)
 			}
 			run := model.PluginRun{ID: "p10-kept-run", UserID: "user", IdempotencyKey: "keep", Status: "waiting_input", Revision: 8}
@@ -25,7 +25,7 @@ func TestP10MigrationPreservesWorkbenchState(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if err := db.Delete(&schemaMigration{}, "version = ?", 37).Error; err != nil {
+			if err := db.Delete(&schemaMigration{}, "name = ?", "business_objects").Error; err != nil {
 				t.Fatal(err)
 			}
 			for i := 0; i < 2; i++ {
@@ -34,7 +34,7 @@ func TestP10MigrationPreservesWorkbenchState(t *testing.T) {
 				}
 			}
 			var after schemaMigration
-			if err := db.First(&after, "version = ?", 36).Error; err != nil {
+			if err := db.First(&after, "name = ?", "agent_threads").Error; err != nil {
 				t.Fatal(err)
 			}
 			if previous.Checksum != after.Checksum || !previous.AppliedAt.Equal(after.AppliedAt) {
