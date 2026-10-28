@@ -124,10 +124,7 @@ func applyAgentOutputLimit(body map[string]interface{}, limit int, protocol stri
 }
 
 func runDeclarativeAgentTask(ctx context.Context, input canvasGenerationInput, adapter protocol.AgentAdapter) (map[string]interface{}, error) {
-	wire := input.Config.InterfaceType
-	if wire == string(model.ChannelInterfaceOpenAIResponse) {
-		wire = "responses"
-	}
+	wire := declarativeTextWire(input.Config.InterfaceType)
 	knownWire := wire == "chat-completion" || wire == "responses" || wire == "claude-api"
 	if input.TextOptions.Thinking && !knownWire {
 		return nil, errors.New("当前声明式 Agent 渠道尚不支持思考模式，请关闭思考模式或切换内置协议渠道")

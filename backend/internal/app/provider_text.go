@@ -30,11 +30,21 @@ func runTextTask(ctx context.Context, input canvasGenerationInput) (map[string]i
 
 // Known text protocols keep the plugin's request mapping and host transport,
 // while sharing the SSE parser used by text generation and Agent requests.
-func executeProtocolCreateRequest(ctx context.Context, input canvasGenerationInput, spec protocol.RequestSpec) ([]byte, *protocol.Result, error) {
-	wire := input.Config.InterfaceType
-	if wire == string(model.ChannelInterfaceOpenAIResponse) {
-		wire = "responses"
+func declarativeTextWire(interfaceType string) string {
+	switch interfaceType {
+	case string(model.ChannelInterfaceOpenAIResponse):
+		return "responses"
+	case "lxmone-chat":
+		return "chat-completion"
+	case "lxmone-claude":
+		return "claude-api"
+	default:
+		return interfaceType
 	}
+}
+
+func executeProtocolCreateRequest(ctx context.Context, input canvasGenerationInput, spec protocol.RequestSpec) ([]byte, *protocol.Result, error) {
+	wire := declarativeTextWire(input.Config.InterfaceType)
 	if input.Mode != "text" || !input.StreamText || (wire != "chat-completion" && wire != "responses" && wire != "claude-api") {
 		data, err := executeProtocolRequest(ctx, input.Config, spec)
 		return data, nil, err

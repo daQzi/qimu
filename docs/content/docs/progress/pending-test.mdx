@@ -5,6 +5,17 @@ description: 当前项目已实现功能的手工验证清单与未确认边界
 
 # 待测试
 
+## 万有引力全模态插件
+
+- 已实现：`lxmone-video-suite` 升为 1.1.0，保留原有 8 个视频 provider ID；新增文本 Chat Completions、Claude Messages、同步/异步图片生成与 multipart 编辑、当前视频模型自动路由。宿主将新增文本 provider 映射至已有 SSE/Agent wire，保留流式、输出限制和工具调用语义。不改数据库、渠道绑定和价格配置。
+- 协议边界：当前视频入口按已核对的完整模型 ID 路由，未知模型、超量参考素材和不支持的时长/分辨率拒绝提交；无直链时使用同一 Key 下载 `/videos/{id}/content`。图片最多 3 张参考图，Qwen/Seedream 限制单张，不开放模型专用高级图片参数。
+- 已验证：`go test ./internal/protocol -count=1` 通过，覆盖 36 个公开视频示例、文本/Agent 映射、图片同步/异步响应、编辑顺序与参数拒绝；app 专项测试覆盖本地 HTTP 文本调用、两图 multipart 上传、视频创建/查询/鉴权下载、两个新增文本入口的 SSE/JSON 回退/取消/524、Agent 输出限制，以及官方插件包重载。`git diff --check` 通过。未做真实上游付费调用、浏览器验收或全后端测试。
+- [ ] 替换官方目录中的插件包并重启后端后，系统渠道与个人自定义渠道可分别选择新增文本、图片、视频协议，原有渠道绑定保持不变。官方插件不能通过后台上传同 ID 包覆盖。
+- [ ] 真实 Key 分别验证文本非流式/流式、Claude Messages 与 Agent 工具调用；上游模型支持程度不能由协议声明推定。
+- [ ] 图片验证 gpt-image-2a 与 nana-banana-2.1 的文生图、两张参考图编辑、Qwen/Seedream 单张限制；异步任务完成后多图无重复且转存成功。
+- [ ] 视频验证 Seedance HC 生成声音、Kling camelCase 素材字段、H3 B/C 参考图、原生 assets 与 Wan P；上游只给相对结果路径时，通过鉴权 content 下载并转存。
+- [ ] 上游计费与失败状态人工核对；超时不重复创建。本站模型目录和账户可调用模型需重新核对，本次不做付费调用。
+
 ## 画布同步：已应用目标值幂等收敛与瞬时并发重放
 
 - 已实现（后端）：`applyCanvasOperations` 对当前值已等于目标值的写入按已应用处理，不再因旧基线整笔返回 `canvas_field_conflict`。覆盖 `patch_node` 各补丁路径（不再限于任务围栏请求）、`set_field`、`update_connection`，以及同内容重复的 `create_node` / `create_connection`。`remove_node`、`update_connection`、`remove_connection` 的整对象基线忽略节点 `updatedAt`。只在 `before` 中的断言、第三值和内容不同的同 ID 对象仍冲突。

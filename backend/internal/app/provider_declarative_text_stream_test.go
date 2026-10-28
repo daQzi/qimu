@@ -21,6 +21,8 @@ func TestDeclarativeTextStreaming(t *testing.T) {
 		{"chat-completion", "/v1/chat/completions", "data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n\n", `{"choices":[{"message":{"content":"hello"}}]}`},
 		{"openai-response", "/v1/responses", "event: response.output_text.delta\ndata: {\"delta\":\"hello\"}\n\n", `{"output_text":"hello"}`},
 		{"claude-api", "/v1/messages", "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"hello\"}}\n\n", `{"content":[{"type":"text","text":"hello"}]}`},
+		{"lxmone-chat", "/v1/chat/completions", "data: {\"choices\":[{\"delta\":{\"content\":\"hello\"}}]}\n\n", `{"choices":[{"message":{"content":"hello"}}]}`},
+		{"lxmone-claude", "/v1/messages", "event: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"hello\"}}\n\n", `{"content":[{"type":"text","text":"hello"}]}`},
 	} {
 		for _, scenario := range []string{"stream", "json_fallback", "stream_disabled", "http_524", "cancel"} {
 			t.Run(wire.id+"/"+scenario, func(t *testing.T) {
@@ -49,7 +51,7 @@ func TestDeclarativeTextStreaming(t *testing.T) {
 						if r.Header.Get("Accept") != "text/event-stream" {
 							t.Errorf("Accept = %q", r.Header.Get("Accept"))
 						}
-						if wire.id == "chat-completion" {
+						if declarativeTextWire(wire.id) == "chat-completion" {
 							options, _ := body["stream_options"].(map[string]any)
 							if options["include_usage"] != true {
 								t.Error("stream usage was not requested")
