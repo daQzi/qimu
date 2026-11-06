@@ -131,7 +131,8 @@ func TestLxmoneAgentUsesKnownWireOutputLimits(t *testing.T) {
 					Claude:         map[string]interface{}{"messages": []any{}, "max_tokens": 512},
 				},
 			}
-			result, err := runDeclarativeAgentTask(context.Background(), input, adapter.(protocol.AgentAdapter))
+			ctx := withProtocolRegistry(context.Background(), loadOfficialFallbackRegistry())
+			result, err := runDeclarativeAgentTask(ctx, input, adapter.(protocol.AgentAdapter))
 			if err != nil || result["text"] != "done" || calls != 1 {
 				t.Fatalf("Agent result = %#v, %v; calls = %d", result, err, calls)
 			}

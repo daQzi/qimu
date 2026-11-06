@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"yingce/backend/internal/protocol"
 )
 
 func TestDeclarativeTextStreaming(t *testing.T) {
@@ -51,7 +53,12 @@ func TestDeclarativeTextStreaming(t *testing.T) {
 						if r.Header.Get("Accept") != "text/event-stream" {
 							t.Errorf("Accept = %q", r.Header.Get("Accept"))
 						}
-						if declarativeTextWire(wire.id) == "chat-completion" {
+						adapter, ok := loadOfficialFallbackRegistry().Resolve(wire.id)
+						if !ok {
+							t.Errorf("missing provider %q", wire.id)
+							return
+						}
+						if adapter.Metadata().TextWire == protocol.TextWireChatCompletion {
 							options, _ := body["stream_options"].(map[string]any)
 							if options["include_usage"] != true {
 								t.Error("stream usage was not requested")
